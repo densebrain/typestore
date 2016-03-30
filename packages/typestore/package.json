@@ -1,0 +1,29 @@
+{
+  "name": "typestore",
+  "description": "TypeScript Persistence Framework - pluggable storage, logging, mapping, etc",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "test": "gulp ts-compile && mocha dist/test/**/*.spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/densebrain/typestore.git"
+  },
+  "keywords": [
+    "plugin",
+    "typestore",
+    "typescript",
+    "ts",
+    "mapper",
+    "db"
+  ],
+  "author": "Jonathan Glanz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/densebrain/typestore/issues"
+  },
+  "homepage": "https://github.com/densebrain/typestore#readme",
+  "dependencies": {}
+}

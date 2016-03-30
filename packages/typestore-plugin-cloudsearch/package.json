@@ -1,0 +1,37 @@
+{
+  "name": "typestore-plugin-cloudsearch",
+  "description": "CloudSearch TypesStore Plugin",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "test": "gulp ts-compile && mocha dist/test/**/*.spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/densebrain/typestore.git"
+  },
+  "keywords": [
+    "dynamo",
+    "dynamodb",
+    "typescript",
+    "typestore",
+    "store",
+    "plugin",
+    "ts",
+    "mapper",
+    "db"
+  ],
+  "author": "Jonathan Glanz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/densebrain/typestore/issues"
+  },
+  "homepage": "https://github.com/densebrain/typestore#readme",
+  "dependencies": {
+    "aws-sdk": "^2.3.7",
+    "lodash": "^4.11.1",
+    "aws-sdk-typescript": "densebrain/aws-sdk-typescript#v0.0.4"
+
+  }
+}
