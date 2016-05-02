@@ -1,0 +1,25 @@
+{
+	"compilerOptions": {
+		"target": "es5",
+		"module": "commonjs",
+		"moduleResolution": "classic",
+		"declaration": true,
+
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"preserveConstEnums": true,
+		"allowSyntheticDefaultImports": true,
+		"outDir": "dist",
+
+		"sourceMap": true
+		// ,
+		// "outFile": "dist/index.js"
+	},
+
+	"exclude": [
+		"node_modules",
+		"typings/main.d.ts",
+		"typings/main",
+		"dist"
+	]
+}
