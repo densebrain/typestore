@@ -1,4 +1,4 @@
-require('source-map-support').install()
+//require('source-map-support').install()
 import 'reflect-metadata'
 import 'expectations'
 
@@ -24,6 +24,7 @@ function reset(createTables:boolean,endpoint:string) {
 
 	if (!endpoint)
 		delete opts['endpoint']
+
 
 	Manager.init(opts)
 

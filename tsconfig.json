@@ -9,6 +9,8 @@
 		"experimentalDecorators": true,
 		"preserveConstEnums": true,
 		"allowSyntheticDefaultImports": true,
+		"inlineSourceMap": true,
+		"inlineSources": true,
 		"outDir": "dist",
 
 		"sourceMap": true

@@ -6,7 +6,7 @@
     <pass-parent-env>true</pass-parent-env>
     <envs />
     <ui>bdd</ui>
-    <extra-mocha-options>-w --debug-brk --require source-map-support/register</extra-mocha-options>
+    <extra-mocha-options>-w --debug --require source-map-support/register</extra-mocha-options>
     <test-kind>DIRECTORY</test-kind>
     <test-directory>$PROJECT_DIR$/dist/test</test-directory>
     <recursive>false</recursive>

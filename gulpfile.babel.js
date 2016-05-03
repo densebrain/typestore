@@ -19,11 +19,12 @@ function compile() {
 	log.info('Compilation Completed')
 
 	const sourcemapOpts = {
-		sourceRoot: path.resolve(process.cwd(),'src')
+		sourceRoot: path.resolve(__dirname,'src')
 	}
 
 	return tsResult
 		.pipe(sourcemaps.write('.',sourcemapOpts))
+		//.pipe(sourcemaps.write(sourcemapOpts))
 		.pipe(gulp.dest('dist'))
 }
 
