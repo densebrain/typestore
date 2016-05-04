@@ -1,6 +1,6 @@
 "use strict";
 exports.DynoModelKey = 'dyno-model';
 exports.DynoAttrKey = 'dyno-attr';
-exports.LocalEndpoint = 'localhost:8000';
+exports.LocalEndpoint = 'http://localhost:8000';
 
-//# sourceMappingURL=data:application/json;charset=utf8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIkNvbnN0YW50cy50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiO0FBQ2Esb0JBQVksR0FBRyxZQUFZLENBQUE7QUFDM0IsbUJBQVcsR0FBRyxXQUFXLENBQUE7QUFDekIscUJBQWEsR0FBRyxnQkFBZ0IsQ0FBQSIsImZpbGUiOiJDb25zdGFudHMuanMiLCJzb3VyY2VzQ29udGVudCI6WyJcbmV4cG9ydCBjb25zdCBEeW5vTW9kZWxLZXkgPSAnZHluby1tb2RlbCdcbmV4cG9ydCBjb25zdCBEeW5vQXR0cktleSA9ICdkeW5vLWF0dHInXG5leHBvcnQgY29uc3QgTG9jYWxFbmRwb2ludCA9ICdsb2NhbGhvc3Q6ODAwMCdcbiJdLCJzb3VyY2VSb290IjoiL1VzZXJzL2pnbGFuei9EZXZlbG9wbWVudC9keW5vdHlwZS9zcmMifQ==
+//# sourceMappingURL=Constants.js.map

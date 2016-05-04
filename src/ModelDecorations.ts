@@ -9,17 +9,6 @@ import {ITableOptions,IModelOptions,IAttributeOptions} from './Types'
 
 const log = Log.create('ModelDecorations')
 
-
-let defaultTableOptions:ITableOptions = {
-	writeThroughput: 5,
-	readThroughput: 10
-}
-
-
-export function setDefaultTableOptions(newTableOptions:ITableOptions) {
-	defaultTableOptions = newTableOptions
-}
-
 /**
  * Decorate a specified class, making it a
  * PersistableModel
@@ -35,7 +24,7 @@ export function ModelDescriptor(opts:IModelOptions) {
 
 		return function(constructor:Function) {
 			// Make sure everything is valid
-			_.defaults(opts,defaultTableOptions,{
+			_.defaults(opts,{
 				clazzName: (constructor as any).name
 			})
 
