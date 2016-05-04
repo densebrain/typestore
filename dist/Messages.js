@@ -8,7 +8,7 @@ exports.Strings = {
     ManagerSettled: 'Manager is settled',
     ManagerNotSettled: 'Manager not settled',
     ManagerInitComplete: 'dont forget to start when models are prepared, start triggers model prep, including table create',
-    ManagerNoCreateTables: 'Create tables is disabled, nothing to prepare',
+    ManagerNoSyncModels: 'Create tables is disabled, nothing to prepare',
     ManagerOnlyOneKeyType: 'An attribute can only have 1 key type ?0',
     ManagerTypeStoreRequired: 'TypeStore required on options',
     PromiseUnhandledRejection: 'Unhandled promise rejection ?0',

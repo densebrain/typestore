@@ -60,10 +60,6 @@ var Manager;
         assert(valid, Messages_1.msg(not ? Messages_1.Strings.ManagerSettled : Messages_1.Strings.ManagerNotSettled));
     }
     /**
-     * Ref to aws client
-     */
-    var store;
-    /**
      * Set the manager options
      */
     function init(newOptions) {
@@ -72,10 +68,10 @@ var Manager;
         initialized = true;
         options = options || newOptions;
         _.assign(options, newOptions);
-        store = options.store;
-        assert(store, Messages_1.msg(Messages_1.Strings.ManagerTypeStoreRequired));
+        Manager.store = options.store;
+        assert(Manager.store, Messages_1.msg(Messages_1.Strings.ManagerTypeStoreRequired));
         log.debug(Messages_1.msg(Messages_1.Strings.ManagerInitComplete));
-        return store.init(this, options).return(true);
+        return Manager.store.init(this, options).return(true);
     }
     Manager.init = init;
     /**
@@ -84,7 +80,7 @@ var Manager;
      * @returns {Bluebird<boolean>}
      */
     function start() {
-        return startPromise = store.start()
+        return startPromise = Manager.store.start()
             .catch(function (err) {
             log.error(Messages_1.msg(Messages_1.Strings.ManagerFailedToStart), err);
             startPromise = null;
@@ -130,11 +126,11 @@ var Manager;
     function reset() {
         if (startPromise)
             startPromise.cancel();
-        return Promise_1.default.resolve(store ? store.stop() : true).then(function () {
+        return Promise_1.default.resolve(Manager.store ? Manager.store.stop() : true).then(function () {
             log.info("Store successfully stopped");
             return true;
         }).finally(function () {
-            store = startPromise = null;
+            Manager.store = startPromise = null;
             if (options)
                 options.store = null;
             initialized = false;
@@ -184,6 +180,15 @@ var internal = {};
  * Add getter/setters
  */
 Object.defineProperties(Manager, {
+    store: {
+        set: function (newVal) {
+            internal.store = newVal;
+        },
+        get: function () {
+            return internal.store;
+        },
+        configurable: false
+    },
     startPromise: {
         set: function (newVal) {
             internal.startPromise = newVal;

@@ -8,7 +8,7 @@ import * as assert from 'assert'
 import Promise from './Promise'
 import * as Log from './log'
 import {DynoModelKey,DynoAttrKey} from './Constants'
-import {IModelOptions,IAttributeOptions,IStore,IManagerOptions} from './Types'
+import {IModelOptions, IAttributeOptions, IStore, IManagerOptions, IModelClass, IModelRepo, IModelKey} from './Types'
 import {msg, Strings} from "./Messages"
 
 
@@ -82,7 +82,7 @@ export namespace Manager {
 	/**
 	 * Ref to aws client
 	 */
-	let store:IStore
+	export let store:IStore
 
 	/**
 	 * Set the manager options
@@ -216,6 +216,8 @@ export namespace Manager {
 		modelAttrs.push(opts)
 		Reflect.defineMetadata(DynoAttrKey,modelAttrs,target)
 	}
+
+
 }
 
 /**
@@ -229,6 +231,15 @@ const internal:any = {}
  * Add getter/setters
  */
 Object.defineProperties(Manager,{
+	store: {
+		set: (newVal:IStore) => {
+			internal.store = newVal
+		},
+		get: () => {
+			return internal.store
+		},
+		configurable: false
+	},
 	startPromise: {
 		set: (newVal:any) => {
 			internal.startPromise = newVal

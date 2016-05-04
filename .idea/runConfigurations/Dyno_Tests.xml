@@ -6,7 +6,7 @@
     <pass-parent-env>true</pass-parent-env>
     <envs />
     <ui>bdd</ui>
-    <extra-mocha-options />
+    <extra-mocha-options>--colors</extra-mocha-options>
     <test-kind>PATTERN</test-kind>
     <test-pattern>dist/**/*.spec.js</test-pattern>
     <method />

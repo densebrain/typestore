@@ -3,6 +3,7 @@
   "version": false,
   "dependencies": {
     "bluebird": "registry:npm/bluebird#3.3.4+20160427051630",
+    "chalk": "registry:npm/chalk#1.0.0+20160211003958",
     "lodash": "registry:npm/lodash#4.0.0+20160416211519",
     "object-assign": "registry:npm/object-assign#4.0.1+20160301180549",
     "reflect-metadata": "npm:reflect-metadata"

@@ -1,27 +1,99 @@
 "use strict";
 require('es6-shim');
+var chalk = require('chalk');
+/**
+ * Enabled colored output
+ *
+ * @type {boolean}
+ */
+exports.colorEnabled = true;
+var styles = {
+    standard: {
+        text: function (str) {
+            return chalk.white(str);
+        }
+    },
+    debug: {
+        level: function (str) {
+            return chalk.green(str);
+        },
+        name: function (str) {
+            return chalk.white(str);
+        }
+    },
+    info: {
+        level: function (str) {
+            return chalk.black.bgBlue.bold(str);
+        },
+        name: function (str) {
+            return chalk.blue.bold(str);
+        }
+    },
+    warn: {
+        level: function (str) {
+            return chalk.black.bgYellow.bold(str);
+        },
+        name: function (str) {
+            return chalk.yellow.bold(str);
+        }
+    },
+    error: {
+        level: function (str) {
+            return chalk.black.bgRed.bold(str);
+        },
+        name: function (str) {
+            return chalk.red.bold(str);
+        }
+    }
+};
 /**
  * Current logger output
  */
 var loggerOutput = console;
 /**
- * Use internal node console by default
+ * Generic log action
+ *
+ * @param name
+ * @param level
+ * @param args
  */
 function log(name, level) {
     var args = [];
     for (var _i = 2; _i < arguments.length; _i++) {
         args[_i - 2] = arguments[_i];
     }
-    if (!loggerOutput[level])
-        level = 'info';
-    var msg = "[" + name + "] [" + level + "] " + args.shift();
-    loggerOutput[level].apply(loggerOutput, [msg].concat(args));
+    var logOut = loggerOutput;
+    var logFns = [logOut[level], logOut.log, logOut];
+    var logFn = null;
+    for (var _a = 0, logFns_1 = logFns; _a < logFns_1.length; _a++) {
+        logFn = logFns_1[_a];
+        if (logFn && typeof logFn === 'function')
+            break;
+    }
+    if (!logFn)
+        throw new Error('Logger output can not be null');
+    var msg = (exports.colorEnabled) ?
+        styles[level].name("[" + name + "] ") +
+            styles[level].level("[" + level.toUpperCase() + "]") :
+        "[" + name + "] [" + level.toUpperCase() + "]";
+    if (exports.colorEnabled) {
+    }
+    logFn.apply(void 0, [msg].concat(args));
 }
 /**
  * Default log factory, uses console
  */
 exports.DefaultLoggerFactory = {
+    /**
+     * Creates a simple logger, parsing
+     * provided category as a simple filename
+     * and using the current output for output
+     *
+     * @param name
+     * @returns {ILogger}
+     */
     create: function (name) {
+        name = name.split('/').pop().split('.').shift();
         /**
          * (description)
          *

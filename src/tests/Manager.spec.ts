@@ -1,5 +1,8 @@
 require('source-map-support').install()
+
+import {SyncStrategy} from "../Types";
 import 'reflect-metadata'
+import 'es6-shim'
 import 'expectations'
 import Promise from '../Promise'
 
@@ -16,7 +19,7 @@ log.info('Starting test suite')
 let Fixtures = null
 let store = null
 
-function reset(syncModels:boolean,endpoint:string) {
+function reset(syncStrategy:SyncStrategy,endpoint:string) {
 	// Init dynamo type
 	// using local
 	store = new DynamoDBStore()
@@ -24,7 +27,7 @@ function reset(syncModels:boolean,endpoint:string) {
 	const opts:IDynamoDBManagerOptions = {
 		dynamoEndpoint: endpoint,
 		prefix: `test_${process.env.USER}_`,
-		syncModels,
+		syncStrategy,
 		store
 	}
 
@@ -45,7 +48,7 @@ function reset(syncModels:boolean,endpoint:string) {
 
 }
 
-describe('dynotype',() => {
+describe('DynoType',() => {
 
 
 	/**
@@ -53,7 +56,7 @@ describe('dynotype',() => {
 	 */
 	describe('Decorators',() => {
 		beforeEach(() => {
-			return reset(false,LocalEndpoint)
+			return reset(SyncStrategy.None,LocalEndpoint)
 		})
 
 		it('decorates a new model',() => {
@@ -64,6 +67,7 @@ describe('dynotype',() => {
 
 			const attrData = Reflect.getOwnMetadata(DynoAttrKey,constructorFn),
 				modelData = Reflect.getOwnMetadata(DynoModelKey,constructorFn)
+
 
 			expect(attrData.length).toEqual(3)
 			expect(modelData.attrs.length).toEqual(3)
@@ -87,17 +91,25 @@ describe('dynotype',() => {
 	})
 
 
-	describe('Client connects and works',() => {
+	describe('Client connects and CRUD',() => {
 		beforeEach(() => {
-			return reset(true,LocalEndpoint)
+			return reset(SyncStrategy.Overwrite,LocalEndpoint)
 		})
 
-		it("Can create a table for a model",(done) => {
+		it("Can create a table for a model",() => {
 			const test1 = new Fixtures.Test1()
 			return Manager.start().then(() => {
 				expect(store.availableTables.length).toBe(1)
-				done()
-			}).catch(done)
+
+			})
+		})
+
+		it('Can create data',() => {
+
+			return Manager.start().then(() => {
+				Manager.store.getModelRepo(Fixtures.Test1)
+
+			})
 
 		})
 	})

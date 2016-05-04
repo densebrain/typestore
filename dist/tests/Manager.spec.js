@@ -1,6 +1,8 @@
 "use strict";
 require('source-map-support').install();
+var Types_1 = require("../Types");
 require('reflect-metadata');
+require('es6-shim');
 require('expectations');
 var DynamoDBStore_1 = require('../DynamoDBStore');
 var index_1 = require('../index');
@@ -10,14 +12,14 @@ var log = Log.create(__filename);
 log.info('Starting test suite');
 var Fixtures = null;
 var store = null;
-function reset(syncModels, endpoint) {
+function reset(syncStrategy, endpoint) {
     // Init dynamo type
     // using local
     store = new DynamoDBStore_1.DynamoDBStore();
     var opts = {
         dynamoEndpoint: endpoint,
         prefix: "test_" + process.env.USER + "_",
-        syncModels: syncModels,
+        syncStrategy: syncStrategy,
         store: store
     };
     if (!endpoint)
@@ -31,13 +33,13 @@ function reset(syncModels, endpoint) {
         Fixtures = require('./fixtures/index');
     });
 }
-describe('dynotype', function () {
+describe('DynoType', function () {
     /**
      * Test for valid decorations
      */
     describe('Decorators', function () {
         beforeEach(function () {
-            return reset(false, Constants_1.LocalEndpoint);
+            return reset(Types_1.SyncStrategy.None, Constants_1.LocalEndpoint);
         });
         it('decorates a new model', function () {
             var test1 = new Fixtures.Test1();
@@ -60,16 +62,20 @@ describe('dynotype', function () {
             expect(tableDef.AttributeDefinitions[0].AttributeType).toBe('S');
         });
     });
-    describe('Client connects and works', function () {
+    describe('Client connects and CRUD', function () {
         beforeEach(function () {
-            return reset(true, Constants_1.LocalEndpoint);
+            return reset(Types_1.SyncStrategy.Overwrite, Constants_1.LocalEndpoint);
         });
-        it("Can create a table for a model", function (done) {
+        it("Can create a table for a model", function () {
             var test1 = new Fixtures.Test1();
             return index_1.Manager.start().then(function () {
                 expect(store.availableTables.length).toBe(1);
-                done();
-            }).catch(done);
+            });
+        });
+        it('Can create data', function () {
+            return index_1.Manager.start().then(function () {
+                index_1.Manager.store.getModelRepo(Fixtures.Test1);
+            });
         });
     });
 });

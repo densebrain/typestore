@@ -5,7 +5,7 @@ import * as _ from 'lodash'
 import * as Log from './log'
 
 import {Manager} from './Manager'
-import {ITableOptions,IModelOptions,IAttributeOptions} from './Types'
+import {IModelOptions,IAttributeOptions} from './Types'
 
 const log = Log.create('ModelDecorations')
 
@@ -39,12 +39,9 @@ export function ModelDescriptor(opts:IModelOptions) {
 
 
 export function AttributeDescriptor(opts: IAttributeOptions) {
-
 	return function (target:any,propertyKey:string) {
 		Manager.registerAttribute(target,propertyKey,opts)
 	}
-
-
 }
 
 
