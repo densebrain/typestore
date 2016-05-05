@@ -1,9 +1,10 @@
 "use strict";
+//import Promise from './Promise'
+var Promise = require('bluebird');
 var Log = require('./log');
 var AWS = require('aws-sdk');
 var _ = require('lodash');
 var assert = require('assert');
-var Promise_1 = require('./Promise');
 var Types_1 = require("./Types");
 var Messages_1 = require("./Messages");
 // Set the aws promise provide to bluebird
@@ -24,23 +25,23 @@ var DefaultDynamoDBOptions = {
 function tableNameParam(TableName) {
     return { TableName: TableName };
 }
-var KeyType;
 (function (KeyType) {
     KeyType[KeyType["HASH"] = 0] = "HASH";
     KeyType[KeyType["RANGE"] = 1] = "RANGE";
-})(KeyType || (KeyType = {}));
-var ResourceState;
+})(exports.KeyType || (exports.KeyType = {}));
+var KeyType = exports.KeyType;
 (function (ResourceState) {
     ResourceState[ResourceState["tableExists"] = 0] = "tableExists";
     ResourceState[ResourceState["tableNotExists"] = 1] = "tableNotExists";
-})(ResourceState || (ResourceState = {}));
-var TableStatus;
+})(exports.ResourceState || (exports.ResourceState = {}));
+var ResourceState = exports.ResourceState;
 (function (TableStatus) {
     TableStatus[TableStatus["CREATING"] = 0] = "CREATING";
     TableStatus[TableStatus["UPDATING"] = 1] = "UPDATING";
     TableStatus[TableStatus["DELETING"] = 2] = "DELETING";
     TableStatus[TableStatus["ACTIVE"] = 3] = "ACTIVE";
-})(TableStatus || (TableStatus = {}));
+})(exports.TableStatus || (exports.TableStatus = {}));
+var TableStatus = exports.TableStatus;
 var StatusPending = [TableStatus.CREATING, TableStatus.UPDATING];
 function isTableStatusIn(status) {
     var statuses = [];
@@ -81,6 +82,7 @@ var DynamoDBModelKeyAttribute = (function () {
     };
     return DynamoDBModelKeyAttribute;
 }());
+exports.DynamoDBModelKeyAttribute = DynamoDBModelKeyAttribute;
 var DynamoDBModelKey = (function () {
     function DynamoDBModelKey(hashKey, sortKey) {
         this.hashKey = hashKey;
@@ -190,7 +192,7 @@ var DynamoDBStore = (function () {
         this.manager = manager;
         this.opts = opts;
         _.defaultsDeep(this.opts, DefaultDynamoDBOptions);
-        return Promise_1.default.resolve(true);
+        return Promise.resolve(true);
     };
     /**
      * Create a new dynamo type store
@@ -210,7 +212,7 @@ var DynamoDBStore = (function () {
     DynamoDBStore.prototype.stop = function () {
         this._docClient = null;
         this._dynamoClient = null;
-        return Promise_1.default.resolve(true);
+        return Promise.resolve(true);
     };
     /**
      * Determine the attribute type to
@@ -300,7 +302,7 @@ var DynamoDBStore = (function () {
      */
     DynamoDBStore.prototype.waitForTable = function (TableName, resourceState) {
         if (resourceState === void 0) { resourceState = ResourceState.tableExists; }
-        return Promise_1.default.resolve(this.dynamoClient.waitFor(ResourceState[resourceState], tableNameParam(TableName))
+        return Promise.resolve(this.dynamoClient.waitFor(ResourceState[resourceState], tableNameParam(TableName))
             .promise()).then(this.setTableAvailable.bind(this, TableName));
     };
     /**
@@ -311,7 +313,7 @@ var DynamoDBStore = (function () {
      */
     DynamoDBStore.prototype.findExistingTable = function (TableName) {
         var _this = this;
-        return Promise_1.default.resolve(this.dynamoClient.describeTable({ TableName: TableName })
+        return Promise.resolve(this.dynamoClient.describeTable({ TableName: TableName })
             .promise()
             .then(function (newTableDesc) {
             _this.tableDescs[TableName] = newTableDesc.Table;
@@ -319,22 +321,22 @@ var DynamoDBStore = (function () {
         })).catch(function (err) {
             if (err.code === 'ResourceNotFoundException') {
                 log.info("Table does not exist " + TableName);
-                return Promise_1.default.resolve(null);
+                return Promise.resolve(null);
             }
-            return Promise_1.default.reject(err);
+            return Promise.reject(err);
         });
     };
     DynamoDBStore.prototype.createTable = function (tableDef) {
         var _this = this;
         var TableName = tableDef.TableName;
         log.info("In create " + TableName);
-        return Promise_1.default.resolve(this.dynamoClient.createTable(tableDef).promise()
+        return Promise.resolve(this.dynamoClient.createTable(tableDef).promise()
             .then(function (createResult) {
             var status = createResult.TableDescription.TableStatus;
             // ERROR STATE - table deleting
             if (isTableStatusIn(status, TableStatus.DELETING))
-                return Promise_1.default.reject(new Error(Messages_1.msg(DynamoStrings.TableDeleting, tableDef.TableName)));
-            var promised = Promise_1.default.resolve(createResult);
+                return Promise.reject(new Error(Messages_1.msg(DynamoStrings.TableDeleting, tableDef.TableName)));
+            var promised = Promise.resolve(createResult);
             if (isTableStatusIn.apply(void 0, [status].concat(StatusPending))) {
                 log.debug("Waiting for table to create " + TableName);
                 promised.then(function () {
@@ -353,16 +355,16 @@ var DynamoDBStore = (function () {
         var tableDesc = this.tableDescs[TableName];
         if (_.isMatch(tableDesc, updateDef)) {
             log.debug("No change to table definition " + TableName);
-            return Promise_1.default.resolve(this.setTableAvailable(TableName));
+            return Promise.resolve(this.setTableAvailable(TableName));
         }
-        return Promise_1.default.resolve(this.dynamoClient.updateTable(updateDef)
+        return Promise.resolve(this.dynamoClient.updateTable(updateDef)
             .promise()
             .then(function (updateResult) {
             var status = updateResult.TableDescription.TableStatus;
             // ERROR STATE - table deleting
             if (isTableStatusIn(status, TableStatus.DELETING))
-                return Promise_1.default.reject(new Error(Messages_1.msg(DynamoStrings.TableDeleting, tableDef.TableName)));
-            var promised = Promise_1.default.resolve(updateResult);
+                return Promise.reject(new Error(Messages_1.msg(DynamoStrings.TableDeleting, tableDef.TableName)));
+            var promised = Promise.resolve(updateResult);
             if (isTableStatusIn.apply(void 0, [status].concat(StatusPending))) {
                 log.debug("Waiting for table to update " + TableName);
                 promised
@@ -374,7 +376,7 @@ var DynamoDBStore = (function () {
     };
     DynamoDBStore.prototype.deleteTable = function (tableDef) {
         var TableName = tableDef.TableName;
-        return Promise_1.default.resolve(this.dynamoClient.deleteTable({ TableName: TableName })
+        return Promise.resolve(this.dynamoClient.deleteTable({ TableName: TableName })
             .promise()).then(this.waitForTable.bind(this, TableName, ResourceState.tableNotExists));
     };
     /**
@@ -419,9 +421,9 @@ var DynamoDBStore = (function () {
         // If create is not enabled then skip
         if (this.opts.syncStrategy === Types_1.SyncStrategy.None) {
             log.debug(Messages_1.msg(Messages_1.Strings.ManagerNoSyncModels));
-            return Promise_1.default.resolve(true);
+            return Promise.resolve(true);
         }
-        return Promise_1.default.each(tableDefs, this.syncTable.bind(this)).return(true);
+        return Promise.each(tableDefs, this.syncTable.bind(this)).return(true);
     };
     return DynamoDBStore;
 }());

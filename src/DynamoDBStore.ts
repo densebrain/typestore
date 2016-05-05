@@ -1,9 +1,12 @@
+//import Promise from './Promise'
+import Promise = require('bluebird')
+
 import * as Log from './log'
 import * as AWS from 'aws-sdk'
 import {DynamoDB} from 'aws-sdk'
 import * as _ from 'lodash'
 import * as assert from 'assert'
-import Promise from './Promise'
+
 import {
 	IManagerOptions, IAttributeOptions, IModelOptions, IStore, IManager, SyncStrategy, IModelClass,
 	IModelRepo, IModelKey
@@ -54,17 +57,17 @@ function tableNameParam(TableName:string) {
 	return {TableName}
 }
 
-enum KeyType {
+export enum KeyType {
 	HASH,
 	RANGE
 }
 
-enum ResourceState {
+export enum ResourceState {
 	tableExists,
 	tableNotExists
 }
 
-enum TableStatus {
+export enum TableStatus {
 	CREATING,
 	UPDATING,
 	DELETING,
@@ -91,7 +94,7 @@ function typeToDynamoType(type:any) {
 /**
  * Internal dynamo key map class
  */
-class DynamoDBModelKeyAttribute {
+export class DynamoDBModelKeyAttribute {
 
 	constructor(
 		private name:string,
@@ -155,6 +158,7 @@ export class DynamoDBModelRepo<M extends IModelClass> implements IModelRepo<M,Dy
 		return null
 	}
 }
+
 
 export class DynamoDBStore implements IStore {
 	private _docClient:AWS.DynamoDB.DocumentClient

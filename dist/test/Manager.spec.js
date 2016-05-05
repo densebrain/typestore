@@ -1,9 +1,10 @@
 "use strict";
 require('source-map-support').install();
-var Types_1 = require("../Types");
 require('reflect-metadata');
-require('es6-shim');
+//import 'es6-shim'
 require('expectations');
+//import Promise from '../Promise'
+var Types_1 = require("../Types");
 var DynamoDBStore_1 = require('../DynamoDBStore');
 var index_1 = require('../index');
 var Log = require('../log');

@@ -2,16 +2,20 @@
 	"compilerOptions": {
 		"target": "es5",
 		"module": "commonjs",
-		"moduleResolution": "classic",
+		"moduleResolution": "node",
+		"declaration": true,
+
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"preserveConstEnums": true,
 		"allowSyntheticDefaultImports": true,
 		"sourceMap": true
 	},
+
 	"exclude": [
 		"node_modules",
 		"typings/main.d.ts",
-		"typings/main"
+		"typings/main",
+		"dist"
 	]
 }

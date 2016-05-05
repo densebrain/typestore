@@ -8,7 +8,7 @@ const log = console
 const sourceMaps = require('gulp-sourcemaps')
 const relativeSourcemapsSource = require('gulp-relative-sourcemaps-source')
 const tsProject = ts.createProject('./tsconfig.json')
-const srcPaths = ['typings/browser.d.ts','src/**/*.ts']
+const srcPaths = ['typings/browser.d.ts','src/**/*.ts','test/**/*.ts']
 log.info('Using src roots',srcPaths)
 
 
@@ -33,7 +33,7 @@ function clean() {
 function compile() {
 
 	const sourcemapOpts = {
-		sourceRoot: path.relative("./dist/",'./src/'),
+		sourceRoot: path.resolve(__dirname,'src'),
 		//sourceRoot: '.',
 		includeContent: false
 	}

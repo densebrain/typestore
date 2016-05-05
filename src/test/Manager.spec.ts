@@ -1,11 +1,12 @@
 require('source-map-support').install()
 
-import {SyncStrategy} from "../Types";
-import 'reflect-metadata'
-import 'es6-shim'
-import 'expectations'
-import Promise from '../Promise'
 
+import 'reflect-metadata'
+//import 'es6-shim'
+import 'expectations'
+//import Promise from '../Promise'
+
+import {SyncStrategy} from "../Types";
 import {DynamoDBStore,IDynamoDBManagerOptions} from '../DynamoDBStore'
 
 import {Manager} from '../index'

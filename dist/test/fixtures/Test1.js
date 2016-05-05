@@ -9,26 +9,27 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var Log = require('../../log');
-var ModelDecorations_1 = require("../../ModelDecorations");
+var Decorations = require("../../ModelDecorations");
+var ModelDescriptor = Decorations.ModelDescriptor, AttributeDescriptor = Decorations.AttributeDescriptor;
 var log = Log.create(__filename);
 var Test1 = (function () {
     function Test1() {
         log.info("constructor for " + this.constructor.name);
     }
     __decorate([
-        ModelDecorations_1.AttributeDescriptor({ name: 'id', partitionKey: true }), 
+        AttributeDescriptor({ name: 'id', partitionKey: true }), 
         __metadata('design:type', String)
     ], Test1.prototype, "id", void 0);
     __decorate([
-        ModelDecorations_1.AttributeDescriptor({ name: 'createdAt', sortKey: true }), 
+        AttributeDescriptor({ name: 'createdAt', sortKey: true }), 
         __metadata('design:type', Number)
     ], Test1.prototype, "createdAt", void 0);
     __decorate([
-        ModelDecorations_1.AttributeDescriptor({ name: 'field2' }), 
+        AttributeDescriptor({ name: 'field2' }), 
         __metadata('design:type', String)
     ], Test1.prototype, "attrStr2", void 0);
     Test1 = __decorate([
-        ModelDecorations_1.ModelDescriptor({ tableName: 'testTable1' }), 
+        ModelDescriptor({ tableName: 'testTable1' }), 
         __metadata('design:paramtypes', [])
     ], Test1);
     return Test1;

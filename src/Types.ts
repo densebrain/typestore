@@ -39,7 +39,7 @@ export interface IStore {
 	start():Promise<boolean>
 	stop():Promise<boolean>
 	syncModels():Promise<boolean>
-	getModelRepo<T extends IModelClass, K extends IModelKey>(clazz:{new(): T; }):IModelRepo<T,K>
+	getModelRepo<T>(clazz:{new(): T; }):T
 }
 
 export enum SyncStrategy {

@@ -1,10 +1,10 @@
-///<reference path="../typings/browser/definitions/bluebird/index.d.ts"/>
 "use strict";
-var Bluebird = require('bluebird');
+///<reference path="../typings/browser/definitions/bluebird/index.d.ts"/>
+var Promise = require('bluebird');
 var Log = require('./log');
 var Messages_1 = require("./Messages");
 var log = Log.create(__filename);
-Bluebird.config({
+Promise.config({
     cancellation: true,
     longStackTraces: true,
     warnings: true,
@@ -19,6 +19,6 @@ process.on("rejectionHandled", function (promise) {
     //log.debug(msg(Strings.PromiseRejected))
 });
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = Bluebird;
+exports.default = Promise;
 
 //# sourceMappingURL=Promise.js.map

@@ -1,11 +1,11 @@
 /// <reference path="../node_modules/reflect-metadata/reflect-metadata.d.ts" />
-import 'es6-shim'
 import 'reflect-metadata'
 
+import Promise = require('bluebird')// from './Promise'
 import * as _ from 'lodash'
 import * as assert from 'assert'
 
-import Promise from './Promise'
+
 import * as Log from './log'
 import {DynoModelKey,DynoAttrKey} from './Constants'
 import {IModelOptions, IAttributeOptions, IStore, IManagerOptions, IModelClass, IModelRepo, IModelKey} from './Types'

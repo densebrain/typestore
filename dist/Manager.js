@@ -1,10 +1,9 @@
 "use strict";
 /// <reference path="../node_modules/reflect-metadata/reflect-metadata.d.ts" />
-require('es6-shim');
 require('reflect-metadata');
+var Promise = require('bluebird'); // from './Promise'
 var _ = require('lodash');
 var assert = require('assert');
-var Promise_1 = require('./Promise');
 var Log = require('./log');
 var Constants_1 = require('./Constants');
 var Messages_1 = require("./Messages");
@@ -96,7 +95,7 @@ var Manager;
      * @param fn
      */
     function execute(fn) {
-        return new Promise_1.default(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             function executeFn() {
                 var args = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
@@ -114,7 +113,7 @@ var Manager;
                 startPromise.then(executeFn).catch(handleError);
             }
             else {
-                Promise_1.default.resolve(executeFn).catch(handleError);
+                Promise.resolve(executeFn).catch(handleError);
             }
         });
     }
@@ -126,7 +125,7 @@ var Manager;
     function reset() {
         if (startPromise)
             startPromise.cancel();
-        return Promise_1.default.resolve(Manager.store ? Manager.store.stop() : true).then(function () {
+        return Promise.resolve(Manager.store ? Manager.store.stop() : true).then(function () {
             log.info("Store successfully stopped");
             return true;
         }).finally(function () {

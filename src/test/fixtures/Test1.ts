@@ -1,5 +1,6 @@
 import * as Log from '../../log'
-import {ModelDescriptor, AttributeDescriptor} from "../../ModelDecorations";
+import Decorations = require("../../ModelDecorations")
+const {ModelDescriptor, AttributeDescriptor} = Decorations
 
 const log = Log.create(__filename)
 
