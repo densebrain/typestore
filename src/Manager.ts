@@ -8,7 +8,7 @@ import * as assert from 'assert'
 
 import * as Log from './log'
 import {DynoModelKey,DynoAttrKey} from './Constants'
-import {IModelOptions, IAttributeOptions, IStore, IManagerOptions, IModelClass, IModelRepo, IModelKey} from './Types'
+import {IModelOptions, IModelAttributeOptions, IStore, IManagerOptions, IModelClass, IRepo, IModelKey} from './Types'
 import {msg, Strings} from "./Messages"
 
 
@@ -187,7 +187,7 @@ export namespace Manager {
 		checkStarted(true)
 
 		// Retrieve its attributes first
-		opts.attrs = Reflect.getOwnMetadata(DynoAttrKey, constructor.prototype) as IAttributeOptions[]
+		opts.attrs = Reflect.getOwnMetadata(DynoAttrKey, constructor.prototype) as IModelAttributeOptions[]
 
 		// Define the metadata for the model
 		Reflect.defineMetadata(DynoModelKey,opts,constructor.prototype)
@@ -201,7 +201,7 @@ export namespace Manager {
 
 	}
 
-	export function registerAttribute(target:any,propertyKey:string,opts:IAttributeOptions) {
+	export function registerAttribute(target:any,propertyKey:string,opts:IModelAttributeOptions) {
 		checkStarted(true)
 
 		const attrType = Reflect.getMetadata('design:type',target,propertyKey)

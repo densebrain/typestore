@@ -1,34 +1,45 @@
-import Promise from './Promise'
+import Promise = require('bluebird')
 
 export interface IModelClass {
-	prototype:any
+
 }
 
-export interface IAttributeOptions {
+export interface IModelAttributeOptions {
 	name?:string
 	type?:any
 	partitionKey?:boolean
 	sortKey?:boolean
 }
 
+/**
+ * Options provided to model
+ * decorator annotation
+ */
 export interface IModelOptions {
 	clazzName?:string
 	clazz?:any
 	tableName:string
-	attrs?:IAttributeOptions[]
+	attrs?:IModelAttributeOptions[]
 }
 
 export interface IModelKey {
 
 }
 
-export interface IModelRepo<M extends IModelClass,K extends IModelKey> {
-	key(...args):K
-	get(key:K):Promise<M>
+
+export interface IRepoOptions {
+
+}
+
+export interface IRepo<M extends IModelClass> {
+	key(...args):IModelKey
+	get(key:IModelKey):Promise<M>
 	create(o:M):Promise<M>
 	update(o:M):Promise<M>
-	remove(key:K):Promise<M>
+	remove(key:IModelKey):Promise<M>
 }
+
+
 
 /**
  * Store interface that must be fulfilled for
@@ -39,9 +50,12 @@ export interface IStore {
 	start():Promise<boolean>
 	stop():Promise<boolean>
 	syncModels():Promise<boolean>
-	getModelRepo<T>(clazz:{new(): T; }):T
+	getRepo<T extends IRepo<any>>(clazz:{new(): T; }):T
 }
 
+/**
+ * Sync strategy for updating models in the store
+ */
 export enum SyncStrategy {
 	Overwrite,
 	Update,

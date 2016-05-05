@@ -1,17 +1,17 @@
 require('source-map-support').install()
 
-
-import 'reflect-metadata'
 //import 'es6-shim'
-import 'expectations'
 //import Promise from '../Promise'
 
+import 'expectations'
+import 'reflect-metadata'
+import * as util from 'util'
 import {SyncStrategy} from "../Types";
 import {DynamoDBStore,IDynamoDBManagerOptions} from '../DynamoDBStore'
 
 import {Manager} from '../index'
+import {DynoModelKey,DynoAttrKey,DynamoDBLocalEndpoint} from '../Constants'
 import * as Log from '../log'
-import {DynoModelKey,DynoAttrKey,LocalEndpoint} from '../Constants'
 
 
 const log = Log.create(__filename)
@@ -20,6 +20,14 @@ log.info('Starting test suite')
 let Fixtures = null
 let store = null
 
+
+/**
+ * Reset Dynotype and start all over
+ *
+ * @param syncStrategy
+ * @param endpoint
+ * @returns {Bluebird<U>}
+ */
 function reset(syncStrategy:SyncStrategy,endpoint:string) {
 	// Init dynamo type
 	// using local
@@ -49,6 +57,10 @@ function reset(syncStrategy:SyncStrategy,endpoint:string) {
 
 }
 
+
+/**
+ * Global test suite
+ */
 describe('DynoType',() => {
 
 
@@ -57,7 +69,7 @@ describe('DynoType',() => {
 	 */
 	describe('Decorators',() => {
 		beforeEach(() => {
-			return reset(SyncStrategy.None,LocalEndpoint)
+			return reset(SyncStrategy.None,DynamoDBLocalEndpoint)
 		})
 
 		it('decorates a new model',() => {
@@ -94,7 +106,7 @@ describe('DynoType',() => {
 
 	describe('Client connects and CRUD',() => {
 		beforeEach(() => {
-			return reset(SyncStrategy.Overwrite,LocalEndpoint)
+			return reset(SyncStrategy.Overwrite,DynamoDBLocalEndpoint)
 		})
 
 		it("Can create a table for a model",() => {
@@ -108,8 +120,8 @@ describe('DynoType',() => {
 		it('Can create data',() => {
 
 			return Manager.start().then(() => {
-				Manager.store.getModelRepo(Fixtures.Test1)
-
+				const test1Repo = Manager.store.getRepo(Fixtures.Test1Repo)
+				util.inspect(test1Repo)
 			})
 
 		})

@@ -8,10 +8,11 @@ import * as _ from 'lodash'
 import * as assert from 'assert'
 
 import {
-	IManagerOptions, IAttributeOptions, IModelOptions, IStore, IManager, SyncStrategy, IModelClass,
-	IModelRepo, IModelKey
+	IManagerOptions, IModelAttributeOptions, IModelOptions, IStore, IManager, SyncStrategy, IModelClass,
+	IRepo, IModelKey
 } from "./Types";
 import {msg, Strings} from "./Messages"
+import {DynoFindersKey} from "./Constants";
 
 // Set the aws promise provide to bluebird
 //(AWS.config as any).setPromiseDependency(Promise)
@@ -21,7 +22,18 @@ const DynamoStrings = {
 	TableDeleting: 'Table is DELETING ?0'
 }
 
-export interface IDynamoDBAttributeOptions extends IAttributeOptions {
+export interface IDynamoDBFinderOptions {
+	keyConditionExpression:string
+	expressionAttributeNames: {[alias:string]:string}
+	expressionAttributeValues:{[key:string]:any}
+}
+
+export function DynamoDBFinderDescriptor(opts:IDynamoDBFinderOptions) {
+
+}
+
+
+export interface IDynamoDBAttributeOptions extends IModelAttributeOptions {
 	awsAttrType?:string
 }
 
@@ -130,7 +142,7 @@ export class DynamoDBModelKey implements IModelKey {
 
 }
 
-export class DynamoDBModelRepo<M extends IModelClass> implements IModelRepo<M,DynamoDBModelKey> {
+export class DynamoDBModelRepo<M extends IModelClass> implements IRepo<M> {
 
 	private modelOpts:IDynamoDBModelOptions
 
@@ -165,7 +177,10 @@ export class DynamoDBStore implements IStore {
 	private _dynamoClient:AWS.DynamoDB
 	private _availableTables:string[] = []
 	private tableDescs:{[TableName:string]:DynamoDB.TableDescription} = {}
+	private repos:{[clazzName:string]:IRepo<any>}
+
 	private opts:IDynamoDBManagerOptions
+
 	manager:IManager
 
 	/**
@@ -262,6 +277,27 @@ export class DynamoDBStore implements IStore {
 	}
 
 
+
+	/**
+	 * Create a repo for the supplied
+	 *
+	 * @param clazz
+	 * @returns {null}
+	 */
+	getRepo<T extends IRepo<any>>(clazz:{new(): T; }):T {
+		log.info('keys:' + Reflect.getOwnMetadataKeys(clazz))
+		const clazzType = Reflect.getMetadata('design:type',clazz.prototype)
+		debugger
+		const clazzName = clazzType.name
+
+		let repo = this.repos[clazzName]
+		const finders = Reflect.getMetadata(DynoFindersKey,clazz) || []
+		log.info(`Building repo`)
+
+
+		return new DynamoDBRepo<any>() as T
+	}
+
 	/**
 	 * Determine the attribute type to
 	 * be used with dynamo from the js def
@@ -288,6 +324,12 @@ export class DynamoDBStore implements IStore {
 		return attr.awsAttrType
 	}
 
+	/**
+	 * Create dynamo table definition
+	 *
+	 * @param clazzName
+	 * @returns {AWS.DynamoDB.CreateTableInput}
+	 */
 	tableDefinition(clazzName:string):AWS.DynamoDB.CreateTableInput {
 		log.debug(`Creating table definition for ${clazzName}`)
 
@@ -344,15 +386,8 @@ export class DynamoDBStore implements IStore {
 	}
 
 
-	/**
-	 * Create a repo for the supplied
-	 *
-	 * @param clazz
-	 * @returns {null}
-	 */
-	getModelRepo<T extends IModelClass>(clazz:{new(): T; }):IModelRepo<T,DynamoDBModelKey> {
-		return null
-	}
+
+
 
 	/**
 	 * Record the fact that the table is now available
@@ -545,5 +580,28 @@ export class DynamoDBStore implements IStore {
 
 		return Promise.each(tableDefs, this.syncTable.bind(this)).return(true)
 
+	}
+}
+
+export class DynamoDBRepo<M extends IModelClass> implements IRepo<M> {
+
+	key(...args):DynamoDBModelKey {
+		return null
+	}
+
+	get(key:DynamoDBModelKey):Promise<M> {
+		return null
+	}
+
+	create(o:M):Promise<M> {
+		return null
+	}
+
+	update(o:M):Promise<M> {
+		return null
+	}
+
+	remove(key:DynamoDBModelKey):Promise<M> {
+		return null
 	}
 }
