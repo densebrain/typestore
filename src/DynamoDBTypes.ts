@@ -33,7 +33,7 @@ export interface IDynamoDBManagerOptions extends IManagerOptions {
 export interface IDynamoDBFinderOptions {
 	projection?:string // project expression - projectionExpression
 	type?:DynamoDBFinderType // Query type
-	indexName?:string //Name of the index to use
+	index?:string //Name of the index to use
 	queryExpression?:string // keyExpressionCondition - keyExpressionCondition
 	scanExpression?:string // FilterExpression - FilterExpression
 

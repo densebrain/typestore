@@ -47,6 +47,13 @@ export function ModelDescriptor(opts:IModelOptions) {
  */
 export function AttributeDescriptor(opts: IModelAttributeOptions) {
 	return function (target:any,propertyKey:string) {
+		const attrType = Reflect.getMetadata('design:type',target,propertyKey)
+		opts = Object.assign({},{
+			type:attrType,
+			typeName: attrType.name || 'unknown type',
+			key:propertyKey
+		},opts)
+		
 		Manager.registerAttribute(target,propertyKey,opts)
 	}
 }

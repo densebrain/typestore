@@ -6,4 +6,5 @@
 /// <reference path="browser/definitions/bluebird/index.d.ts" />
 /// <reference path="browser/definitions/chalk/index.d.ts" />
 /// <reference path="browser/definitions/lodash/index.d.ts" />
+/// <reference path="browser/definitions/node-uuid/index.d.ts" />
 /// <reference path="browser/definitions/object-assign/index.d.ts" />

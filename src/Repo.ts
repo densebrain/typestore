@@ -6,30 +6,14 @@ import {DynoModelKey} from "./Constants";
 
 export abstract class Repo<M> {
 
-	private _modelClazz
-	private _modelOpts:IModelOptions
+	protected modelClazz
+	protected modelOpts:IModelOptions
 
 	constructor(modelClazz:{new ():M;}) {
-		this._modelClazz = modelClazz
-		this._modelOpts = Reflect.getMetadata(DynoModelKey,modelClazz.prototype)
+		this.modelClazz = modelClazz
+		this.modelOpts = Reflect.getMetadata(DynoModelKey,modelClazz.prototype)
 	}
 
-	get modelClazz():M {
-		return this._modelClazz
-	}
-
-	get modelOpts() {
-		return this._modelOpts
-	}
-
-	get tableName() {
-		return this.modelOpts.tableName
-	}
-
-	newModel():M {
-		return new this._modelClazz()
-	}
-	
 	key(...args):IKeyValue {
 		return NotImplemented('key')
 	}
@@ -42,8 +26,12 @@ export abstract class Repo<M> {
 		return NotImplemented('save')
 	}
 
-	
-	remove(key:IModelKey):Promise<M> {
+
+	remove(key:IKeyValue):Promise<any> {
 		return NotImplemented('remove')
+	}
+
+	count():Promise<number> {
+		return NotImplemented('count')
 	}
 }

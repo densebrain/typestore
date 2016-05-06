@@ -1,5 +1,5 @@
 //import Promise from './Promise'
-import Promise = require('bluebird')
+import Promise = require('./Promise')
 import * as AWS from 'aws-sdk'
 import {DynamoDB} from 'aws-sdk'
 import * as Log from './log'
@@ -318,13 +318,32 @@ export class DynamoDBStore implements IStore {
 		const prefix = this.opts.prefix || '',
 			TableName = `${prefix}${modelReg.tableName}`
 
+
+		// Create the table definition
+		const provisioning = modelReg.provisioning || {}
+		_.defaults(provisioning, DefaultDynamoDBProvisioning)
+
+
 		// Assemble attribute definitions
 		const keySchema:DynamoDB.KeySchema = []
 		const attrDefs:DynamoDB.AttributeDefinitions = []
+
+		// Secondary instances
+		const globalIndexes:DynamoDB.GlobalSecondaryIndex[] = []
+		const allAttrs = {}
 		modelReg.attrs.forEach((attr:IDynamoDBAttributeOptions) => {
 
 			// Determine attribute type
 			attr.awsAttrType = this.attributeType(attr)
+
+			// Create the attr
+			const awsAttr = {
+				AttributeName: attr.name,
+				AttributeType: attr.awsAttrType
+			}
+
+			// Keep a ref for indexes
+			allAttrs[attr.name] = awsAttr
 
 			if (attr.hashKey || attr.rangeKey) {
 				log.debug(`Adding key ${attr.name}`)
@@ -336,24 +355,61 @@ export class DynamoDBStore implements IStore {
 					AttributeName: attr.name,
 					KeyType: KeyType[
 						(attr.hashKey) ? KeyType.HASH : KeyType.RANGE
-						]
+					]
 				})
 
-				attrDefs.push({
-					AttributeName: attr.name,
-					AttributeType: attr.awsAttrType
-				})
+				attrDefs.push(awsAttr)
 			}
 		})
 
-		// Create the table definition
-		const provisioning = modelReg.provisioning || {}
-		_.defaults(provisioning, DefaultDynamoDBProvisioning)
+		/**
+		 * Loop again to build ancilaries - this could
+		 * be baked in above, but separating leaves more
+		 * options in the future
+		 */
+		modelReg.attrs
+			.forEach((attr:IDynamoDBAttributeOptions) => {
+				if (!attr.index) return
+
+				const indexDef = attr.index
+				if (indexDef.isAlternateRangeKey) {
+
+				} else {
+					const keySchema:DynamoDB.KeySchema = []
+					keySchema.push({
+						AttributeName: attr.name,
+						KeyType: KeyType[KeyType.HASH]
+					})
+
+					attrDefs.push(allAttrs[attr.name])
+
+					if (indexDef.rangeKey) {
+						keySchema.push({
+							AttributeName: indexDef.rangeKey,
+							KeyType: KeyType[KeyType.RANGE]
+						})
+					}
+
+					globalIndexes.push({
+						IndexName: indexDef.name,
+						KeySchema: keySchema,
+						Projection: {
+							ProjectionType: 'ALL'
+						},
+						ProvisionedThroughput: {
+							ReadCapacityUnits: provisioning.readCapacityUnits,
+							WriteCapacityUnits: provisioning.writeCapacityUnits
+						}
+					})
+				}
+			})
+
 
 		modelReg.tableDef = {
 			TableName,
 			KeySchema: keySchema,
 			AttributeDefinitions: attrDefs,
+			GlobalSecondaryIndexes: globalIndexes,
 			ProvisionedThroughput: {
 				ReadCapacityUnits: provisioning.readCapacityUnits,
 				WriteCapacityUnits: provisioning.writeCapacityUnits
@@ -402,7 +458,7 @@ export class DynamoDBStore implements IStore {
 	 * @param TableName
 	 * @return {any}
 	 */
-	findExistingTable(TableName:string):Promise<DynamoDB.TableDescription> {
+	describeTable(TableName:string):Promise<DynamoDB.TableDescription> {
 		return Promise.resolve(
 			this.dynamoClient.describeTable({TableName})
 				.promise()
@@ -510,7 +566,7 @@ export class DynamoDBStore implements IStore {
 		const TableName = tableDef.TableName
 
 		log.info(`Creating table ${TableName}`)
-		return this.findExistingTable(TableName)
+		return this.describeTable(TableName)
 			.then((tableInfo:DynamoDB.TableDescription) => {
 
 				// If the table exists and in OVERWRITE MODE
@@ -560,28 +616,59 @@ export class DynamoDBStore implements IStore {
 
 	}
 
+	/**
+	 * Query a table, likely from a finder
+	 *
+	 * @param params
+	 * @returns {Promise<DynamoDB.QueryOutput>}
+	 */
 	query(params:DynamoDB.QueryInput):Promise<DynamoDB.QueryOutput> {
 		return Promise.resolve(
 			this.documentClient.query(params).promise()
 		) as Promise<DynamoDB.QueryOutput>
 	}
 
+	/**
+	 * Full table scan
+	 *
+	 * @param params
+	 * @returns {Promise<DynamoDB.ScanOutput>}
+	 */
 	scan(params:DynamoDB.ScanInput):Promise<DynamoDB.ScanOutput> {
 		return Promise.resolve(
 			this.documentClient.scan(params).promise()
 		) as Promise<DynamoDB.ScanOutput>
 	}
 
+	/**
+	 * Get an item
+	 *
+	 * @param params
+	 * @returns {Promise<DynamoDB.GetItemOutput>}
+	 */
 	get(params:DynamoDB.GetItemInput):Promise<DynamoDB.GetItemOutput> {
 		return Promise.resolve(
 			this.documentClient.get(params).promise()
 		) as Promise<DynamoDB.GetItemOutput>
 	}
 
+
+	/**
+	 * Create/Update item
+	 *
+	 * @param params
+	 * @returns {Promise<DynamoDB.PutItemOutput>}
+	 */
 	put(params:DynamoDB.PutItemInput):Promise<DynamoDB.PutItemOutput> {
 		return Promise.resolve(
 			this.documentClient.put(params).promise()
 		) as Promise<DynamoDB.PutItemOutput>
+	}
+
+	delete(params:DynamoDB.DeleteItemInput):Promise<DynamoDB.DeleteItemOutput> {
+		return Promise.resolve(
+			this.documentClient.delete(params).promise()
+		) as Promise<DynamoDB.DeleteItemOutput>
 	}
 
 

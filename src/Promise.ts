@@ -1,5 +1,5 @@
 ///<reference path="../typings/browser/definitions/bluebird/index.d.ts"/>
-import * as Promise from 'bluebird'
+import Promise = require('bluebird')
 import * as Log from './log'
 import {msg, Strings} from "./Messages";
 
@@ -22,4 +22,4 @@ process.on("rejectionHandled", function (promise) {
 	//log.debug(msg(Strings.PromiseRejected))
 })
 
-export default Promise
+export = Promise

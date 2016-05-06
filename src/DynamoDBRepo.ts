@@ -1,4 +1,4 @@
-import Promise = require('bluebird')
+import Promise = require('./Promise')
 
 import * as assert from 'assert'
 import * as Log from './log'
@@ -17,13 +17,16 @@ const MappedFinderParams = {
 	Projection: 'ProjectionExpression',
 	QueryExpression: 'KeyConditionExpression',
 	ScanExpression: 'FilterExpression',
-	Aliases: 'ExpressionAttributeNames'
+	Aliases: 'ExpressionAttributeNames',
+	Index: 'IndexName'
 
 }
 
 export class DynamoDBRepo<M> extends Repo<M> {
 
 	private repoType:any
+	private tableDef:DynamoDB.CreateTableInput
+	private mapper
 
 	constructor(
 		private store:DynamoDBStore,
@@ -33,10 +36,15 @@ export class DynamoDBRepo<M> extends Repo<M> {
 		super(new repoClazz().modelClazz)
 		assert(repoClazz && repoClazz.prototype,'Repo class is required and must have a valid prototype')
 
-
 		const repoType = this.repoType = repoClazz.prototype
 		const repoTypeKeys = Reflect.getOwnMetadataKeys(repoType)
 		log.debug(`Repo type (${this.repoClazzName} keys: ${repoTypeKeys.join(', ')}`)
+
+		// Grab the table definition
+		this.tableDef = this.store.tableDefinition((this.modelClazz as any).name)
+
+		// Grab a mapper
+		this.mapper = this.store.manager.getMapper(this.modelClazz)
 
 		const finderKeys = Reflect.getMetadata(DynoFindersKey,repoType)
 		if (finderKeys) {
@@ -44,6 +52,12 @@ export class DynamoDBRepo<M> extends Repo<M> {
 		}
 
 		log.info(`Building repo`)
+
+
+	}
+
+	get tableName() {
+		return this.tableDef.TableName
 	}
 
 	private makeParams(params = {}):any {
@@ -61,19 +75,20 @@ export class DynamoDBRepo<M> extends Repo<M> {
 		const defaultParams = this.makeParams()
 
 		const valuesOpt = finderOpts.values
-		const valueMapper = (...args) => {
+		const valueMapper = (args) => {
 			if (valuesOpt) {
 				return (_.isFunction(valuesOpt)) ?
 					// If its a function then execute it
-					valuesOpt(args) :
+					valuesOpt(...args) :
 
 					// If its an array map it by index
-					(_.isArray(valuesOpt)) ? () => {
-						const values:any = {}
-						_.forEach(valuesOpt as Array,(valueOpt,index) => {
-							values[valueOpt] = args[index]
+					(Array.isArray(valuesOpt)) ? (() => {
+						const values = {}
+						const argNameList = valuesOpt as any
+						argNameList.forEach((valueOpt,index) => {
+							values[`:${valueOpt}`] = args[index]
 						})
-					} :
+					}) :
 
 					// if its an object - good luck
 					valuesOpt
@@ -84,7 +99,7 @@ export class DynamoDBRepo<M> extends Repo<M> {
 
 		Object.keys(finderOpts).forEach((key) => {
 			let val = finderOpts[key]
-			let awsKey = _.capitalize(key)
+			let awsKey = key.charAt(0).toUpperCase() + key.substring(1)
 			let mappedKey = MappedFinderParams[awsKey]
 			if (mappedKey) {
 				defaultParams[mappedKey] = val
@@ -94,17 +109,27 @@ export class DynamoDBRepo<M> extends Repo<M> {
 		})
 
 
+
+		// Create the finder function
 		this[finderKey] = (...args) => {
 
 			//params.ExpressionsAttributeValues
 			const params = _.assign(_.clone(defaultParams),{
-				ExpressionsAttributeValues: valueMapper(args)
+				ExpressionAttributeValues: valueMapper(args)
 			})
 
+			debugger
+
 			// Find or scan
-			let results = (type === DynamoDBFinderType.Query) ?
+			return (((type === DynamoDBFinderType.Query) ?
 				this.store.query(params as DynamoDB.QueryInput) :
 				this.store.scan(params as DynamoDB.ScanInput)
+			) as Promise<any>).then((results) => {
+					const models = [] as M[]
+					results.Items.forEach((item) => models.push(this.mapper.fromObject(item)))
+
+					return models
+				})
 
 
 		}
@@ -115,31 +140,36 @@ export class DynamoDBRepo<M> extends Repo<M> {
 		assert(args && args.length > 0 && args.length < 3,
 			'Either 1 or two parameters can be used to create dynamo keys')
 
-		const tableDef = this.store.tableDefinition(this.modelClazz.name)
-		return new DynamoDBKeyValue(tableDef.KeySchema,args[0],args[1])
+		return new DynamoDBKeyValue(this.tableDef.KeySchema,args[0],args[1])
 	}
 
-	get(key:IKeyValue):Promise<M> {
-		if(key instanceof DynamoDBKeyValue)
-			this.store.get(this.makeParams({
-				Key: key.toParam()
-			})).then((result) => {
-				//TODO: Assign item data to model
-				return this.newModel()
-			})
+	get(key:DynamoDBKeyValue):Promise<M> {
+		return this.store.get(this.makeParams({
+			Key: key.toParam()
+		})).then((result) => {
+			return this.mapper.fromObject(result.Item)
+		}) as Promise<M>
 
-		throw new IncorrectKeyTypeError(`Expected ${DynamoDBKeyValue.name}`)
+
 	}
 
 	save(o:M):Promise<M> {
 		return this.store.put(this.makeParams({Item:o as any}))
 			.then((result:DynamoDB.PutItemOutput) => {
-				//TODO: IMplement item data to model
 				return o
 			})
 	}
 
-	remove(key:DynamoDBModelKey):Promise<M> {
-		return null
+	remove(key:DynamoDBKeyValue):Promise<any> {
+		return this.store.delete(this.makeParams({
+			Key: key.toParam()
+		}))
+	}
+
+	count():Promise<number> {
+		return this.store.describeTable(this.tableName)
+			.then((tableDesc) => {
+				return tableDesc.ItemCount
+			})
 	}
 }

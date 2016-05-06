@@ -35,7 +35,7 @@ export interface IModelKey {
 }
 
 export interface IKeyValue {
-	
+
 }
 
 
@@ -84,6 +84,18 @@ export interface IManagerOptions {
 
 
 /**
+ * Mapper interface for transforming objects back and forth between json
+ * and their respective models
+ */
+export interface IModelMapper<M> {
+	toObject(o:M):Object
+	toJson(o:M):string
+	fromObject(json:Object):M
+	fromJson(json:string):M
+}
+
+
+/**
  * Manager interface for store provider development
  * and end user management
  *
@@ -95,5 +107,7 @@ export interface IManager {
 	start():Promise<boolean>
 	init(opts:IManagerOptions):Promise<boolean>
 	reset():Promise<void>
-	store:IStore
+	getRepo<T extends Repo<M>,M>(clazz:{new(): T; }):T
+	getMapper<M>(clazz:{new():M;}):IModelMapper<M>
 }
+

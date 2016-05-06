@@ -11,13 +11,13 @@ var Repo_1 = require("./Repo");
 var DynamoDBStore_1 = require("./DynamoDBStore");
 var Constants_1 = require("./Constants");
 var DynamoDBTypes_1 = require("./DynamoDBTypes");
-var Errors_1 = require("./Errors");
 var log = Log.create(__filename);
 var MappedFinderParams = {
     Projection: 'ProjectionExpression',
     QueryExpression: 'KeyConditionExpression',
     ScanExpression: 'FilterExpression',
-    Aliases: 'ExpressionAttributeNames'
+    Aliases: 'ExpressionAttributeNames',
+    Index: 'IndexName'
 };
 var DynamoDBRepo = (function (_super) {
     __extends(DynamoDBRepo, _super);
@@ -31,12 +31,23 @@ var DynamoDBRepo = (function (_super) {
         var repoType = this.repoType = repoClazz.prototype;
         var repoTypeKeys = Reflect.getOwnMetadataKeys(repoType);
         log.debug("Repo type (" + this.repoClazzName + " keys: " + repoTypeKeys.join(', '));
+        // Grab the table definition
+        this.tableDef = this.store.tableDefinition(this.modelClazz.name);
+        // Grab a mapper
+        this.mapper = this.store.manager.getMapper(this.modelClazz);
         var finderKeys = Reflect.getMetadata(Constants_1.DynoFindersKey, repoType);
         if (finderKeys) {
             finderKeys.forEach(function (finderKey) { return _this.makeFinder(finderKey); });
         }
         log.info("Building repo");
     }
+    Object.defineProperty(DynamoDBRepo.prototype, "tableName", {
+        get: function () {
+            return this.tableDef.TableName;
+        },
+        enumerable: true,
+        configurable: true
+    });
     DynamoDBRepo.prototype.makeParams = function (params) {
         if (params === void 0) { params = {}; }
         return Object.assign({
@@ -50,22 +61,19 @@ var DynamoDBRepo = (function (_super) {
         var type = finderOpts.type || DynamoDBTypes_1.DynamoDBFinderType.Query;
         var defaultParams = this.makeParams();
         var valuesOpt = finderOpts.values;
-        var valueMapper = function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i - 0] = arguments[_i];
-            }
+        var valueMapper = function (args) {
             if (valuesOpt) {
                 return (_.isFunction(valuesOpt)) ?
                     // If its a function then execute it
-                    valuesOpt(args) :
+                    valuesOpt.apply(void 0, args) :
                     // If its an array map it by index
-                    (_.isArray(valuesOpt)) ? function () {
+                    (Array.isArray(valuesOpt)) ? (function () {
                         var values = {};
-                        _.forEach(valuesOpt, function (valueOpt, index) {
-                            values[valueOpt] = args[index];
+                        var argNameList = valuesOpt;
+                        argNameList.forEach(function (valueOpt, index) {
+                            values[(":" + valueOpt)] = args[index];
                         });
-                    } :
+                    }) :
                         // if its an object - good luck
                         valuesOpt;
             }
@@ -73,12 +81,13 @@ var DynamoDBRepo = (function (_super) {
         };
         Object.keys(finderOpts).forEach(function (key) {
             var val = finderOpts[key];
-            var awsKey = _.capitalize(key);
+            var awsKey = key.charAt(0).toUpperCase() + key.substring(1);
             var mappedKey = MappedFinderParams[awsKey];
             if (mappedKey) {
                 defaultParams[mappedKey] = val;
             }
         });
+        // Create the finder function
         this[finderKey] = function () {
             var args = [];
             for (var _i = 0; _i < arguments.length; _i++) {
@@ -86,12 +95,17 @@ var DynamoDBRepo = (function (_super) {
             }
             //params.ExpressionsAttributeValues
             var params = _.assign(_.clone(defaultParams), {
-                ExpressionsAttributeValues: valueMapper(args)
+                ExpressionAttributeValues: valueMapper(args)
             });
+            debugger;
             // Find or scan
-            var results = (type === DynamoDBTypes_1.DynamoDBFinderType.Query) ?
+            return ((type === DynamoDBTypes_1.DynamoDBFinderType.Query) ?
                 _this.store.query(params) :
-                _this.store.scan(params);
+                _this.store.scan(params)).then(function (results) {
+                var models = [];
+                results.Items.forEach(function (item) { return models.push(_this.mapper.fromObject(item)); });
+                return models;
+            });
         };
     };
     DynamoDBRepo.prototype.key = function () {
@@ -100,29 +114,32 @@ var DynamoDBRepo = (function (_super) {
             args[_i - 0] = arguments[_i];
         }
         assert(args && args.length > 0 && args.length < 3, 'Either 1 or two parameters can be used to create dynamo keys');
-        var tableDef = this.store.tableDefinition(this.modelClazz.name);
-        return new DynamoDBStore_1.DynamoDBKeyValue(tableDef.KeySchema, args[0], args[1]);
+        return new DynamoDBStore_1.DynamoDBKeyValue(this.tableDef.KeySchema, args[0], args[1]);
     };
     DynamoDBRepo.prototype.get = function (key) {
         var _this = this;
-        if (key instanceof DynamoDBStore_1.DynamoDBKeyValue)
-            this.store.get(this.makeParams({
-                Key: key.toParam()
-            })).then(function (result) {
-                //TODO: Assign item data to model
-                return _this.newModel();
-            });
-        throw new Errors_1.IncorrectKeyTypeError("Expected " + DynamoDBStore_1.DynamoDBKeyValue.name);
+        return this.store.get(this.makeParams({
+            Key: key.toParam()
+        })).then(function (result) {
+            return _this.mapper.fromObject(result.Item);
+        });
     };
     DynamoDBRepo.prototype.save = function (o) {
         return this.store.put(this.makeParams({ Item: o }))
             .then(function (result) {
-            //TODO: IMplement item data to model
             return o;
         });
     };
     DynamoDBRepo.prototype.remove = function (key) {
-        return null;
+        return this.store.delete(this.makeParams({
+            Key: key.toParam()
+        }));
+    };
+    DynamoDBRepo.prototype.count = function () {
+        return this.store.describeTable(this.tableName)
+            .then(function (tableDesc) {
+            return tableDesc.ItemCount;
+        });
     };
     return DynamoDBRepo;
 }(Repo_1.Repo));

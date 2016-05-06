@@ -1,12 +1,12 @@
 "use strict";
 /// <reference path="../node_modules/reflect-metadata/reflect-metadata.d.ts" />
 require('reflect-metadata');
-var Promise = require('bluebird'); // from './Promise'
-var _ = require('lodash');
+var Promise = require('./Promise');
 var assert = require('assert');
 var Log = require('./log');
 var Constants_1 = require('./Constants');
 var Messages_1 = require("./Messages");
+var ModelMapper_1 = require("./ModelMapper");
 var log = Log.create(__filename);
 var Manager;
 (function (Manager) {
@@ -65,10 +65,13 @@ var Manager;
         checkStarted(true);
         checkInitialized(true);
         initialized = true;
+        // Update the default options
         options = options || newOptions;
-        _.assign(options, newOptions);
+        Object.assign(options, newOptions);
         Manager.store = options.store;
+        // Make sure we got a valid store
         assert(Manager.store, Messages_1.msg(Messages_1.Strings.ManagerTypeStoreRequired));
+        // Manager is ready, now initialize the store
         log.debug(Messages_1.msg(Messages_1.Strings.ManagerInitComplete));
         return Manager.store.init(this, options).return(true);
     }
@@ -156,18 +159,26 @@ var Manager;
     Manager.registerModel = registerModel;
     function registerAttribute(target, propertyKey, opts) {
         checkStarted(true);
-        var attrType = Reflect.getMetadata('design:type', target, propertyKey);
-        _.defaults(opts, {
-            type: attrType,
-            typeName: _.get(attrType, 'name', 'unknown type'),
-            key: propertyKey
-        });
         log.info("Decorating " + propertyKey, opts);
         var modelAttrs = Reflect.getMetadata(Constants_1.DynoAttrKey, target) || [];
         modelAttrs.push(opts);
         Reflect.defineMetadata(Constants_1.DynoAttrKey, modelAttrs, target);
     }
     Manager.registerAttribute = registerAttribute;
+    /**
+     * Get a repository for the specified model/class
+     *
+     * @param clazz
+     * @returns {T}
+     */
+    function getRepo(clazz) {
+        return Manager.store.getRepo(clazz);
+    }
+    Manager.getRepo = getRepo;
+    function getMapper(clazz) {
+        return new ModelMapper_1.ModelMapper(clazz);
+    }
+    Manager.getMapper = getMapper;
 })(Manager = exports.Manager || (exports.Manager = {}));
 /**
  * Internal vals

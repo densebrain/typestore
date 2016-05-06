@@ -18,7 +18,6 @@ process.on("unhandledRejection", function (reason, promise) {
 process.on("rejectionHandled", function (promise) {
     //log.debug(msg(Strings.PromiseRejected))
 });
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = Promise;
+module.exports = Promise;
 
 //# sourceMappingURL=Promise.js.map

@@ -47,16 +47,17 @@ export class Test1Repo extends Repo<Test1> {
 	}
 
 	@DynamoDBFinderDescriptor({
-		queryExpression: "randomText contains :randomText",
+		queryExpression: "randomText = :randomText",
+		index: 'RandomTextIndex',
 		// values could be ['randomText'] with the same effect
 		values: function(...args) {
 			return {
-				randomText: args[0]
+				':randomText': args[0]
 			}
 		}
 	})
 	@FinderDescriptor()
-	findByRandomText(text:string):Test1[] {
+	findByRandomText(text:string):Promise<Test1[]> {
 		return null
 	}
 }

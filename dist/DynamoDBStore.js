@@ -1,6 +1,6 @@
 "use strict";
 //import Promise from './Promise'
-var Promise = require('bluebird');
+var Promise = require('./Promise');
 var AWS = require('aws-sdk');
 var Log = require('./log');
 var _ = require('lodash');
@@ -262,12 +262,25 @@ var DynamoDBStore = (function () {
         var modelRegs = this.manager.getModelRegistrations();
         var modelReg = modelRegs[clazzName];
         var prefix = this.opts.prefix || '', TableName = "" + prefix + modelReg.tableName;
+        // Create the table definition
+        var provisioning = modelReg.provisioning || {};
+        _.defaults(provisioning, DefaultDynamoDBProvisioning);
         // Assemble attribute definitions
         var keySchema = [];
         var attrDefs = [];
+        // Secondary instances
+        var globalIndexes = [];
+        var allAttrs = {};
         modelReg.attrs.forEach(function (attr) {
             // Determine attribute type
             attr.awsAttrType = _this.attributeType(attr);
+            // Create the attr
+            var awsAttr = {
+                AttributeName: attr.name,
+                AttributeType: attr.awsAttrType
+            };
+            // Keep a ref for indexes
+            allAttrs[attr.name] = awsAttr;
             if (attr.hashKey || attr.rangeKey) {
                 log.debug("Adding key " + attr.name);
                 // make sure its one or the other
@@ -277,19 +290,52 @@ var DynamoDBStore = (function () {
                     AttributeName: attr.name,
                     KeyType: KeyType[(attr.hashKey) ? KeyType.HASH : KeyType.RANGE]
                 });
-                attrDefs.push({
+                attrDefs.push(awsAttr);
+            }
+        });
+        /**
+         * Loop again to build ancilaries - this could
+         * be baked in above, but separating leaves more
+         * options in the future
+         */
+        modelReg.attrs
+            .forEach(function (attr) {
+            if (!attr.index)
+                return;
+            var indexDef = attr.index;
+            if (indexDef.isAlternateRangeKey) {
+            }
+            else {
+                var keySchema_1 = [];
+                keySchema_1.push({
                     AttributeName: attr.name,
-                    AttributeType: attr.awsAttrType
+                    KeyType: KeyType[KeyType.HASH]
+                });
+                attrDefs.push(allAttrs[attr.name]);
+                if (indexDef.rangeKey) {
+                    keySchema_1.push({
+                        AttributeName: indexDef.rangeKey,
+                        KeyType: KeyType[KeyType.RANGE]
+                    });
+                }
+                globalIndexes.push({
+                    IndexName: indexDef.name,
+                    KeySchema: keySchema_1,
+                    Projection: {
+                        ProjectionType: 'ALL'
+                    },
+                    ProvisionedThroughput: {
+                        ReadCapacityUnits: provisioning.readCapacityUnits,
+                        WriteCapacityUnits: provisioning.writeCapacityUnits
+                    }
                 });
             }
         });
-        // Create the table definition
-        var provisioning = modelReg.provisioning || {};
-        _.defaults(provisioning, DefaultDynamoDBProvisioning);
         modelReg.tableDef = {
             TableName: TableName,
             KeySchema: keySchema,
             AttributeDefinitions: attrDefs,
+            GlobalSecondaryIndexes: globalIndexes,
             ProvisionedThroughput: {
                 ReadCapacityUnits: provisioning.readCapacityUnits,
                 WriteCapacityUnits: provisioning.writeCapacityUnits
@@ -324,7 +370,7 @@ var DynamoDBStore = (function () {
      * @param TableName
      * @return {any}
      */
-    DynamoDBStore.prototype.findExistingTable = function (TableName) {
+    DynamoDBStore.prototype.describeTable = function (TableName) {
         var _this = this;
         return Promise.resolve(this.dynamoClient.describeTable({ TableName: TableName })
             .promise()
@@ -401,7 +447,7 @@ var DynamoDBStore = (function () {
         var _this = this;
         var TableName = tableDef.TableName;
         log.info("Creating table " + TableName);
-        return this.findExistingTable(TableName)
+        return this.describeTable(TableName)
             .then(function (tableInfo) {
             // If the table exists and in OVERWRITE MODE
             if (tableInfo && _this.opts.syncStrategy === Types_1.SyncStrategy.Overwrite) {
@@ -437,17 +483,44 @@ var DynamoDBStore = (function () {
         }
         return Promise.each(tableDefs, this.syncTable.bind(this)).return(true);
     };
+    /**
+     * Query a table, likely from a finder
+     *
+     * @param params
+     * @returns {Promise<DynamoDB.QueryOutput>}
+     */
     DynamoDBStore.prototype.query = function (params) {
         return Promise.resolve(this.documentClient.query(params).promise());
     };
+    /**
+     * Full table scan
+     *
+     * @param params
+     * @returns {Promise<DynamoDB.ScanOutput>}
+     */
     DynamoDBStore.prototype.scan = function (params) {
         return Promise.resolve(this.documentClient.scan(params).promise());
     };
+    /**
+     * Get an item
+     *
+     * @param params
+     * @returns {Promise<DynamoDB.GetItemOutput>}
+     */
     DynamoDBStore.prototype.get = function (params) {
         return Promise.resolve(this.documentClient.get(params).promise());
     };
+    /**
+     * Create/Update item
+     *
+     * @param params
+     * @returns {Promise<DynamoDB.PutItemOutput>}
+     */
     DynamoDBStore.prototype.put = function (params) {
         return Promise.resolve(this.documentClient.put(params).promise());
+    };
+    DynamoDBStore.prototype.delete = function (params) {
+        return Promise.resolve(this.documentClient.delete(params).promise());
     };
     return DynamoDBStore;
 }());

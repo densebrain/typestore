@@ -1,15 +1,16 @@
 /// <reference path="../node_modules/reflect-metadata/reflect-metadata.d.ts" />
 import 'reflect-metadata'
 
-import Promise = require('bluebird')// from './Promise'
-import * as _ from 'lodash'
+import Promise = require('./Promise')
 import * as assert from 'assert'
 
 
 import * as Log from './log'
 import {DynoModelKey,DynoAttrKey} from './Constants'
-import {IModelOptions, IModelAttributeOptions, IStore, IManagerOptions} from './Types'
+import {IModelOptions, IModelAttributeOptions, IStore, IManagerOptions, IModelMapper} from './Types'
 import {msg, Strings} from "./Messages"
+import {Repo} from "./Repo";
+import {ModelMapper} from "./ModelMapper";
 
 
 const log = Log.create(__filename)
@@ -92,15 +93,18 @@ export namespace Manager {
 		checkInitialized(true)
 		initialized = true
 
+		// Update the default options
 		options = options || newOptions
-		_.assign(options,newOptions)
+		Object.assign(options,newOptions)
+
 
 		store = options.store
 
+		// Make sure we got a valid store
 		assert(store,msg(Strings.ManagerTypeStoreRequired))
 
+		// Manager is ready, now initialize the store
 		log.debug(msg(Strings.ManagerInitComplete))
-
 		return store.init(this,options).return(true)
 	}
 
@@ -204,19 +208,25 @@ export namespace Manager {
 	export function registerAttribute(target:any,propertyKey:string,opts:IModelAttributeOptions) {
 		checkStarted(true)
 
-		const attrType = Reflect.getMetadata('design:type',target,propertyKey)
-		_.defaults(opts,{
-			type:attrType,
-			typeName: _.get(attrType,'name','unknown type'),
-			key:propertyKey
-		});
-
 		log.info(`Decorating ${propertyKey}`,opts)
 		const modelAttrs = Reflect.getMetadata(DynoAttrKey,target) || []
 		modelAttrs.push(opts)
 		Reflect.defineMetadata(DynoAttrKey,modelAttrs,target)
 	}
 
+	/**
+	 * Get a repository for the specified model/class
+	 *
+	 * @param clazz
+	 * @returns {T}
+	 */
+	export function getRepo<T extends Repo<M>,M>(clazz:{new(): T; }):T {
+		return store.getRepo(clazz)
+	}
+
+	export function getMapper<M>(clazz:{new():M;}):IModelMapper<M> {
+		return new ModelMapper(clazz)
+	}
 
 }
 

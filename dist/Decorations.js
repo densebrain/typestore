@@ -34,6 +34,12 @@ exports.ModelDescriptor = ModelDescriptor;
  */
 function AttributeDescriptor(opts) {
     return function (target, propertyKey) {
+        var attrType = Reflect.getMetadata('design:type', target, propertyKey);
+        opts = Object.assign({}, {
+            type: attrType,
+            typeName: attrType.name || 'unknown type',
+            key: propertyKey
+        }, opts);
         Manager_1.Manager.registerAttribute(target, propertyKey, opts);
     };
 }

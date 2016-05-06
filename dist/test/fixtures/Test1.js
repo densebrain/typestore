@@ -60,7 +60,8 @@ var Test1Repo = (function (_super) {
     };
     __decorate([
         DynamoDBDecorators_1.DynamoDBFinderDescriptor({
-            queryExpression: "randomText contains :randomText",
+            queryExpression: "randomText = :randomText",
+            index: 'RandomTextIndex',
             // values could be ['randomText'] with the same effect
             values: function () {
                 var args = [];
@@ -68,14 +69,14 @@ var Test1Repo = (function (_super) {
                     args[_i - 0] = arguments[_i];
                 }
                 return {
-                    randomText: args[0]
+                    ':randomText': args[0]
                 };
             }
         }),
         Decorations_1.FinderDescriptor(), 
         __metadata('design:type', Function), 
         __metadata('design:paramtypes', [String]), 
-        __metadata('design:returntype', Array)
+        __metadata('design:returntype', Promise)
     ], Test1Repo.prototype, "findByRandomText", null);
     Test1Repo = __decorate([
         Decorations_1.RepoDescriptor(), 
