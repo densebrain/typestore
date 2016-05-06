@@ -70,12 +70,12 @@ describe('DynoType',() => {
 	/**
 	 * Test for valid decorations
 	 */
-	describe('Decorators',() => {
+	describe('#decorators',() => {
 		beforeEach(() => {
 			return reset(SyncStrategy.None,DynamoDBLocalEndpoint)
 		})
 
-		it('decorates a new model',() => {
+		it('#model',() => {
 			const test1 = new Fixtures.Test1()
 
 			const constructorFn = test1.constructor.prototype
@@ -92,7 +92,7 @@ describe('DynoType',() => {
 		/**
 		 * Creates a valid table definition
 		 */
-		it('Creates a valid table def', () => {
+		it('#tableDef', () => {
 			new Fixtures.Test1()
 			const modelOpts = Manager.findModelOptionsByClazz(Fixtures.Test1)
 			const tableDef = store.tableDefinition(modelOpts.clazzName)
@@ -157,6 +157,10 @@ describe('DynoType',() => {
 				return test1Repo.findByRandomText('asdfasdfadsf')
 					.then((items) => {
 						expect(items.length).toBe(1)
+						const t2 = items[0]
+						expect(t1.id).toBe(t2.id)
+						expect(t1.createdAt).toBe(t2.createdAt)
+						expect(t1.randomText).toBe(t2.randomText)
 					})
 			})
 

@@ -47,11 +47,11 @@ describe('DynoType', function () {
     /**
      * Test for valid decorations
      */
-    describe('Decorators', function () {
+    describe('#decorators', function () {
         beforeEach(function () {
             return reset(Types_1.SyncStrategy.None, Constants_1.DynamoDBLocalEndpoint);
         });
-        it('decorates a new model', function () {
+        it('#model', function () {
             var test1 = new Fixtures.Test1();
             var constructorFn = test1.constructor.prototype;
             expect(constructorFn).toBe(Fixtures.Test1.prototype);
@@ -62,7 +62,7 @@ describe('DynoType', function () {
         /**
          * Creates a valid table definition
          */
-        it('Creates a valid table def', function () {
+        it('#tableDef', function () {
             new Fixtures.Test1();
             var modelOpts = index_1.Manager.findModelOptionsByClazz(Fixtures.Test1);
             var tableDef = store.tableDefinition(modelOpts.clazzName);
@@ -113,6 +113,10 @@ describe('DynoType', function () {
                 return test1Repo.findByRandomText('asdfasdfadsf')
                     .then(function (items) {
                     expect(items.length).toBe(1);
+                    var t2 = items[0];
+                    expect(t1.id).toBe(t2.id);
+                    expect(t1.createdAt).toBe(t2.createdAt);
+                    expect(t1.randomText).toBe(t2.randomText);
                 });
             });
             it('#delete', function () {

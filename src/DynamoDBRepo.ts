@@ -118,8 +118,6 @@ export class DynamoDBRepo<M> extends Repo<M> {
 				ExpressionAttributeValues: valueMapper(args)
 			})
 
-			debugger
-
 			// Find or scan
 			return (((type === DynamoDBFinderType.Query) ?
 				this.store.query(params as DynamoDB.QueryInput) :

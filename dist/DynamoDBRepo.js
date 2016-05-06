@@ -97,7 +97,6 @@ var DynamoDBRepo = (function (_super) {
             var params = _.assign(_.clone(defaultParams), {
                 ExpressionAttributeValues: valueMapper(args)
             });
-            debugger;
             // Find or scan
             return ((type === DynamoDBTypes_1.DynamoDBFinderType.Query) ?
                 _this.store.query(params) :
