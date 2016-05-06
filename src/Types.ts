@@ -1,14 +1,22 @@
 import Promise = require('bluebird')
+import {Repo} from "./Repo";
 
 export interface IModelClass {
 
 }
 
+export interface IModelIndex {
+	name:string
+	isAlternateRangeKey?:boolean
+	rangeKey?:string
+}
+
 export interface IModelAttributeOptions {
 	name?:string
 	type?:any
-	partitionKey?:boolean
-	sortKey?:boolean
+	hashKey?:boolean
+	rangeKey?:boolean
+	index?: IModelIndex
 }
 
 /**
@@ -26,19 +34,14 @@ export interface IModelKey {
 
 }
 
+export interface IKeyValue {
+	
+}
+
 
 export interface IRepoOptions {
 
 }
-
-export interface IRepo<M extends IModelClass> {
-	key(...args):IModelKey
-	get(key:IModelKey):Promise<M>
-	create(o:M):Promise<M>
-	update(o:M):Promise<M>
-	remove(key:IModelKey):Promise<M>
-}
-
 
 
 /**
@@ -50,7 +53,7 @@ export interface IStore {
 	start():Promise<boolean>
 	stop():Promise<boolean>
 	syncModels():Promise<boolean>
-	getRepo<T extends IRepo<any>>(clazz:{new(): T; }):T
+	getRepo<T extends Repo<M>,M extends any>(clazz:{new(): T; }):T
 }
 
 /**

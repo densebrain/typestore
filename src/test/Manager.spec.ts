@@ -1,3 +1,4 @@
+import {IDynamoDBManagerOptions} from "../DynamoDBTypes";
 require('source-map-support').install()
 
 //import 'es6-shim'
@@ -7,7 +8,7 @@ import 'expectations'
 import 'reflect-metadata'
 import * as util from 'util'
 import {SyncStrategy} from "../Types";
-import {DynamoDBStore,IDynamoDBManagerOptions} from '../DynamoDBStore'
+import {DynamoDBStore} from '../DynamoDBStore'
 
 import {Manager} from '../index'
 import {DynoModelKey,DynoAttrKey,DynamoDBLocalEndpoint} from '../Constants'

@@ -8,7 +8,7 @@ import * as assert from 'assert'
 
 import * as Log from './log'
 import {DynoModelKey,DynoAttrKey} from './Constants'
-import {IModelOptions, IModelAttributeOptions, IStore, IManagerOptions, IModelClass, IRepo, IModelKey} from './Types'
+import {IModelOptions, IModelAttributeOptions, IStore, IManagerOptions} from './Types'
 import {msg, Strings} from "./Messages"
 
 

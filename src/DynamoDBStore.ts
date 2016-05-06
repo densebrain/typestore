@@ -1,18 +1,31 @@
 //import Promise from './Promise'
 import Promise = require('bluebird')
-
-import * as Log from './log'
 import * as AWS from 'aws-sdk'
 import {DynamoDB} from 'aws-sdk'
+import * as Log from './log'
+
 import * as _ from 'lodash'
 import * as assert from 'assert'
 
 import {
-	IManagerOptions, IModelAttributeOptions, IModelOptions, IStore, IManager, SyncStrategy, IModelClass,
-	IRepo, IModelKey
+	IManagerOptions,
+	IModelAttributeOptions,
+	IModelOptions,
+	IStore,
+	IManager,
+	SyncStrategy,
+	IModelClass,
+	IModelKey, IKeyValue
 } from "./Types";
 import {msg, Strings} from "./Messages"
-import {DynoFindersKey} from "./Constants";
+import {Repo} from "./Repo"
+import {
+	IDynamoDBModelOptions,
+	IDynamoDBManagerOptions,
+	IDynamoDBProvisioning,
+	IDynamoDBAttributeOptions
+} from "./DynamoDBTypes"
+import {DynamoDBRepo} from "./DynamoDBRepo"
 
 // Set the aws promise provide to bluebird
 //(AWS.config as any).setPromiseDependency(Promise)
@@ -22,37 +35,10 @@ const DynamoStrings = {
 	TableDeleting: 'Table is DELETING ?0'
 }
 
-export interface IDynamoDBFinderOptions {
-	keyConditionExpression:string
-	expressionAttributeNames: {[alias:string]:string}
-	expressionAttributeValues:{[key:string]:any}
-}
-
-export function DynamoDBFinderDescriptor(opts:IDynamoDBFinderOptions) {
-
-}
 
 
-export interface IDynamoDBAttributeOptions extends IModelAttributeOptions {
-	awsAttrType?:string
-}
+export const DynamoDBFinderKey = 'dynamodb:finder'
 
-export interface IDynamoDBProvisioning {
-	writeCapacityUnits?:number
-	readCapacityUnits?:number
-}
-
-export interface IDynamoDBModelOptions extends IModelOptions {
-	provisioning?:IDynamoDBProvisioning
-	tableDef?:AWS.DynamoDB.CreateTableInput
-}
-
-export interface IDynamoDBManagerOptions extends IManagerOptions {
-	dynamoEndpoint?:string
-	region?:string
-	awsOptions?:AWS.ClientConfigPartial
-	prefix?:string
-}
 
 const DefaultDynamoDBProvisioning = {
 	writeCapacityUnits: 5,
@@ -135,49 +121,40 @@ export class DynamoDBModelKey implements IModelKey {
 
 	constructor(
 		private hashKey:DynamoDBModelKeyAttribute,
-		private sortKey:DynamoDBModelKeyAttribute) {
-
-	}
-
-
-}
-
-export class DynamoDBModelRepo<M extends IModelClass> implements IRepo<M> {
-
-	private modelOpts:IDynamoDBModelOptions
-
-	constructor(private store:DynamoDBStore,private modelClazz:M) {
-		this.modelOpts = store.manager.findModelOptionsByClazz(modelClazz)
-	}
-
-	key(...args):DynamoDBModelKey {
-		return null
-	}
-
-	get(key:DynamoDBModelKey):Promise<M> {
-		return null
-	}
-
-	create(o:M):Promise<M> {
-		return null
-	}
-
-	update(o:M):Promise<M> {
-		return null
-	}
-
-	remove(key:DynamoDBModelKey):Promise<M> {
-		return null
+		private rangeKey:DynamoDBModelKeyAttribute) {
 	}
 }
 
+export class DynamoDBKeyValue implements IKeyValue {
 
+	constructor(
+		public keySchema:DynamoDB.KeySchema,
+		public hashValue:any,
+	    public rangeValue:any
+	) {}
+
+	toParam() {
+		const params:any = {}
+		this.keySchema.forEach((keyDef) => {
+			params[keyDef.AttributeName] =
+				(KeyType[keyDef.KeyType] === KeyType.HASH) ?
+					this.hashValue :
+					this.rangeValue
+		})
+
+		return params
+	}
+}
+
+/**
+ * Store implementation for DynamoDB
+ */
 export class DynamoDBStore implements IStore {
 	private _docClient:AWS.DynamoDB.DocumentClient
 	private _dynamoClient:AWS.DynamoDB
 	private _availableTables:string[] = []
 	private tableDescs:{[TableName:string]:DynamoDB.TableDescription} = {}
-	private repos:{[clazzName:string]:IRepo<any>}
+	private repos:{[clazzName:string]:Repo<any>} = {}
 
 	private opts:IDynamoDBManagerOptions
 
@@ -284,18 +261,20 @@ export class DynamoDBStore implements IStore {
 	 * @param clazz
 	 * @returns {null}
 	 */
-	getRepo<T extends IRepo<any>>(clazz:{new(): T; }):T {
-		log.info('keys:' + Reflect.getOwnMetadataKeys(clazz))
-		const clazzType = Reflect.getMetadata('design:type',clazz.prototype)
-		debugger
-		const clazzName = clazzType.name
+	getRepo<T extends Repo<M>,M extends any>(repoClazz:{new(): T; }):T {
+		//const repoClazzType = Reflect.getMetadata('design:type',repoClazz.prototype)
+		const repoClazzName = (repoClazz as any).name
 
-		let repo = this.repos[clazzName]
-		const finders = Reflect.getMetadata(DynoFindersKey,clazz) || []
-		log.info(`Building repo`)
+		// Check to see if we have created this repo before
+		let repo = this.repos[repoClazzName]
 
+		// If not - create it
+		if (!repo) {
+			repo = this.repos[repoClazzName] =
+				new DynamoDBRepo<M>(this,repoClazzName,repoClazz)
+		}
 
-		return new DynamoDBRepo<any>() as T
+		return repo as T
 	}
 
 	/**
@@ -347,16 +326,16 @@ export class DynamoDBStore implements IStore {
 			// Determine attribute type
 			attr.awsAttrType = this.attributeType(attr)
 
-			if (attr.partitionKey || attr.sortKey) {
+			if (attr.hashKey || attr.rangeKey) {
 				log.debug(`Adding key ${attr.name}`)
 				// make sure its one or the other
-				if (attr.partitionKey && attr.sortKey)
+				if (attr.hashKey && attr.rangeKey)
 					assert(msg(Strings.ManagerOnlyOneKeyType, attr.name))
 
 				keySchema.push({
 					AttributeName: attr.name,
 					KeyType: KeyType[
-						(attr.partitionKey) ? KeyType.HASH : KeyType.RANGE
+						(attr.hashKey) ? KeyType.HASH : KeyType.RANGE
 						]
 				})
 
@@ -475,7 +454,6 @@ export class DynamoDBStore implements IStore {
 		const updateDef = _.clone(tableDef)
 		delete updateDef.KeySchema
 
-		//debugger
 		const tableDesc = this.tableDescs[TableName]
 		if (_.isMatch(tableDesc, updateDef)) {
 			log.debug(`No change to table definition ${TableName}`)
@@ -581,27 +559,32 @@ export class DynamoDBStore implements IStore {
 		return Promise.each(tableDefs, this.syncTable.bind(this)).return(true)
 
 	}
+
+	query(params:DynamoDB.QueryInput):Promise<DynamoDB.QueryOutput> {
+		return Promise.resolve(
+			this.documentClient.query(params).promise()
+		) as Promise<DynamoDB.QueryOutput>
+	}
+
+	scan(params:DynamoDB.ScanInput):Promise<DynamoDB.ScanOutput> {
+		return Promise.resolve(
+			this.documentClient.scan(params).promise()
+		) as Promise<DynamoDB.ScanOutput>
+	}
+
+	get(params:DynamoDB.GetItemInput):Promise<DynamoDB.GetItemOutput> {
+		return Promise.resolve(
+			this.documentClient.get(params).promise()
+		) as Promise<DynamoDB.GetItemOutput>
+	}
+
+	put(params:DynamoDB.PutItemInput):Promise<DynamoDB.PutItemOutput> {
+		return Promise.resolve(
+			this.documentClient.put(params).promise()
+		) as Promise<DynamoDB.PutItemOutput>
+	}
+
+
 }
 
-export class DynamoDBRepo<M extends IModelClass> implements IRepo<M> {
 
-	key(...args):DynamoDBModelKey {
-		return null
-	}
-
-	get(key:DynamoDBModelKey):Promise<M> {
-		return null
-	}
-
-	create(o:M):Promise<M> {
-		return null
-	}
-
-	update(o:M):Promise<M> {
-		return null
-	}
-
-	remove(key:DynamoDBModelKey):Promise<M> {
-		return null
-	}
-}
