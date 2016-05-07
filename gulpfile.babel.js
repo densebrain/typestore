@@ -2,14 +2,24 @@ const path = require('path')
 const gulp = require('gulp')
 const del = require('del')
 const ts = require('gulp-typescript')
-
+const merge = require('merge2')
 const log = console
 
 const sourceMaps = require('gulp-sourcemaps')
 const relativeSourcemapsSource = require('gulp-relative-sourcemaps-source')
-const tsProject = ts.createProject('./tsconfig.json')
-const srcPaths = ['typings/browser.d.ts','src/**/*.ts','test/**/*.ts']
-log.info('Using src roots',srcPaths)
+
+
+const projectNames = ['typestore','typestore-store-dynamodb']
+
+const projects = projectNames.map((projectName) => {
+	return {
+		name: projectName,
+		base: path.resolve(__dirname,'packages',projectName)
+
+	}
+})
+
+
 
 
 const SourceMapModes = {
@@ -19,44 +29,65 @@ const SourceMapModes = {
 
 // Set the sourcemap mode
 const sourceMapMode = SourceMapModes.SourceMap
+const compileTasks = []
+const allWatchConfigs = []
 
-function clean() {
-	return del(['dist/**/*.*'])
-}
+projects.forEach((project) => {
+	log.info('Using src roots', project.srcs)
+	const distPath = path.resolve(project.base,'dist')
+	const srcs = [
+		`${project.base}/typings/browser.d.ts`,
+		`${project.base}/typings/${project.name}.d.ts`,
+		`${project.base}/src/**/*.ts`,
+		`${project.base}/test/**/*.ts`
+	]
 
-/**
- * Compile compile
- * - the actual compilation
- *
- * @returns {*}
- */
-function compile() {
+	const taskCompileName = `ts-compile-${project.name}`
 
-	const sourcemapOpts = {
-		sourceRoot: path.resolve(__dirname,'src'),
-		//sourceRoot: '.',
-		includeContent: false
-	}
+	const tsProject = ts.createProject(path.resolve(project.base,'tsconfig.json'))
 
-	const tsResult = gulp.src(srcPaths)
-		.pipe(sourceMaps.init())
-		.pipe(ts(tsProject))
+	/**
+	 * Compile compile
+	 * - the actual compilation
+	 *
+	 * @returns {*}
+	 */
+	function compile() {
 
-	log.info('Compilation Completed')
+		const sourcemapOpts = {
+			sourceRoot: path.resolve(project.base, 'src'),
+			includeContent: false
+		}
 
-	return tsResult
-		//.pipe(relativeSourcemapsSource({dest:'dist'}))
-		.pipe((sourceMapMode === SourceMapModes.SourceMap) ?
+		const tsResult = gulp.src(srcs)
+			.pipe(sourceMaps.init())
+			.pipe(ts(tsProject))
+
+		log.info('Compilation Completed')
+
+		const sourceMapHandler = (sourceMapMode === SourceMapModes.SourceMap) ?
 			// External source maps
-			sourceMaps.write('.',sourcemapOpts) :
+			sourceMaps.write('.', sourcemapOpts) :
 			// Inline source maps
 			sourceMaps.write(sourcemapOpts)
-		)
-		.pipe(gulp.dest('dist'))
-}
+
+		return merge([
+			tsResult.dts.pipe(gulp.dest(distPath)),
+			tsResult.js.pipe(sourceMapHandler).pipe(gulp.dest(distPath))
+		])
+	}
 
 
 
+	gulp.task(taskCompileName,[],compile)
+	compileTasks.push(taskCompileName)
+	allWatchConfigs.push({
+		name: project.name,
+		srcs: srcs,
+		task: taskCompileName,
+		base: project.base
+	})
+})
 
 /**
  * Gulp watch task, compiles on file change
@@ -66,14 +97,22 @@ function compile() {
 function watch(done) {
 	log.info('TypeScript Compilation Watching Files...')
 
-	const watcher = gulp.watch(srcPaths,['ts-compile'])
-	watcher.on('change',(event) => {
-		log.info("Files Changed: ",event.path)
+	allWatchConfigs.forEach((config) => {
+		const watcher = gulp.watch(config.srcs, [config.task])
+		watcher.on('change', (event) => {
+			log.info("Project",config.name,"Files Changed: ", event.path)
+		})
 	})
 
 }
 
-gulp.task('clean',[],clean)
-gulp.task('ts-compile',['clean'],compile)
-gulp.task('ts-compile-watch',['ts-compile'],watch)
+
+
+function clean() {
+	return del(['packages/*/dist/**/*.*'])
+}
+
+gulp.task('clean', [], clean)
+gulp.task('ts-compile-all', ['clean'].concat(compileTasks), () => {})
+gulp.task('ts-compile-watch',compileTasks,watch)
 

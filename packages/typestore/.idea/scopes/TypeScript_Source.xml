@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="TypeScript Source" pattern="file[dynotype]:src//*.ts" />
+</component>
