@@ -19,11 +19,15 @@ function ModelDescriptor(opts) {
         // Make sure everything is valid
         //const type = Reflect.getOwnMetadata('design:type',constructor)
         var type = constructor;
+        var attrs = Reflect.getOwnMetadata(Constants_1.TypeStoreAttrKey, constructor);
         var finalOpts = Object.assign({}, {
-            clazzName: type.name
+            clazzName: type.name,
+            attrs: attrs
         }, opts);
         log.debug('Decorating: ', finalOpts.clazzName);
-        Manager_1.Manager.registerModel(finalOpts.clazzName, constructor, finalOpts);
+        Reflect.defineMetadata(Constants_1.TypeStoreModelKey, finalOpts, constructor);
+        if (Manager_1.Manager.getOptions().autoRegisterModels)
+            Manager_1.Manager.registerModel(constructor);
     };
 }
 exports.ModelDescriptor = ModelDescriptor;
@@ -38,10 +42,14 @@ function AttributeDescriptor(opts) {
         var attrType = Reflect.getMetadata('design:type', target, propertyKey);
         opts = Object.assign({}, {
             type: attrType,
-            typeName: attrType.name || 'unknown type',
+            typeName: (attrType && attrType.name) ? attrType.name : 'unknown type',
             key: propertyKey
         }, opts);
-        Manager_1.Manager.registerAttribute(target, propertyKey, opts);
+        // Update the attribute array
+        log.debug("Decorating " + propertyKey, opts);
+        var modelAttrs = Reflect.getMetadata(Constants_1.TypeStoreAttrKey, target.constructor) || [];
+        modelAttrs.push(opts);
+        Reflect.defineMetadata(Constants_1.TypeStoreAttrKey, modelAttrs, target.constructor);
     };
 }
 exports.AttributeDescriptor = AttributeDescriptor;
@@ -52,7 +60,9 @@ exports.AttributeDescriptor = AttributeDescriptor;
  * @return {function(Function)}
  */
 function RepoDescriptor(opts) {
+    if (opts === void 0) { opts = {}; }
     return function (constructor) {
+        Reflect.defineMetadata(Constants_1.TypeStoreRepoKey, opts, constructor);
     };
 }
 exports.RepoDescriptor = RepoDescriptor;
@@ -61,12 +71,15 @@ exports.RepoDescriptor = RepoDescriptor;
  *
  * @returns {function(any, string, TypedPropertyDescriptor<any>): TypedPropertyDescriptor<any>}
  */
-function FinderDescriptor() {
+function FinderDescriptor(opts) {
+    if (opts === void 0) { opts = {}; }
     return function (target, propertyKey, descriptor) {
+        // Add the options to metadata
+        Reflect.defineMetadata(Constants_1.TypeStoreFinderKey, opts, target, propertyKey);
         // Now add the finders to the repo metadata
-        var finders = Reflect.getMetadata(Constants_1.DynoFindersKey, target) || [];
+        var finders = Reflect.getMetadata(Constants_1.TypeStoreFindersKey, target) || [];
         finders.push(propertyKey);
-        Reflect.defineMetadata(Constants_1.DynoFindersKey, finders, target);
+        Reflect.defineMetadata(Constants_1.TypeStoreFindersKey, finders, target);
         //return descriptor
     };
 }

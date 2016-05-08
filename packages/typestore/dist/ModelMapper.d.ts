@@ -1,5 +1,5 @@
-import { IModelMapper } from "./Types";
-export declare class ModelMapper<M> implements IModelMapper<M> {
+import { IModelMapper, IModel } from "./Types";
+export declare class ModelMapper<M extends IModel> implements IModelMapper<M> {
     private modelClazz;
     private modelAttrs;
     constructor(modelClazz: {

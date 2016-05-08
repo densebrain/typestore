@@ -1,13 +1,13 @@
 "use strict";
-var Promise = require('bluebird');
+var BBPromise = require('bluebird');
 var Log = require('./log');
 var Messages_1 = require("./Messages");
 var log = Log.create(__filename);
-Promise.config({
+BBPromise.config({
     cancellation: true,
     longStackTraces: true,
     warnings: true,
-    monitoring: true
+    monitoring: false
 });
 // NOTE: event name is camelCase as per node convention
 process.on("unhandledRejection", function (reason, promise) {
@@ -17,6 +17,7 @@ process.on("unhandledRejection", function (reason, promise) {
 process.on("rejectionHandled", function (promise) {
     //log.debug(msg(Strings.PromiseRejected))
 });
-module.exports = Promise;
+global.Promise = BBPromise;
+module.exports = BBPromise;
 
 //# sourceMappingURL=Promise.js.map

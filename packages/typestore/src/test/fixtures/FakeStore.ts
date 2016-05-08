@@ -1,7 +1,7 @@
 
 import Promise = require('../../Promise')
 
-import {IStore, IManager, IManagerOptions} from '../../Types'
+import {IStore, IManager, IManagerOptions, IModel} from '../../Types'
 import {Repo} from "../../Repo";
 import {NotImplemented} from "../../Errors";
 
@@ -27,7 +27,7 @@ export class FakeStore implements IStore {
 		return NotImplemented('syncModels') as Promise<boolean>
 	}
 
-	getRepo<T extends Repo<M>, M extends any>(clazz:{new():T;}):T {
+	getRepo<T extends Repo<M>, M extends IModel>(clazz:{new():T;}):T {
 		return NotImplemented('getRepo') as T
 	}
 }

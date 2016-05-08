@@ -1,11 +1,13 @@
 "use strict";
 require('reflect-metadata');
+require('./Globals');
 var Promise = require('./Promise');
 var assert = require('assert');
 var Log = require('./log');
 var Constants_1 = require('./Constants');
 var Messages_1 = require("./Messages");
 var ModelMapper_1 = require("./ModelMapper");
+// Create logger
 var log = Log.create(__filename);
 var Manager;
 (function (Manager) {
@@ -17,32 +19,43 @@ var Manager;
      *
      * @type {{}}
      */
-    var modelRegistrations = {};
+    var modelMap = {};
+    var models = [];
     /**
      * Retrieve model registrations
      *
-     * @returns {TModelRegistrations}
+     * @returns {TModelTypeMap}
      */
-    function getModelRegistrations() {
-        return modelRegistrations;
+    function getModels() {
+        return models;
     }
-    Manager.getModelRegistrations = getModelRegistrations;
-    function findModelOptionsByClazz(clazz) {
-        for (var _i = 0, _a = Object.keys(modelRegistrations); _i < _a.length; _i++) {
-            var clazzName = _a[_i];
-            var modelReg = modelRegistrations[clazzName];
-            if (modelReg.clazz === clazz) {
-                return modelReg;
+    Manager.getModels = getModels;
+    function findModel(predicate) {
+        for (var _i = 0, models_1 = models; _i < models_1.length; _i++) {
+            var modelType = models_1[_i];
+            if (predicate(modelType)) {
+                return modelType;
             }
         }
-        log.info('unable to find registered model for clazz', clazz, 'in', Object.keys(modelRegistrations));
+        log.info('unable to find registered model for clazz in', Object.keys(modelMap));
         return null;
     }
-    Manager.findModelOptionsByClazz = findModelOptionsByClazz;
+    function getModel(clazz) {
+        return findModel(function (model) { return model.clazz === clazz; });
+    }
+    Manager.getModel = getModel;
+    function getModelByName(name) {
+        return findModel(function (model) { return model.name === name; });
+    }
+    Manager.getModelByName = getModelByName;
     /**
      * Default options
      */
     var options;
+    function getOptions() {
+        return options;
+    }
+    Manager.getOptions = getOptions;
     var initialized = false;
     // NOTE: settled and settling promise are overriden properties - check below namespace
     var started = false;
@@ -81,6 +94,12 @@ var Manager;
      * @returns {Bluebird<boolean>}
      */
     function start() {
+        var models = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            models[_i - 0] = arguments[_i];
+        }
+        checkStarted(true);
+        models.forEach(registerModel);
         return startPromise = Manager.store.start()
             .catch(function (err) {
             log.error(Messages_1.msg(Messages_1.Strings.ManagerFailedToStart), err);
@@ -111,12 +130,9 @@ var Manager;
                 log.error(Messages_1.msg(Messages_1.Strings.ManagerErrorFn, fnName ? fnName : 'UNKNOWN'), err);
                 reject(err);
             }
-            if (startPromise) {
-                startPromise.then(executeFn).catch(handleError);
-            }
-            else {
+            return (startPromise) ?
+                startPromise.then(executeFn).catch(handleError) :
                 Promise.resolve(executeFn).catch(handleError);
-            }
         });
     }
     /**
@@ -127,7 +143,7 @@ var Manager;
     function reset() {
         if (startPromise)
             startPromise.cancel();
-        return Promise.resolve(Manager.store ? Manager.store.stop() : true).then(function () {
+        return Promise.resolve((Manager.store) ? Manager.store.stop() : true).then(function () {
             log.info("Store successfully stopped");
             return true;
         }).finally(function () {
@@ -145,32 +161,23 @@ var Manager;
      * @param constructor
      * @param opts
      */
-    function registerModel(clazzName, constructor, opts) {
+    function registerModel(constructor) {
         checkStarted(true);
-        // Retrieve its attributes first
-        opts.attrs = Reflect.getOwnMetadata(Constants_1.DynoAttrKey, constructor.prototype);
-        // Define the metadata for the model
-        Reflect.defineMetadata(Constants_1.DynoModelKey, opts, constructor.prototype);
-        modelRegistrations[clazzName] = Object.assign({}, opts, {
+        var model = getModel(constructor);
+        if (model) {
+            log.info("Trying to register " + model.name + " a second time? is autoregister enabled?");
+            return;
+        }
+        var modelOpts = Reflect.getMetadata(Constants_1.TypeStoreModelKey, constructor);
+        model = {
+            options: modelOpts,
+            name: modelOpts.clazzName,
             clazz: constructor
-        });
+        };
+        modelMap[modelOpts.clazzName] = model;
+        models.push(model);
     }
     Manager.registerModel = registerModel;
-    /**
-     * Register an attribute
-     *
-     * @param target
-     * @param propertyKey
-     * @param opts
-     */
-    function registerAttribute(target, propertyKey, opts) {
-        checkStarted(true);
-        log.info("Decorating " + propertyKey, opts);
-        var modelAttrs = Reflect.getMetadata(Constants_1.DynoAttrKey, target) || [];
-        modelAttrs.push(opts);
-        Reflect.defineMetadata(Constants_1.DynoAttrKey, modelAttrs, target);
-    }
-    Manager.registerAttribute = registerAttribute;
     /**
      * Get a repository for the specified model/class
      *

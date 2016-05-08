@@ -1,8 +1,10 @@
 
 export const ReturnTypeKey = 'design:returntype'
+export const TypeKey = 'design:type'
 
-export const DynoModelKey = 'dyno:model'
-export const DynoAttrKey = 'dyno:attr'
-export const DynoFinderKey = 'dyno:finder'
-export const DynoFindersKey = 'dyno:finders'
+export const TypeStoreModelKey = 'dyno:model'
+export const TypeStoreAttrKey = 'dyno:attr'
+export const TypeStoreRepoKey = 'dyno:repo'
+export const TypeStoreFinderKey = 'dyno:finder'
+export const TypeStoreFindersKey = 'dyno:finders'
 

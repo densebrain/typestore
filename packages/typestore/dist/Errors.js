@@ -26,5 +26,13 @@ function NotImplemented(name) {
     return null;
 }
 exports.NotImplemented = NotImplemented;
+var NoReflectionMetataError = (function (_super) {
+    __extends(NoReflectionMetataError, _super);
+    function NoReflectionMetataError(name) {
+        _super.call(this, name);
+    }
+    return NoReflectionMetataError;
+}(Error));
+exports.NoReflectionMetataError = NoReflectionMetataError;
 
 //# sourceMappingURL=Errors.js.map

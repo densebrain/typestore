@@ -1,14 +1,13 @@
 import Promise = require('bluebird')
-
-
 import 'reflect-metadata'
 
-
 import * as Log from './log'
-
 import {Manager} from './Manager'
-import {IModelOptions, IRepoOptions, IModelAttributeOptions, IModelClass} from './Types'
-import {DynoFinderKey, DynoFindersKey} from "./Constants";
+import {IModelOptions, IRepoOptions, IModelAttributeOptions, IModel, IFinderOptions} from './Types'
+import {
+	TypeStoreFinderKey, TypeStoreFindersKey, TypeStoreAttrKey, TypeStoreModelKey,
+	TypeStoreRepoKey
+} from "./Constants";
 import {Repo} from "./Repo";
 
 const log = Log.create(__filename)
@@ -30,14 +29,19 @@ export function ModelDescriptor(opts:IModelOptions) {
 		// Make sure everything is valid
 		//const type = Reflect.getOwnMetadata('design:type',constructor)
 		const type = constructor as any
-
+		const attrs = Reflect.getOwnMetadata(TypeStoreAttrKey, constructor) as IModelAttributeOptions[]
+		
 		const finalOpts = Object.assign({},{
-			clazzName: type.name
+			clazzName: type.name,
+			attrs
 		},opts)
 
 
 		log.debug('Decorating: ', finalOpts.clazzName)
-		Manager.registerModel(finalOpts.clazzName,constructor,finalOpts)
+		Reflect.defineMetadata(TypeStoreModelKey,finalOpts,constructor)
+
+		if (Manager.getOptions().autoRegisterModels)
+			Manager.registerModel(constructor)
 	}
 }
 
@@ -51,13 +55,19 @@ export function ModelDescriptor(opts:IModelOptions) {
 export function AttributeDescriptor(opts: IModelAttributeOptions) {
 	return function (target:any,propertyKey:string) {
 		const attrType = Reflect.getMetadata('design:type',target,propertyKey)
+		
 		opts = Object.assign({},{
 			type:attrType,
-			typeName: attrType.name || 'unknown type',
+			typeName: (attrType && attrType.name) ? attrType.name : 'unknown type',
 			key:propertyKey
 		},opts)
 
-		Manager.registerAttribute(target,propertyKey,opts)
+		// Update the attribute array
+		log.debug(`Decorating ${propertyKey}`,opts)
+		const modelAttrs = Reflect.getMetadata(TypeStoreAttrKey,target.constructor) || []
+		modelAttrs.push(opts)
+
+		Reflect.defineMetadata(TypeStoreAttrKey,modelAttrs,target.constructor)
 	}
 }
 
@@ -68,12 +78,11 @@ export function AttributeDescriptor(opts: IModelAttributeOptions) {
  * @param opts for the repository
  * @return {function(Function)}
  */
-export function RepoDescriptor(opts?:IRepoOptions) {
+export function RepoDescriptor(opts:IRepoOptions = {}) {
 
 
 	return function (constructor:Function) {
-
-
+		Reflect.defineMetadata(TypeStoreRepoKey,opts,constructor)
 	}
 }
 
@@ -82,20 +91,25 @@ export function RepoDescriptor(opts?:IRepoOptions) {
  *
  * @returns {function(any, string, TypedPropertyDescriptor<any>): TypedPropertyDescriptor<any>}
  */
-export function FinderDescriptor() {
+export function FinderDescriptor(opts:IFinderOptions = {}) {
 
 	return function<R extends Repo<any>>(
 		target:R,
 		propertyKey:string,
 		descriptor:TypedPropertyDescriptor<any>
 	) {
+		// Add the options to metadata
+		Reflect.defineMetadata(TypeStoreFinderKey,opts,target,propertyKey)
+
 		// Now add the finders to the repo metadata
-		const finders = Reflect.getMetadata(DynoFindersKey,target) || []
+		const finders = Reflect.getMetadata(TypeStoreFindersKey,target) || []
 		finders.push(propertyKey)
-		Reflect.defineMetadata(DynoFindersKey,finders,target)
+		Reflect.defineMetadata(TypeStoreFindersKey,finders,target)
 		//return descriptor
 	}
 }
+
+
 
 
 

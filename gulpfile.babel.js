@@ -1,25 +1,14 @@
+const fs = require('fs')
 const path = require('path')
 const gulp = require('gulp')
 const del = require('del')
 const ts = require('gulp-typescript')
+const dts = require('dts-bundle')
+const babel = require('gulp-babel')
 const merge = require('merge2')
 const log = console
-
+const _ = require('lodash')
 const sourceMaps = require('gulp-sourcemaps')
-const relativeSourcemapsSource = require('gulp-relative-sourcemaps-source')
-
-
-const projectNames = ['typestore','typestore-store-dynamodb']
-
-const projects = projectNames.map((projectName) => {
-	return {
-		name: projectName,
-		base: path.resolve(__dirname,'packages',projectName)
-
-	}
-})
-
-
 
 
 const SourceMapModes = {
@@ -32,19 +21,49 @@ const sourceMapMode = SourceMapModes.SourceMap
 const compileTasks = []
 const allWatchConfigs = []
 
-projects.forEach((project) => {
+
+/**
+ * All project names current in system
+ *
+ * @type {string[]}
+ */
+const projectNames = [
+	'typestore',
+	'typestore-plugin-dynamodb'
+]
+
+
+
+
+// Now map and configure all the projects/plugins
+const projects = projectNames.map((projectName) => {
+	const project = {
+		name: projectName,
+		base: path.resolve(__dirname,'packages',projectName),
+		tasks: {
+			compile: `ts-compile-${projectName}`
+		}
+	}
+
+
+
+	/**
+	 * Build the tasks
+	 */
 	log.info('Using src roots', project.srcs)
 	const distPath = path.resolve(project.base,'dist')
-	const srcs = [
+	const srcs = _.uniq([
+		`${process.cwd()}/typings/browser.d.ts`,
+		`${process.cwd()}/packages/typestore/typings/typestore.d.ts`,
 		`${project.base}/typings/browser.d.ts`,
 		`${project.base}/typings/${project.name}.d.ts`,
 		`${project.base}/src/**/*.ts`,
 		`${project.base}/test/**/*.ts`
-	]
+	])
 
-	const taskCompileName = `ts-compile-${project.name}`
+	const taskCompileName = project.tasks.compile
 
-	const tsProject = ts.createProject(path.resolve(project.base,'tsconfig.json'))
+	const tsProject = ts.createProject(path.resolve(__dirname,'tsconfig.json'))
 
 	/**
 	 * Compile compile
@@ -72,9 +91,21 @@ projects.forEach((project) => {
 			sourceMaps.write(sourcemapOpts)
 
 		return merge([
-			tsResult.dts.pipe(gulp.dest(distPath)),
-			tsResult.js.pipe(sourceMapHandler).pipe(gulp.dest(distPath))
-		])
+			tsResult.dts
+				.pipe(gulp.dest(distPath)),
+			tsResult.js
+				//.pipe(babel(babelConfig))
+				.pipe(sourceMapHandler)
+				.pipe(gulp.dest(distPath))
+		]).on('end',() => {
+
+			// log.info("creating declaration")
+			// dts.bundle({
+			// 	name: projectName,
+			// 	main: `${distPath}/index.d.ts`,
+			// 	exclude: /^test\/$/
+			// })
+		})
 	}
 
 
@@ -87,7 +118,18 @@ projects.forEach((project) => {
 		task: taskCompileName,
 		base: project.base
 	})
+
+
+
+	return project
 })
+
+
+
+
+
+
+
 
 /**
  * Gulp watch task, compiles on file change

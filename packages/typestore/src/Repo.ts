@@ -1,36 +1,113 @@
-import Promise = require('bluebird')
+import Promise = require('./Promise')
 
-import {IModelKey, IModelOptions, IKeyValue} from "./Types";
+import {IModelKey, IModelOptions, IKeyValue, IModel, IFinderOptions, IStore} from "./Types";
 import {NotImplemented} from "./Errors";
-import {DynoModelKey} from "./Constants";
+import {TypeStoreModelKey, TypeStoreFinderKey} from "./Constants";
+import * as Log from './log'
 
-export abstract class Repo<M> {
+const log = Log.create(__filename)
+
+export abstract class Repo<M extends IModel> {
 
 	protected modelClazz
 	protected modelOpts:IModelOptions
 
+	
 	constructor(modelClazz:{new ():M;}) {
 		this.modelClazz = modelClazz
-		this.modelOpts = Reflect.getMetadata(DynoModelKey,modelClazz.prototype)
+		this.modelOpts = Reflect.getMetadata(TypeStoreModelKey,modelClazz.prototype)
 	}
 
+	protected makeFinder(finderKey:string) {
+		const opts:IFinderOptions = Reflect.getMetadata(
+			TypeStoreFinderKey,
+			this.modelClazz,
+			finderKey
+		)
+
+		const searchOpts = opts.searchOptions
+		
+		if (!searchOpts) {
+			log.debug('Generic finders are only created with a specified SearchProvider')
+			return
+		}
+		
+		this.setFinder(finderKey,(...args) => {
+			return searchOpts.provider.search(
+				this.modelClazz,
+				searchOpts,
+				args
+			).then((results) => {
+				
+				// Once the provider returns the resulting data,
+				// pass it to the mapper to get keys
+				const keys:IModelKey[] = results.map((result:any) => {
+					return searchOpts.resultKeyMapper(
+						this,
+						searchOpts.resultType,
+						result
+					)
+				})
+
+				
+				return Promise.map(keys,(key) => {
+					return this.get(key)
+				})
+			})
+		})
+
+	}
+	
+	protected setFinder(finderKey:string,finderFn:(...args) => any) {
+		this[finderKey] = finderFn
+	}
+
+	/**
+	 * Not implemented
+	 *
+	 * @param args
+	 * @returns {null}
+	 */
 	key(...args):IKeyValue {
 		return NotImplemented('key')
 	}
 
+	/**
+	 * Get one or more models with keys
+	 *
+	 * @param key
+	 * @returns {null}
+	 */
 	get(key:IKeyValue):Promise<M> {
 		return NotImplemented('get')
 	}
 
+	/**
+	 * Save model
+	 *
+	 * @param o
+	 * @returns {null}
+	 */
 	save(o:M):Promise<M> {
 		return NotImplemented('save')
 	}
 
 
+	/**
+	 * Remove a model
+	 *
+	 * @param key
+	 * @returns {null}
+	 */
 	remove(key:IKeyValue):Promise<any> {
 		return NotImplemented('remove')
 	}
 
+	/**
+	 * Count models
+	 *
+	 * @returns {null}
+	 */
 	count():Promise<number> {
 		return NotImplemented('count')
 	}

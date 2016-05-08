@@ -1,17 +1,16 @@
 import 'reflect-metadata'
-
+import './Globals'
 import Promise = require('./Promise')
-import * as assert from 'assert'
-
+import assert = require('assert')
 
 import * as Log from './log'
-import {DynoModelKey,DynoAttrKey} from './Constants'
-import {IModelOptions, IModelAttributeOptions, IStore, IManagerOptions, IModelMapper} from './Types'
+import {TypeStoreModelKey,TypeStoreAttrKey} from './Constants'
+import {IModelOptions, IModelAttributeOptions, IStore, IManagerOptions, IModelMapper, IModel, IModelType} from './Types'
 import {msg, Strings} from "./Messages"
 import {Repo} from "./Repo";
 import {ModelMapper} from "./ModelMapper";
 
-
+// Create logger
 const log = Log.create(__filename)
 
 export namespace Manager {
@@ -19,7 +18,7 @@ export namespace Manager {
 	/**
 	 * Model registration map type
 	 */
-	export type TModelRegistrations = {[clazzName:string]:IModelOptions}
+	export type TModelTypeMap = {[clazzName:string]:IModelType}
 
 
 	/**
@@ -30,27 +29,37 @@ export namespace Manager {
 	 *
 	 * @type {{}}
 	 */
-	const modelRegistrations:TModelRegistrations = {}
-
+	
+	const modelMap:TModelTypeMap = {}
+	const models:IModelType[] = [] 
+	
+	
 	/**
 	 * Retrieve model registrations
 	 *
-	 * @returns {TModelRegistrations}
+	 * @returns {TModelTypeMap}
 	 */
-	export function getModelRegistrations():TModelRegistrations {
-		return modelRegistrations
+	export function getModels():IModelType[] {
+		return models
 	}
 
-	export function findModelOptionsByClazz(clazz:any):IModelOptions {
-		for (let clazzName of Object.keys(modelRegistrations)) {
-			const modelReg = modelRegistrations[clazzName]
-			if (modelReg.clazz === clazz) {
-				return modelReg
+	function findModel(predicate) {
+		for (let modelType of models) {
+			if (predicate(modelType)) {
+				return modelType
 			}
 		}
 
-		log.info('unable to find registered model for clazz',clazz,'in',Object.keys(modelRegistrations))
+		log.info('unable to find registered model for clazz in',Object.keys(modelMap))
 		return null
+	}
+	
+	export function getModel(clazz:any):IModelType {
+		return findModel((model) => model.clazz === clazz)
+	}
+	
+	export function getModelByName(name:string):IModelType {
+		return findModel((model) => model.name === name)
 	}
 
 	/**
@@ -58,6 +67,11 @@ export namespace Manager {
 	 */
 	let options:IManagerOptions
 
+	export function getOptions() {
+		return options
+	}
+	
+	
 	let initialized = false
 
 	// NOTE: settled and settling promise are overriden properties - check below namespace
@@ -113,7 +127,10 @@ export namespace Manager {
 	 *
 	 * @returns {Bluebird<boolean>}
 	 */
-	export function start():Promise<boolean> {
+	export function start(...models):Promise<boolean> {
+		checkStarted(true)
+		models.forEach(registerModel)
+
 		return startPromise = store.start()
 			.catch((err) => {
 				log.error(msg(Strings.ManagerFailedToStart),err)
@@ -145,11 +162,10 @@ export namespace Manager {
 				reject(err)
 			}
 
-			if (startPromise) {
-				startPromise.then(executeFn).catch(handleError)
-			} else {
+			return (startPromise) ?
+				startPromise.then(executeFn).catch(handleError) :
 				Promise.resolve(executeFn).catch(handleError)
-			}
+
 		})
 
 	}
@@ -159,11 +175,11 @@ export namespace Manager {
 	 *
 	 * @returns {Manager.reset}
 	 */
-	export function reset() {
+	export function reset():Promise<boolean> {
 		if (startPromise)
 			(startPromise as any).cancel()
 
-		return Promise.resolve(store ? store.stop() : true).then(() =>{
+		return Promise.resolve((store) ? store.stop() : true).then(() =>{
 			log.info(`Store successfully stopped`)
 			return true
 		}).finally(() => {
@@ -183,36 +199,28 @@ export namespace Manager {
 	 * @param constructor
 	 * @param opts
 	 */
-	export function registerModel(clazzName:string,constructor:Function,opts:IModelOptions) {
+	export function registerModel(constructor:Function) {
 		checkStarted(true)
 
-		// Retrieve its attributes first
-		opts.attrs = Reflect.getOwnMetadata(DynoAttrKey, constructor.prototype) as IModelAttributeOptions[]
+		let model = getModel(constructor)
+		if (model) {
+			log.info(`Trying to register ${model.name} a second time? is autoregister enabled?`)
+			return
+		}
 
-		// Define the metadata for the model
-		Reflect.defineMetadata(DynoModelKey,opts,constructor.prototype)
+		const modelOpts:IModelOptions = Reflect.getMetadata(TypeStoreModelKey,constructor)
+		model = {
+			options: modelOpts,
+			name: modelOpts.clazzName,
+			clazz: constructor
+		}
 
-		modelRegistrations[clazzName] = Object.assign({},opts,{
-			clazz:constructor
-		})
+		modelMap[modelOpts.clazzName] = model
+		models.push(model)
+
 
 	}
 
-	/**
-	 * Register an attribute
-	 *
-	 * @param target
-	 * @param propertyKey
-	 * @param opts
-	 */
-	export function registerAttribute(target:any,propertyKey:string,opts:IModelAttributeOptions) {
-		checkStarted(true)
-
-		log.info(`Decorating ${propertyKey}`,opts)
-		const modelAttrs = Reflect.getMetadata(DynoAttrKey,target) || []
-		modelAttrs.push(opts)
-		Reflect.defineMetadata(DynoAttrKey,modelAttrs,target)
-	}
 
 	/**
 	 * Get a repository for the specified model/class
@@ -220,11 +228,11 @@ export namespace Manager {
 	 * @param clazz
 	 * @returns {T}
 	 */
-	export function getRepo<T extends Repo<M>,M>(clazz:{new(): T; }):T {
+	export function getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T {
 		return store.getRepo(clazz)
 	}
 
-	export function getMapper<M>(clazz:{new():M;}):IModelMapper<M> {
+	export function getMapper<M extends IModel>(clazz:{new():M;}):IModelMapper<M> {
 		return new ModelMapper(clazz)
 	}
 

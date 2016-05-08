@@ -3,20 +3,22 @@
 		"target": "es5",
 		"module": "commonjs",
 		"moduleResolution": "node",
-		"declaration": false,
+		"declaration": true,
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"preserveConstEnums": true,
 		"allowSyntheticDefaultImports": true,
 		"sourceMap": true,
 		"outDir": "dist"
-
 	},
-
 	"exclude": [
 		"node_modules",
+		"**/node_modules",
 		"typings/main.d.ts",
+		"**/typings/main.d.ts",
 		"typings/main",
-		"dist"
+		"**/typings/main",
+		"dist",
+		"**/dist"
 	]
 }

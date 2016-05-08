@@ -1,17 +1,17 @@
 
-import {IModelMapper, IModelAttributeOptions} from "./Types";
-import {DynoAttrKey} from "./Constants";
+import {IModelMapper, IModelAttributeOptions, IModel} from "./Types";
+import {TypeStoreAttrKey} from "./Constants";
 
 const JSONFormattingSpace = (process.env.NODE_ENV !== 'production') ? 4 : 0
 
-export class ModelMapper<M> implements IModelMapper<M> {
+export class ModelMapper<M extends IModel> implements IModelMapper<M> {
 
 
 	private modelAttrs:IModelAttributeOptions[]
 
 
 	constructor(private modelClazz:{new():M}) {
-		this.modelAttrs = Reflect.getMetadata(DynoAttrKey,this.modelClazz.prototype)
+		this.modelAttrs = Reflect.getMetadata(TypeStoreAttrKey,this.modelClazz)
 	}
 
 	private attr(key:string) {

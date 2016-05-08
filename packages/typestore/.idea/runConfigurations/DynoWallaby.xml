@@ -1,5 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="DynoWallaby" type="wallaby" factoryName="Wallaby.js" config="$PROJECT_DIR$/wallaby.js">
-    <method />
-  </configuration>
-</component>

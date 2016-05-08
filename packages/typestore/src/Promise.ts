@@ -1,15 +1,16 @@
-import Promise = require('bluebird')
+import * as BBPromise from 'bluebird'
 import * as Log from './log'
 import {msg, Strings} from "./Messages";
 
 const log = Log.create(__filename)
 
-Promise.config({
+BBPromise.config({
 	cancellation: true,
 	longStackTraces: true,
 	warnings: true,
-	monitoring: true
+	monitoring: false
 })
+
 
 // NOTE: event name is camelCase as per node convention
 process.on("unhandledRejection", function (reason, promise) {
@@ -21,4 +22,6 @@ process.on("rejectionHandled", function (promise) {
 	//log.debug(msg(Strings.PromiseRejected))
 })
 
-export = Promise
+global.Promise = BBPromise
+
+export = BBPromise

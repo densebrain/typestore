@@ -20,3 +20,9 @@ export function NotImplemented(name:string) {
 
 	return null
 }
+
+export class NoReflectionMetataError extends Error {
+	constructor(name:string) {
+		super(name)
+	}
+}

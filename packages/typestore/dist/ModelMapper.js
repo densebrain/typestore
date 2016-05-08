@@ -4,7 +4,7 @@ var JSONFormattingSpace = (process.env.NODE_ENV !== 'production') ? 4 : 0;
 var ModelMapper = (function () {
     function ModelMapper(modelClazz) {
         this.modelClazz = modelClazz;
-        this.modelAttrs = Reflect.getMetadata(Constants_1.DynoAttrKey, this.modelClazz.prototype);
+        this.modelAttrs = Reflect.getMetadata(Constants_1.TypeStoreAttrKey, this.modelClazz);
     }
     ModelMapper.prototype.attr = function (key) {
         for (var _i = 0, _a = this.modelAttrs; _i < _a.length; _i++) {

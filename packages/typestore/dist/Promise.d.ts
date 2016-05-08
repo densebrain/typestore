@@ -1,2 +1,2 @@
-import Promise = require('bluebird');
-export = Promise;
+import * as BBPromise from 'bluebird';
+export = BBPromise;

@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { IModelOptions, IRepoOptions, IModelAttributeOptions } from './Types';
+import { IModelOptions, IRepoOptions, IModelAttributeOptions, IFinderOptions } from './Types';
 import { Repo } from "./Repo";
 /**
  * Decorate a specified class, making it a
@@ -31,4 +31,4 @@ export declare function RepoDescriptor(opts?: IRepoOptions): (constructor: Funct
  *
  * @returns {function(any, string, TypedPropertyDescriptor<any>): TypedPropertyDescriptor<any>}
  */
-export declare function FinderDescriptor(): <R extends Repo<any>>(target: R, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) => void;
+export declare function FinderDescriptor(opts?: IFinderOptions): <R extends Repo<any>>(target: R, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) => void;

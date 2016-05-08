@@ -1,21 +1,24 @@
 import 'reflect-metadata';
+import './Globals';
 import Promise = require('./Promise');
-import { IModelOptions, IModelAttributeOptions, IStore, IManagerOptions, IModelMapper } from './Types';
+import { IStore, IManagerOptions, IModelMapper, IModel, IModelType } from './Types';
 import { Repo } from "./Repo";
 export declare namespace Manager {
     /**
      * Model registration map type
      */
-    type TModelRegistrations = {
-        [clazzName: string]: IModelOptions;
+    type TModelTypeMap = {
+        [clazzName: string]: IModelType;
     };
     /**
      * Retrieve model registrations
      *
-     * @returns {TModelRegistrations}
+     * @returns {TModelTypeMap}
      */
-    function getModelRegistrations(): TModelRegistrations;
-    function findModelOptionsByClazz(clazz: any): IModelOptions;
+    function getModels(): IModelType[];
+    function getModel(clazz: any): IModelType;
+    function getModelByName(name: string): IModelType;
+    function getOptions(): IManagerOptions;
     /**
      * Ref to aws client
      */
@@ -29,7 +32,7 @@ export declare namespace Manager {
      *
      * @returns {Bluebird<boolean>}
      */
-    function start(): Promise<boolean>;
+    function start(...models: any[]): Promise<boolean>;
     /**
      * Reset the manager status
      *
@@ -43,25 +46,17 @@ export declare namespace Manager {
      * @param constructor
      * @param opts
      */
-    function registerModel(clazzName: string, constructor: Function, opts: IModelOptions): void;
-    /**
-     * Register an attribute
-     *
-     * @param target
-     * @param propertyKey
-     * @param opts
-     */
-    function registerAttribute(target: any, propertyKey: string, opts: IModelAttributeOptions): void;
+    function registerModel(constructor: Function): void;
     /**
      * Get a repository for the specified model/class
      *
      * @param clazz
      * @returns {T}
      */
-    function getRepo<T extends Repo<M>, M>(clazz: {
+    function getRepo<T extends Repo<M>, M extends IModel>(clazz: {
         new (): T;
     }): T;
-    function getMapper<M>(clazz: {
+    function getMapper<M extends IModel>(clazz: {
         new (): M;
     }): IModelMapper<M>;
 }
