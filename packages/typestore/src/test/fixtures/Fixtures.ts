@@ -1,3 +1,3 @@
 
 export * from './ModelTest1'
-export * from './FakeStore'
+export * from './NullStore'

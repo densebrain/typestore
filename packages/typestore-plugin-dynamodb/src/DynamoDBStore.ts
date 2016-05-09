@@ -409,6 +409,10 @@ export class DynamoDBStore implements Types.IStore {
 			}
 		}
 
+		if (!globalIndexes.length) {
+			delete modelOptions.tableDef['GlobalSecondaryIndexes']
+		}
+
 		return modelOptions.tableDef
 
 	}

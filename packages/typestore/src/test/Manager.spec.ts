@@ -6,7 +6,7 @@ import 'expectations'
 import 'reflect-metadata'
 
 import {SyncStrategy, IManagerOptions,ManagerOptions} from "../Types";
-import {FakeStore} from "./fixtures/FakeStore";
+import {NullStore} from "./fixtures/NullStore";
 import {Manager} from '../Manager'
 import {TypeStoreModelKey,TypeStoreAttrKey} from '../Constants'
 import * as Log from '../log'
@@ -28,7 +28,7 @@ let store = null
  */
 function reset(syncStrategy:SyncStrategy) {
 
-	store = new FakeStore()
+	store = new NullStore()
 
 	const opts = new ManagerOptions(store,{
 		syncStrategy,

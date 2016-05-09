@@ -140,7 +140,8 @@ export interface IStore {
 	start():Promise<boolean>
 	stop():Promise<boolean>
 	syncModels():Promise<boolean>
-	getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T
+	getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):Repo<M>
+	
 }
 
 /**
@@ -226,7 +227,7 @@ export interface IManager {
 	start(...models):Promise<boolean>
 	init(opts:IManagerOptions):Promise<boolean>
 	reset():Promise<void>
-	getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T
+	getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):Repo<M>
 	getMapper<M extends IModel>(clazz:{new():M;}):IModelMapper<M>
 }
 

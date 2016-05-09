@@ -1,0 +1,34 @@
+{
+  "name": "typestore-mocks",
+  "description": "TypesStore Mocks for Testing Purposes",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "test": "gulp ts-compile && mocha dist/test/**/*.spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/densebrain/typestore.git"
+  },
+  "keywords": [
+    "dynamo",
+    "dynamodb",
+    "typescript",
+    "typestore",
+    "store",
+    "plugin",
+    "ts",
+    "mapper",
+    "db"
+  ],
+  "author": "Jonathan Glanz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/densebrain/typestore/issues"
+  },
+  "homepage": "https://github.com/densebrain/typestore#readme",
+  "dependencies": {
+    "typestore": "1.0.0"
+  }
+}

@@ -40,8 +40,8 @@ export function ModelDescriptor(opts:IModelOptions) {
 		log.debug('Decorating: ', finalOpts.clazzName)
 		Reflect.defineMetadata(TypeStoreModelKey,finalOpts,constructor)
 
-		if (Manager.getOptions().autoRegisterModels)
-			Manager.registerModel(constructor)
+		//if (Manager.getOptions().autoRegisterModels)
+		Manager.registerModel(constructor)
 	}
 }
 

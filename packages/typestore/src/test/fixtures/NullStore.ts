@@ -1,11 +1,9 @@
 
-import Promise = require('../../Promise')
+import {Errors,Promise,IStore,IManagerOptions,IManager,Repo,IModel} from '../../index'
 
-import {IStore, IManager, IManagerOptions, IModel} from '../../Types'
-import {Repo} from "../../Repo";
-import {NotImplemented} from "../../Errors";
+const NotImplemented = Errors.NotImplemented;
 
-export class FakeStore implements IStore {
+export class NullStore implements IStore {
 
 	constructor() {
 

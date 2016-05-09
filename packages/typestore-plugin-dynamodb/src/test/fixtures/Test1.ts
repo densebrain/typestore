@@ -38,7 +38,7 @@ export class Test1 extends Types.DefaultModel {
 export class Test1Repo extends Repo<Test1> {
 
 	constructor() {
-		super(Test1)
+		super(Test1Repo,Test1)
 	}
 
 	@DynamoDBFinderDescriptor({

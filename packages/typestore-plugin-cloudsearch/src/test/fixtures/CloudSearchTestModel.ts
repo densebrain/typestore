@@ -1,10 +1,35 @@
+const AWS = require('aws-sdk')
+
 import 'reflect-metadata'
 import {Promise,Log,Repo,Decorations,Types,DefaultKeyMapper} from 'typestore'
+
 import {CloudSearchProvider} from "../../CloudSearchProvider";
+import {CloudSearchLocalEndpoint} from "../../CloudSearchConstants";
 
 
 const log = Log.create(__filename)
-export const cloudSearchProvider = new CloudSearchProvider('http://localhost/2134')
+
+const sharedIniCreds =  new AWS.SharedIniFileCredentials({profile: 'default'})
+
+//const csClient = new AWS.CloudSearch()
+// AWS.config.update({region: 'us-east-1',accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+// 	secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY})
+
+
+
+// module.exports = new AWS.CloudSearchDomain({
+// 	endpoint: 'doc-test-local-cs-z5wcdkp6wb74brygqixjehebka.us-east-1.cloudsearch.amazonaws.com',
+// 	region: 'us-east-1',
+//
+// })
+
+
+
+
+export const cloudSearchProvider = new CloudSearchProvider(CloudSearchLocalEndpoint, {
+	region: 'us-east-1',
+	credentials:sharedIniCreds
+})
 
 @Decorations.ModelDescriptor({tableName:'testTable1'})
 export class CloudSearchTestModel extends Types.DefaultModel {
@@ -37,7 +62,7 @@ export class CloudSearchTestModel extends Types.DefaultModel {
 export class CloudSearchTest1Repo extends Repo<CloudSearchTestModel> {
 
 	constructor() {
-		super(CloudSearchTestModel)
+		super(CloudSearchTest1Repo,CloudSearchTestModel)
 	}
 
 	/**

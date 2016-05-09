@@ -1,4 +1,7 @@
 ///<reference path="../typings/typestore-plugin-cloudsearch"/>
+///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-cloudsearchdomain"/>
+///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-config.d.ts"/>
+///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-sdk"/>
 
 
 import {
@@ -18,10 +21,11 @@ import {CloudSearchDomain} from 'aws-sdk'
 
 const clients:{[endpoint:string]:CloudSearchDomain} = {}
 
-function getClient(endpoint:string) {
+function getClient(endpoint:string,awsOptions:any = {}) {
 	let client = clients[endpoint]
 	if (!client) {
-		clients[endpoint] = client = new CloudSearchDomain({endpoint})
+		Object.assign(awsOptions,{endpoint})
+		clients[endpoint] = client = new CloudSearchDomain(awsOptions)
 	}
 
 	return client
@@ -32,8 +36,8 @@ export class CloudSearchProvider implements IIndexer, ISearchProvider {
 
 	private client:CloudSearchDomain
 
-	constructor(private endpoint:string) {
-		this.client = getClient(endpoint)
+	constructor(private endpoint:string,private awsOptions:any = {}) {
+		this.client = getClient(endpoint,awsOptions)
 	}
 
 	index<M extends IModel>(type:IndexType,options:IIndexerOptions,modelType:IModelType,repo:Repo<M>,...models:IModel[]):Promise<boolean> {
@@ -50,14 +54,15 @@ export class CloudSearchProvider implements IIndexer, ISearchProvider {
 			},{
 				fields:doc
 			},{
-				type:(IndexType.Remove === type) ? 'remove' : 'add'
+				type:(IndexType.Remove === type) ? 'delete' : 'add'
 			})
 		})
 
 		const params = {contentType: 'application/json',documents:JSON.stringify(data)}
-		return this.client.uploadDocuments(params)
-			.promise()
-			.return(true)
+		return Promise.resolve(
+			this.client.uploadDocuments(params)
+				.promise()
+		).return(true)
 	}
 
 	/**
@@ -72,10 +77,12 @@ export class CloudSearchProvider implements IIndexer, ISearchProvider {
 	 * @returns {any}
 	 */
 	search<R extends any>(modelType:IModelType, opts:ISearchOptions<R>, ...args):Promise<R[]> {
-		return this.client.search({query: args.join(' ')})
-			.promise()
-			.then((results) => {
-				return results.hits.hit
-			})
+		return Promise.resolve(
+			this.client.search({query: args.join(' ')})
+				.promise()
+				.then((results) => {
+					return results.hits.hit
+				})
+		) as Promise<R[]>
 	}
 }

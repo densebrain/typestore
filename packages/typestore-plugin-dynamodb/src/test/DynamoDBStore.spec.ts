@@ -82,10 +82,9 @@ describe('#store-dynamodb',() => {
 	})
 
 	it("#sync",() => {
-		const test1 = new Fixtures.Test1()
-		return Manager.start().then(() => {
-			expect(store.availableTables.length).toBe(1)
-
+		return Manager.start(Fixtures.Test1).then(() => {
+			expect(store.availableTables.length).toBeGreaterThan(0)
+			expect(Manager.getModel(Fixtures.Test1)).not.toBeNull()
 		})
 	})
 

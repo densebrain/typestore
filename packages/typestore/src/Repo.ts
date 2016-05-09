@@ -23,10 +23,10 @@ export abstract class Repo<M extends IModel> {
 	protected modelOpts:IModelOptions
 	protected repoOpts:IRepoOptions
 	
-	constructor(modelClazz:{new ():M;}) {
+	constructor(repoClazz:any,modelClazz:{new ():M;}) {
 		this.modelClazz = modelClazz
 		this.modelOpts = Reflect.getMetadata(TypeStoreModelKey,modelClazz.prototype)
-		this.repoOpts = Reflect.getMetadata(TypeStoreRepoKey,this.constructor)
+		this.repoOpts = Reflect.getMetadata(TypeStoreRepoKey,repoClazz)
 	}
 
 	protected makeFinder(finderKey:string) {

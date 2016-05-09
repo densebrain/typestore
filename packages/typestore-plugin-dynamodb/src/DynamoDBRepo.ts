@@ -39,7 +39,7 @@ export class DynamoDBRepo<M extends Types.IModel> extends Repo<M> {
 		private repoClazzName:string,
 		private repoClazz:any
 	) {
-		super(new repoClazz().modelClazz)
+		super(repoClazz,new repoClazz().modelClazz)
 		assert(repoClazz && repoClazz.prototype,'Repo class is required and must have a valid prototype')
 
 		this.manager = this.store.manager

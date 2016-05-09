@@ -1,3 +1,5 @@
+require('./etc/packages-path')
+
 const fs = require('fs')
 const path = require('path')
 const gulp = require('gulp')
@@ -9,7 +11,7 @@ const merge = require('merge2')
 const log = console
 const _ = require('lodash')
 const sourceMaps = require('gulp-sourcemaps')
-
+const runSequence = require('run-sequence')
 
 const SourceMapModes = {
 	SourceMap: 1,
@@ -29,6 +31,7 @@ const allWatchConfigs = []
  */
 const projectNames = [
 	'typestore',
+	'typestore-mocks',
 	'typestore-plugin-dynamodb',
 	'typestore-plugin-cloudsearch'
 ]
@@ -145,12 +148,15 @@ const projects = projectNames.map((projectName) => {
 function watch(done) {
 	log.info('TypeScript Compilation Watching Files...')
 
-	allWatchConfigs.forEach((config) => {
-		const watcher = gulp.watch(config.srcs, [config.task])
-		watcher.on('change', (event) => {
-			log.info("Project",config.name,"Files Changed: ", event.path)
+	runSequence(...compileTasks,() => {
+		allWatchConfigs.forEach((config) => {
+			const watcher = gulp.watch(config.srcs, [config.task])
+			watcher.on('change', (event) => {
+				log.info("Project",config.name,"Files Changed: ", event.path)
+			})
 		})
 	})
+
 
 }
 
@@ -162,5 +168,5 @@ function clean() {
 
 gulp.task('clean', [], clean)
 gulp.task('ts-compile-all', compileTasks, () => {})
-gulp.task('ts-compile-watch',compileTasks,watch)
+gulp.task('ts-compile-watch',[],watch)
 

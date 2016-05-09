@@ -5,7 +5,10 @@ import assert = require('assert')
 
 import * as Log from './log'
 import {TypeStoreModelKey,TypeStoreAttrKey} from './Constants'
-import {IModelOptions, IModelAttributeOptions, IStore, IManagerOptions, IModelMapper, IModel, IModelType} from './Types'
+import {
+	IModelOptions, IModelAttributeOptions, IStore, IManagerOptions, IModelMapper, IModel, IModelType,
+	ManagerOptions
+} from './Types'
 import {msg, Strings} from "./Messages"
 import {Repo} from "./Repo";
 import {ModelMapper} from "./ModelMapper";
@@ -65,7 +68,7 @@ export namespace Manager {
 	/**
 	 * Default options
 	 */
-	let options:IManagerOptions
+	let options:IManagerOptions = new ManagerOptions(null)
 
 	export function getOptions() {
 		return options
@@ -190,8 +193,6 @@ export namespace Manager {
 
 	}
 
-
-
 	/**
 	 * Register a model with the system
 	 *
@@ -228,8 +229,8 @@ export namespace Manager {
 	 * @param clazz
 	 * @returns {T}
 	 */
-	export function getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T {
-		return store.getRepo(clazz)
+	export function getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):Repo<M> {
+		return store.getRepo(clazz) as Repo<M>
 	}
 
 	export function getMapper<M extends IModel>(clazz:{new():M;}):IModelMapper<M> {

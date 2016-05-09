@@ -2,8 +2,8 @@
   "name": "typestore-plugin-dynamodb",
   "description": "DynamoDB TypesStore Plugin",
   "version": "1.0.0",
-  "main": "src/index.js",
-  "typings": "src/typings/index.d.ts",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "scripts": {
     "test": "gulp ts-compile && mocha dist/test/**/*.spec.js"
   },
@@ -29,14 +29,8 @@
   },
   "homepage": "https://github.com/densebrain/typestore#readme",
   "dependencies": {
-    "ansi-256-colors": "^1.1.0",
     "aws-sdk": "^2.3.7",
-    "bluebird": "^3.3.5",
     "lodash": "^4.11.1",
-    "reflect-metadata": "^0.1.3",
-    "aws-sdk-typescript": "densebrain/aws-sdk-typescript#v0.0.4",
-    "es6-shim": "^0.35.0",
-    "typestore": "1.0.0",
-    "source-map-support": "^0.4.0"
+    "aws-sdk-typescript": "densebrain/aws-sdk-typescript#v0.0.4"
   }
 }
