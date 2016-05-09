@@ -8,8 +8,12 @@
  */
 import Promise = require('./Promise')
 
-
+/**
+ * Export types as a a namespace and export all
+ * exports directly as well
+ */
 import * as Types from './Types'
+
 
 import * as Messages from './Messages'
 
@@ -17,6 +21,7 @@ import * as Messages from './Messages'
  * Export all the decorations, etc
  */
 import * as Decorations from './Decorations'
+
 
 /**
  * Export constants
@@ -45,7 +50,9 @@ export {Types, Promise, Decorations, Constants, Log, Errors,Messages}
 /**
  * Export the base Repo
  */
-export {Repo} from './Repo'
+export * from './Repo'
+export * from './Types'
+export * from './Decorations'
 
 
 

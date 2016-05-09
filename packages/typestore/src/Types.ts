@@ -55,13 +55,22 @@ export interface IKeyValue {
 
 }
 
-
+export interface IIndexerOptions {
+	indexer:IIndexer,
+	fields:string[]
+}
 export interface IRepoOptions {
-	indexers?:IIndexer[]
+	indexers?:IIndexerOptions[]
 }
 
 export interface IFinderOptions {
 	searchOptions?:ISearchOptions<any>
+}
+
+export enum IndexType {
+	Add,
+	Update,
+	Remove
 }
 
 /**
@@ -83,7 +92,7 @@ export interface IIndexer {
 	 * @param model
 	 * @param store
 	 */
-	index(modelType:IModelType,model:IModel,store:IStore):Promise<boolean>
+	index<M extends IModel>(type:IndexType,options:IIndexerOptions,modelType:IModelType,repo:Repo<M>,...models:IModel[]):Promise<boolean>
 }
 
 /**

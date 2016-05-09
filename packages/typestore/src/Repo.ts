@@ -1,8 +1,18 @@
 import Promise = require('./Promise')
 
-import {IModelKey, IModelOptions, IKeyValue, IModel, IFinderOptions, IStore} from "./Types";
+import {
+	IModelKey,
+	IModelOptions,
+	IKeyValue,
+	IModel,
+	IFinderOptions,
+	IStore,
+	IndexType,
+	IRepoOptions,
+	IIndexerOptions
+} from "./Types";
 import {NotImplemented} from "./Errors";
-import {TypeStoreModelKey, TypeStoreFinderKey} from "./Constants";
+import {TypeStoreModelKey, TypeStoreFinderKey, TypeStoreRepoKey} from "./Constants";
 import * as Log from './log'
 
 const log = Log.create(__filename)
@@ -11,11 +21,12 @@ export abstract class Repo<M extends IModel> {
 
 	protected modelClazz
 	protected modelOpts:IModelOptions
-
+	protected repoOpts:IRepoOptions
 	
 	constructor(modelClazz:{new ():M;}) {
 		this.modelClazz = modelClazz
 		this.modelOpts = Reflect.getMetadata(TypeStoreModelKey,modelClazz.prototype)
+		this.repoOpts = Reflect.getMetadata(TypeStoreRepoKey,this.constructor)
 	}
 
 	protected makeFinder(finderKey:string) {
@@ -57,11 +68,37 @@ export abstract class Repo<M extends IModel> {
 		})
 
 	}
-	
+
+	/**
+	 * Set a finder function on the repo
+	 * 
+	 * @param finderKey
+	 * @param finderFn
+	 */
 	protected setFinder(finderKey:string,finderFn:(...args) => any) {
 		this[finderKey] = finderFn
 	}
 
+	/**
+	 * Call out to the indexers
+	 *
+	 * @param type
+	 * @param models
+	 * @returns {Bluebird<boolean>}
+	 */
+	index(type:IndexType,...models:IModel[]):Promise<boolean> {
+		return Promise.map(this.repoOpts.indexers || [], (indexerConfig:IIndexerOptions) => {
+			return indexerConfig.indexer
+				.index(
+					type,
+					indexerConfig,
+					this.modelClazz,
+					this,
+					...models
+				)
+		}).return(true)
+	}
+	
 	/**
 	 * Not implemented
 	 *

@@ -1,1 +1,0 @@
-{"version":3,"sources":["src/DynamoDBConstants.js","src/DynamoDBConstants.ts"],"names":[],"mappings":"AAAA;;ACEa,QAAA,qBAAA,GAAwB,uBAAxB;AACA,QAAA,IAAA,GAAO,MAAP","file":"DynamoDBConstants.js","sourceRoot":"/Users/jglanz/Development/typestore-workspace/packages/typestore-store-dynamodb/src"}

@@ -2,8 +2,8 @@
   "name": "typestore-plugin-cloudsearch",
   "description": "CloudSearch TypesStore Plugin",
   "version": "1.0.0",
-  "main": "dist/index.js",
-  "typings": "dist/typings/index.d.ts",
+  "main": "src/index.js",
+  "typings": "src/typings/index.d.ts",
   "scripts": {
     "test": "gulp ts-compile && mocha dist/test/**/*.spec.js"
   },

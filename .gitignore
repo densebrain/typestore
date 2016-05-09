@@ -36,5 +36,6 @@ crashlytics-build.properties
 fabric.properties
 
 
-src/**/*.js
-src/**/*.map
+**/src/**/*.js
+**/src/**/*.map
+**/src/**/*.d.ts

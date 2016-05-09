@@ -29,7 +29,8 @@ const allWatchConfigs = []
  */
 const projectNames = [
 	'typestore',
-	'typestore-plugin-dynamodb'
+	'typestore-plugin-dynamodb',
+	'typestore-plugin-cloudsearch'
 ]
 
 
@@ -52,12 +53,14 @@ const projects = projectNames.map((projectName) => {
 	 */
 	log.info('Using src roots', project.srcs)
 	const distPath = path.resolve(project.base,'dist')
+	const srcPath = `${project.base}/src`
+	
 	const srcs = _.uniq([
 		`${process.cwd()}/typings/browser.d.ts`,
 		`${process.cwd()}/packages/typestore/typings/typestore.d.ts`,
 		`${project.base}/typings/browser.d.ts`,
 		`${project.base}/typings/${project.name}.d.ts`,
-		`${project.base}/src/**/*.ts`,
+		`${srcPath}/**/*.ts`,
 		`${project.base}/test/**/*.ts`
 	])
 
@@ -71,46 +74,49 @@ const projects = projectNames.map((projectName) => {
 	 *
 	 * @returns {*}
 	 */
-	function compile() {
+	function compile(release = false) {
+		const outPath = distPath //release ? distPath : srcPath
+		return () => {
+			const sourcemapOpts = {
+				sourceRoot: path.resolve(project.base, 'src'),
+				includeContent: false
+			}
 
-		const sourcemapOpts = {
-			sourceRoot: path.resolve(project.base, 'src'),
-			includeContent: false
+			const tsResult = gulp.src(srcs)
+				.pipe(sourceMaps.init())
+				.pipe(ts(tsProject))
+
+			log.info('Compilation Completed')
+
+			const sourceMapHandler = (sourceMapMode === SourceMapModes.SourceMap) ?
+				// External source maps
+				sourceMaps.write('.', sourcemapOpts) :
+				// Inline source maps
+				sourceMaps.write(sourcemapOpts)
+
+			return merge([
+				tsResult.dts
+					.pipe(gulp.dest(outPath)),
+				tsResult.js
+					//.pipe(babel(babelConfig))
+					.pipe(sourceMapHandler)
+					.pipe(gulp.dest(outPath))
+			]).on('end',() => {
+
+				// log.info("creating declaration")
+				// dts.bundle({
+				// 	name: projectName,
+				// 	main: `${distPath}/index.d.ts`,
+				// 	exclude: /^test\/$/
+				// })
+			})
 		}
-
-		const tsResult = gulp.src(srcs)
-			.pipe(sourceMaps.init())
-			.pipe(ts(tsProject))
-
-		log.info('Compilation Completed')
-
-		const sourceMapHandler = (sourceMapMode === SourceMapModes.SourceMap) ?
-			// External source maps
-			sourceMaps.write('.', sourcemapOpts) :
-			// Inline source maps
-			sourceMaps.write(sourcemapOpts)
-
-		return merge([
-			tsResult.dts
-				.pipe(gulp.dest(distPath)),
-			tsResult.js
-				//.pipe(babel(babelConfig))
-				.pipe(sourceMapHandler)
-				.pipe(gulp.dest(distPath))
-		]).on('end',() => {
-
-			// log.info("creating declaration")
-			// dts.bundle({
-			// 	name: projectName,
-			// 	main: `${distPath}/index.d.ts`,
-			// 	exclude: /^test\/$/
-			// })
-		})
+		
 	}
 
 
 
-	gulp.task(taskCompileName,[],compile)
+	gulp.task(taskCompileName,[],compile(false))
 	compileTasks.push(taskCompileName)
 	allWatchConfigs.push({
 		name: project.name,
@@ -155,6 +161,6 @@ function clean() {
 }
 
 gulp.task('clean', [], clean)
-gulp.task('ts-compile-all', ['clean'].concat(compileTasks), () => {})
+gulp.task('ts-compile-all', compileTasks, () => {})
 gulp.task('ts-compile-watch',compileTasks,watch)
 

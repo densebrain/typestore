@@ -1,2 +1,2 @@
 
-export * from './Test1'
+export * from './CloudSearchTestModel'
