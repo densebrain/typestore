@@ -1,6 +1,4 @@
-
-node_modules/
-
+# Jetbrains
 .idea/workspace.xml
 .idea/tasks.xml
 .idea/dictionaries
@@ -13,29 +11,23 @@ node_modules/
 .idea/sqlDataSources.xml
 .idea/dynamic.xml
 .idea/uiDesigner.xml
-
 .idea/gradle.xml
 .idea/libraries
-
+.idea_modules/
 .idea/mongoSettings.xml
-
-
 *.iws
-
-
 /out/
 
-
-.idea_modules/
-
+# JIRA - Not used but in my common
 atlassian-ide-plugin.xml
 
-com_crashlytics_export_strings.xml
-crashlytics.properties
-crashlytics-build.properties
-fabric.properties
+# Node
+node_modules/
 
-
+# Typestore Files
 **/src/**/*.js
 **/src/**/*.map
 **/src/**/*.d.ts
+
+# Any log file
+*.log

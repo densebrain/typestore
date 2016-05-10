@@ -27,8 +27,6 @@
   "bugs": {
     "url": "https://github.com/densebrain/typestore/issues"
   },
-  "homepage": "https://github.com/densebrain/typestore#readme",
-  "dependencies": {
-    "typestore": "1.0.0"
-  }
+  "homepage": "https://github.com/densebrain/typestore#readme"
+
 }
