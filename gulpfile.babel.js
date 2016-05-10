@@ -238,21 +238,24 @@ function clean() {
 }
 
 function releaseAll() {
-	basePackageJson.version = nextMinorVersion
-	fs.writeFileSync(`${process.cwd()}/package.json`,JSON.stringify(basePackageJson,null,4))
+	runSequence(projects.map((project) => project.tasks.release), () => {
+		basePackageJson.version = nextMinorVersion
+		fs.writeFileSync(`${process.cwd()}/package.json`,JSON.stringify(basePackageJson,null,4))
 
-	gulp.src('.')
-		.pipe(git.add())
-		.pipe(git.commit('[Release] Bumped version number'))
+		gulp.src('.')
+			.pipe(git.add())
+			.pipe(git.commit('[Release] Bumped version number'))
 
-	gulp.src(releaseFiles)
-		.pipe(ghRelease({
-			tag: `v${nextMinorVersion}`,
-			name: `TypeStore Release ${nextMinorVersion}`,
-			draft:false,
-			prerelease:false,
-			manifest:basePackageJson
-		}))
+		gulp.src(releaseFiles)
+			.pipe(ghRelease({
+				tag: `v${nextMinorVersion}`,
+				name: `TypeStore Release ${nextMinorVersion}`,
+				draft:false,
+				prerelease:false,
+				manifest:basePackageJson
+			}))
+	})
+
 }
 
 function publish(project) {
@@ -272,8 +275,10 @@ function publishAll() {
 }
 
 gulp.task('clean', [], clean)
-gulp.task('compile-all', compileTasks, () => {})
+gulp.task('compile-all', [], () => {
+	runSequence(compileTasks)
+})
 gulp.task('compile-watch',[],watch)
-gulp.task('release-all',projects.map((project) => project.tasks.release), releaseAll)
+gulp.task('release-all',[], releaseAll)
 gulp.task('publish-all',['release-all'],publishAll)
 gulp.task('test-all',[],makeMochaTask())
