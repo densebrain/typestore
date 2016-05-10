@@ -198,8 +198,12 @@ function makeMochaTask(tests = null) {
 			projects.forEach((project) => tests.push(...project.tests))
 		}
 
+		const reporter = (process.env.CIRCLE) ?
+			'mocha-junit-reporter' :
+			'spec'
+
 		return gulp.src(tests)
-			.pipe(mocha({reporter:'spec'}))
+			.pipe(mocha({reporter}))
 
 	}
 }
