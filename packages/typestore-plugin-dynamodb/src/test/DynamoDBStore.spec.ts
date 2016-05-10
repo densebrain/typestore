@@ -10,11 +10,15 @@ if (!process.env.DEBUG)
 
 import {IDynamoDBManagerOptions} from "../DynamoDBTypes"
 import {DynamoDBStore} from '../DynamoDBStore'
-import {DynamoDBLocalEndpoint} from '../DynamoDBConstants'
 
 
 const log = Log.create(__filename)
-log.info('Starting test suite')
+
+//Setup DynamoDBLocal
+const DynamoDBPort = 8787
+const DynamoDBLocal = require('dynamodb-local')
+const DynamoDBLocalEndpoint = `http://localhost:${DynamoDBPort}`
+
 
 let Fixtures = null
 let store:DynamoDBStore = null
@@ -60,6 +64,14 @@ function reset(syncStrategy:SyncStrategy,endpoint:string) {
  * Global test suite
  */
 describe('#store-dynamodb',() => {
+
+	before(() => {
+		DynamoDBLocal.launch(DynamoDBPort, null, ['-sharedDb'])
+	})
+
+	after(() => {
+		DynamoDBLocal.stop(DynamoDBPort)
+	})
 
 	beforeEach(() => {
 		return reset(Types.SyncStrategy.Overwrite,DynamoDBLocalEndpoint)

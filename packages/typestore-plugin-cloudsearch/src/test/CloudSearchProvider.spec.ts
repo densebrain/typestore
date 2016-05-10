@@ -22,7 +22,7 @@ let store:MockStore = new MockStore()
 /**
  * Global test suite
  */
-describe('#plugin-cloudsearch',() => {
+xdescribe('#plugin-cloudsearch',() => {
 	let t1 = null
 	let Fixtures = require('./fixtures/index')
 
