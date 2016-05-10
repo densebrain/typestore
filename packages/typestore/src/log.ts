@@ -1,6 +1,17 @@
 
 const chalk = require('chalk') as any
 
+/**
+ * Log level values
+ */
+export enum LogLevel {
+	TRACE,
+	DEBUG,
+	INFO,
+	WARN,
+	ERROR
+
+}
 
 /**
  * Enabled colored output
@@ -81,11 +92,28 @@ export interface ILoggerFactory {
 	create(name:string):ILogger
 }
 
+let logThreshold = LogLevel.DEBUG
+
+export function setLogThreshold(level:LogLevel) {
+	logThreshold = level
+}
 
 /**
  * Current logger output
  */
 let loggerOutput:ILogger = console
+
+function parseLogLevel(level:string) {
+	let logLevel:any = LogLevel.DEBUG
+	try {
+		logLevel = LogLevel[level.toUpperCase() as any]
+	} catch (err) {
+		console.warn(`Failed to parse log level ${level}`,err)
+		logLevel = LogLevel.DEBUG
+	}
+
+	return logLevel
+}
 
 /**
  * Generic log action
@@ -95,6 +123,9 @@ let loggerOutput:ILogger = console
  * @param args
  */
 function log(name,level, ...args) {
+	if (parseLogLevel(level) < logThreshold)
+		return
+
 	const logOut = loggerOutput as any
 	const logFns = [logOut[level],logOut.log,logOut]
 	let logFn = null
@@ -112,15 +143,6 @@ function log(name,level, ...args) {
 				`[${name}] [${level.toUpperCase()}]`
 
 
-	if (colorEnabled) {
-		//msg = styles[level].labelStyle(msg)
-		// const styledArgs = []
-		// args.forEach((arg) => {
-		// 	styledArgs.push((typeof arg === 'string') ? styles.standard.textStyle(arg) : arg)
-		// })
-		//
-		// args = styledArgs
-	}
 	logFn(msg,...args)
 }
 

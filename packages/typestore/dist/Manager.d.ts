@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import './Globals';
 import Promise = require('./Promise');
-import { IStore, IManagerOptions, IModelMapper, IModel, IModelType } from './Types';
+import { IStore, IManagerOptions, IModelMapper, IModel, IModelType, IManager } from './Types';
 import { Repo } from "./Repo";
 export declare namespace Manager {
     /**
@@ -26,19 +26,19 @@ export declare namespace Manager {
     /**
      * Set the manager options
      */
-    function init(newOptions: IManagerOptions): Promise<boolean>;
+    function init(newOptions: IManagerOptions): Promise<IManager>;
     /**
      * Start the manager and embedded store from options
      *
      * @returns {Bluebird<boolean>}
      */
-    function start(...models: any[]): Promise<boolean>;
+    function start(...models: any[]): Promise<IManager>;
     /**
      * Reset the manager status
      *
      * @returns {Manager.reset}
      */
-    function reset(): Promise<boolean>;
+    function reset(): Promise<IManager>;
     /**
      * Register a model with the system
      *

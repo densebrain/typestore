@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "scripts": {
     "prepublish": "etc/scripts/prepublish.sh",
-    "test": "gulp ts-compile && mocha dist/test/**/*.spec.js"
+    "test": "gulp test-all"
   },
   "repository": {
     "type": "git",
@@ -39,6 +39,7 @@
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
     "gulp-debug": "^2.1.2",
+    "gulp-mocha": "^2.2.0",
     "gulp-relative-sourcemaps-source": "^0.1.2",
     "gulp-sourcemaps": "^2.0.0-alpha",
     "gulp-typescript": "^2.13.0",
@@ -46,9 +47,10 @@
     "lodash": "^4.11.2",
     "merge2": "^1.0.2",
     "mocha": "^2.4.5",
+    "mocha-multi": "^0.9.0",
     "node-uuid": "^1.4.7",
     "run-sequence": "^1.1.5",
     "sinon": "^1.17.4",
-    "typescript": "^1.9.0-dev.20160509"
+    "typescript": "^1.9.0-dev.20160510"
   }
 }

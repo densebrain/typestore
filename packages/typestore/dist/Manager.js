@@ -86,7 +86,7 @@ var Manager;
         assert(Manager.store, Messages_1.msg(Messages_1.Strings.ManagerTypeStoreRequired));
         // Manager is ready, now initialize the store
         log.debug(Messages_1.msg(Messages_1.Strings.ManagerInitComplete));
-        return Manager.store.init(this, options).return(true);
+        return Manager.store.init(this, options).return(this);
     }
     Manager.init = init;
     /**
@@ -102,10 +102,10 @@ var Manager;
         checkStarted(true);
         models.forEach(registerModel);
         return startPromise = Manager.store.start()
+            .return(this)
             .catch(function (err) {
             log.error(Messages_1.msg(Messages_1.Strings.ManagerFailedToStart), err);
             startPromise = null;
-            return false;
         });
     }
     Manager.start = start;
@@ -144,10 +144,10 @@ var Manager;
     function reset() {
         if (startPromise)
             startPromise.cancel();
-        return Promise.resolve((Manager.store) ? Manager.store.stop() : true).then(function () {
-            log.info("Store successfully stopped");
-            return true;
-        }).finally(function () {
+        return Promise
+            .resolve((Manager.store) ? Manager.store.stop() : true)
+            .return(this)
+            .finally(function () {
             Manager.store = startPromise = null;
             if (options)
                 options.store = null;

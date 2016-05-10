@@ -1,12 +1,18 @@
 require('source-map-support').install()
-
 import 'expectations'
 import 'reflect-metadata'
+import {Types,Promise,Manager,Constants,Log} from 'typestore'
+
+if (!process.env.DEBUG)
+	Log.setLogThreshold(Log.LogLevel.WARN)
+
+
+
 
 import * as uuid from 'node-uuid'
 
-import {Types,Promise,Manager,Constants,Log} from 'typestore'
-import {IDynamoDBManagerOptions} from "../DynamoDBTypes";
+
+import {IDynamoDBManagerOptions} from "../DynamoDBTypes"
 import {DynamoDBStore} from '../DynamoDBStore'
 import {DynamoDBLocalEndpoint} from '../DynamoDBConstants'
 const {TypeStoreModelKey,TypeStoreAttrKey} = Constants

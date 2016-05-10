@@ -7,7 +7,7 @@ import * as Log from './log'
 import {TypeStoreModelKey,TypeStoreAttrKey} from './Constants'
 import {
 	IModelOptions, IModelAttributeOptions, IStore, IManagerOptions, IModelMapper, IModel, IModelType,
-	ManagerOptions
+	ManagerOptions, IManager
 } from './Types'
 import {msg, Strings} from "./Messages"
 import {Repo} from "./Repo";
@@ -104,7 +104,7 @@ export namespace Manager {
 	/**
 	 * Set the manager options
 	 */
-	export function init(newOptions:IManagerOptions):Promise<boolean> {
+	export function init(newOptions:IManagerOptions):Promise<IManager> {
 		checkStarted(true)
 		checkInitialized(true)
 		initialized = true
@@ -121,7 +121,7 @@ export namespace Manager {
 
 		// Manager is ready, now initialize the store
 		log.debug(msg(Strings.ManagerInitComplete))
-		return store.init(this,options).return(true)
+		return store.init(this,options).return(this) as Promise<IManager>
 	}
 
 
@@ -130,18 +130,16 @@ export namespace Manager {
 	 *
 	 * @returns {Bluebird<boolean>}
 	 */
-	export function start(...models):Promise<boolean> {
+	export function start(...models):Promise<IManager> {
 		checkStarted(true)
 		models.forEach(registerModel)
 
 		return startPromise = store.start()
+			.return(this)
 			.catch((err) => {
 				log.error(msg(Strings.ManagerFailedToStart),err)
 				startPromise = null
-				return false
 			})
-
-
 	}
 
 	/**
@@ -178,18 +176,18 @@ export namespace Manager {
 	 *
 	 * @returns {Manager.reset}
 	 */
-	export function reset():Promise<boolean> {
+	export function reset():Promise<IManager> {
 		if (startPromise)
 			(startPromise as any).cancel()
 
-		return Promise.resolve((store) ? store.stop() : true).then(() =>{
-			log.info(`Store successfully stopped`)
-			return true
-		}).finally(() => {
-			store = startPromise = null
-			if (options) options.store = null
-			initialized = false
-		})
+		return Promise
+			.resolve((store) ? store.stop() : true)
+			.return(this)
+			.finally(() => {
+				store = startPromise = null
+				if (options) options.store = null
+				initialized = false
+			}) as Promise<IManager>
 
 	}
 

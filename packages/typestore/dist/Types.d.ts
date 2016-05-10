@@ -183,9 +183,9 @@ export interface IManager {
     getModels(): IModelType[];
     getModel(clazz: any): IModelType;
     getModelByName(name: string): any;
-    start(...models: any[]): Promise<boolean>;
-    init(opts: IManagerOptions): Promise<boolean>;
-    reset(): Promise<void>;
+    start(...models: any[]): Promise<IManager>;
+    init(opts: IManagerOptions): Promise<IManager>;
+    reset(): Promise<IManager>;
     getRepo<T extends Repo<M>, M extends IModel>(clazz: {
         new (): T;
     }): Repo<M>;

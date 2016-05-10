@@ -1,15 +1,19 @@
 require('source-map-support').install()
+import * as Log from '../log'
 
-import Promise = require('../Promise')
+if (!process.env.DEBUG) 
+	Log.setLogThreshold(Log.LogLevel.WARN)
 
 import 'expectations'
 import 'reflect-metadata'
+
+import Promise = require('../Promise')
 
 import {SyncStrategy, IManagerOptions,ManagerOptions} from "../Types";
 import {NullStore} from "./fixtures/NullStore";
 import {Manager} from '../Manager'
 import {TypeStoreModelKey,TypeStoreAttrKey} from '../Constants'
-import * as Log from '../log'
+
 
 const log = Log.create(__filename)
 
@@ -20,10 +24,9 @@ let store = null
 
 
 /**
- * Reset Dynotype and start all over
+ * Reset TypeStore and start all over
  *
  * @param syncStrategy
- * @param endpoint
  * @returns {Bluebird<U>}
  */
 function reset(syncStrategy:SyncStrategy) {
