@@ -247,7 +247,6 @@ function releaseAll() {
 
 	gulp.src(releaseFiles)
 		.pipe(ghRelease({
-			token: process.env.GITTOKEN,
 			tag: `v${nextMinorVersion}`,
 			name: `TypeStore Release ${nextMinorVersion}`,
 			draft:false,
