@@ -268,7 +268,7 @@ function publish(project) {
 	const releaseUrl = `${baseUrl}/v${nextMinorVersion}/${project.name}-${nextMinorVersion}.tar.gz`
 
 	log.info(`Publishing ${project.name}@ ${nextMinorVersion} from ${releaseUrl}`)
-	if (exec(`npm publish --tag v${nextMinorVersion} ${releaseUrl}`).code !== 0) {
+	if (exec(`npm publish ${releaseUrl}`).code !== 0) {
 		throw new Error(`Failed to publish ${project.name}`)
 	}
 }
