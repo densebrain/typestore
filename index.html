@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Typestore : DynamoDB TypeScript Mapper &amp; Manager">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Typestore</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/densebrain/typestore">View on GitHub</a>
+
+          <h1 id="project_title">Typestore</h1>
+          <h2 id="project_tagline">DynamoDB TypeScript Mapper &amp; Manager</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/densebrain/typestore/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/densebrain/typestore/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h2>
+<a id="typestore" class="anchor" href="#typestore" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>TypeStore</h2>
+
+<p><em>Statically typed model persistence for TypeScript, totally pluggable</em></p>
+
+<p><a href="https://circleci.com/gh/densebrain/typestore/tree/master"><img src="https://circleci.com/gh/densebrain/typestore/tree/master.svg?style=shield" alt="Circle CI"></a></p>
+
+<p><em>TypeStore</em> by itself won't get you very far, you'll
+need a store to persist your data too.  Implementing a store is
+really simple in-case you don't one of the out of the box
+stores that already exist.</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+
+<h4>
+<a id="install-core" class="anchor" href="#install-core" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install (Core)</h4>
+
+<p><em>note: reflect-meta-data package is required</em></p>
+
+<div class="highlight highlight-source-shell"><pre>npm i --save typestore</pre></div>
+
+<h4>
+<a id="install-plugin-storage---dynamodb" class="anchor" href="#install-plugin-storage---dynamodb" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install Plugin (Storage - DynamoDB)</h4>
+
+<p>for the sake of this example lets use AWS DynamoDB</p>
+
+<div class="highlight highlight-source-shell"><pre>npm i --save typestore-plugin-dynamodb</pre></div>
+
+<h4>
+<a id="another-plugin-indexing---cloudsearch" class="anchor" href="#another-plugin-indexing---cloudsearch" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Another Plugin (Indexing - CloudSearch)</h4>
+
+<p>As an example of how far you can take this - let's drop
+in cloudsearch.</p>
+
+<div class="highlight highlight-source-shell"><pre>npm i --save typestore-plugin-cloudsearch</pre></div>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>This is going to be short for now</p>
+
+<h4>
+<a id="setup-a-model--repo" class="anchor" href="#setup-a-model--repo" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Setup a Model + Repo</h4>
+
+<p><strong>Model+Repo.ts</strong></p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">import</span> <span class="pl-s"><span class="pl-pds">'</span>reflect-metadata<span class="pl-pds">'</span></span>
+<span class="pl-k">import</span> {
+    <span class="pl-smi">Promise</span>,
+    <span class="pl-smi">Log</span>,
+    <span class="pl-smi">Repo</span>,
+    <span class="pl-smi">Decorations</span>,
+    <span class="pl-smi">Types</span>,
+    <span class="pl-smi">ModelDescriptor</span>,
+    <span class="pl-smi">AttributeDescriptor</span>,
+    <span class="pl-smi">RepoDescriptor</span>,
+    <span class="pl-smi">FinderDescriptor</span>
+} <span class="pl-k">from</span> <span class="pl-s"><span class="pl-pds">'</span>typestore<span class="pl-pds">'</span></span>
+
+<span class="pl-c">// You can extend DefaultModel, but that's up to you -</span>
+<span class="pl-c">// as long as you adhere to the IModel interface the system wont care</span>
+@<span class="pl-en">ModelDescriptor</span>({tableName<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>testTable1<span class="pl-pds">'</span></span>})
+<span class="pl-k">class</span> <span class="pl-en">MyModel</span> <span class="pl-k">extends</span> <span class="pl-e">DefaultModel</span> {
+
+    <span class="pl-en">constructor</span>() {
+        <span class="pl-v">super</span>()
+    }
+
+    @<span class="pl-en">AttributeDescriptor</span>({name<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>id<span class="pl-pds">'</span></span>,hashKey<span class="pl-k">:</span><span class="pl-c1">true</span>})
+    id<span class="pl-k">:</span>string
+
+    @<span class="pl-en">AttributeDescriptor</span>({name<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>createdAt<span class="pl-pds">'</span></span>,rangeKey<span class="pl-k">:</span><span class="pl-c1">true</span>})
+    createdAt<span class="pl-k">:</span>number
+
+
+    @<span class="pl-en">AttributeDescriptor</span>({
+        name<span class="pl-k">:</span><span class="pl-s"><span class="pl-pds">'</span>randomText<span class="pl-pds">'</span></span>,
+        index<span class="pl-k">:</span>{
+            name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>RandomTextIndex<span class="pl-pds">'</span></span>
+        }
+    })
+    randomText<span class="pl-k">:</span>string
+}
+
+@<span class="pl-en">RepoDescriptor</span>()
+<span class="pl-k">export</span> <span class="pl-k">class</span> <span class="pl-en">MyRepo</span> <span class="pl-k">extends</span> <span class="pl-e">Repo</span><span class="pl-k">&lt;</span>MyModel<span class="pl-k">&gt;</span> {
+
+    <span class="pl-en">constructor</span>() {
+        <span class="pl-v">super</span>(MyModelRepo,MyModel)
+    }
+
+    @<span class="pl-en">DynamoDBFinderDescriptor</span>({
+        queryExpression<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">"</span>randomText = :randomText<span class="pl-pds">"</span></span>,
+        index<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>RandomTextIndex<span class="pl-pds">'</span></span>,
+        <span class="pl-c">// values could be ['randomText'] with the same effect</span>
+        <span class="pl-en">values</span><span class="pl-k">:</span> <span class="pl-k">function</span>(<span class="pl-k">...</span><span class="pl-v">args</span>) {
+            <span class="pl-k">return</span> {
+                <span class="pl-s"><span class="pl-pds">'</span>:randomText<span class="pl-pds">'</span></span><span class="pl-k">:</span> args[<span class="pl-c1">0</span>]
+            }
+        }
+    })
+    @<span class="pl-en">FinderDescriptor</span>()
+    <span class="pl-en">findByRandomText</span>(text<span class="pl-k">:</span>string)<span class="pl-k">:</span>Promise<span class="pl-k">&lt;</span>MyModel[]<span class="pl-k">&gt;</span> {
+        <span class="pl-c">// Finders can be totally empty</span>
+        <span class="pl-c">// The Repo will replace the method</span>
+        <span class="pl-c">// If TSC emitted abstracted classes</span>
+        <span class="pl-c">// or interfaces then no body would be</span>
+        <span class="pl-c">// needed at all</span>
+        <span class="pl-k">return</span> <span class="pl-c1">null</span>
+    }
+}
+</pre></div>
+
+<h4>
+<a id="initialize-and-use-it" class="anchor" href="#initialize-and-use-it" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Initialize and use it</h4>
+
+<div class="highlight highlight-source-js"><pre>
+<span class="pl-k">import</span> {<span class="pl-smi">Manager</span>} <span class="pl-k">from</span> <span class="pl-s"><span class="pl-pds">'</span>typestore<span class="pl-pds">'</span></span>
+<span class="pl-k">import</span> {<span class="pl-smi">DynamoDBStore</span>} <span class="pl-k">from</span> <span class="pl-s"><span class="pl-pds">'</span>typestore-plugin-dynamodb<span class="pl-pds">'</span></span>
+<span class="pl-k">import</span> {<span class="pl-smi">MyModel</span>,<span class="pl-smi">MyRepo</span>} <span class="pl-k">from</span> <span class="pl-s"><span class="pl-pds">'</span>./Model+Repo<span class="pl-pds">'</span></span>
+
+<span class="pl-k">const</span> <span class="pl-c1">store</span> <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">DynamoDBStore</span>()
+
+<span class="pl-c">// Used for DynamoDB Local - Obviously not needed for the real thing</span>
+<span class="pl-k">const</span> <span class="pl-c1">DynamoDBLocalEndpoint</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>http://localhost:8000<span class="pl-pds">'</span></span>
+
+<span class="pl-k">const</span> opts<span class="pl-k">:</span><span class="pl-c1">IDynamoDBManagerOptions</span> <span class="pl-k">=</span> {
+
+    <span class="pl-c">//Dynamo store specific options</span>
+    dynamoEndpoint<span class="pl-k">:</span> DynamoDBLocalEndpoint,
+
+    <span class="pl-c">// Add a prefix to my tables</span>
+    prefix<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">`</span>dev_<span class="pl-pds">`</span></span>,
+
+    <span class="pl-c">// Automatically create tables/models if</span>
+    <span class="pl-c">// they dont exist</span>
+    syncStrategy<span class="pl-k">:</span> <span class="pl-smi">SyncStrategy</span>.<span class="pl-smi">Update</span>,
+
+    <span class="pl-c">// The actual store</span>
+    store
+}
+
+<span class="pl-smi">Manager</span>.<span class="pl-en">init</span>(opts)
+    .<span class="pl-en">then</span>(() <span class="pl-k">=&gt;</span> {
+        <span class="pl-c">// Pass your models in as REST args</span>
+        <span class="pl-smi">Manager</span>.<span class="pl-c1">start</span>(MyModel)
+    })
+
+<span class="pl-c">// All of the Promise infrastructure used is</span>
+<span class="pl-c">// bluebird - SO - if you want to get jiggy with it</span>
+<span class="pl-c">// you could do something like this</span>
+
+<span class="pl-smi">Manager</span>.<span class="pl-en">init</span>(opts).<span class="pl-c1">call</span>(<span class="pl-s"><span class="pl-pds">'</span>start<span class="pl-pds">'</span></span>,MyModel)
+
+
+<span class="pl-c">// Its all ready to go</span>
+<span class="pl-k">const</span> <span class="pl-c1">model</span> <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">MyModel</span>()
+<span class="pl-smi">model</span>.<span class="pl-c1">id</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>123124<span class="pl-pds">'</span></span>
+<span class="pl-smi">model</span>.<span class="pl-smi">createdAt</span> <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Date</span>().<span class="pl-c1">getTime</span>()
+<span class="pl-smi">model</span>.<span class="pl-smi">randomText</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>asdfasdfadsf<span class="pl-pds">'</span></span>
+
+<span class="pl-k">const</span> <span class="pl-c1">repo</span> <span class="pl-k">=</span> <span class="pl-smi">Manager</span>.<span class="pl-en">getRepo</span>(MyRepo)
+
+<span class="pl-c">// Save the model - create/update are synonymous in</span>
+<span class="pl-c">// TypeStore - so only save matters</span>
+<span class="pl-smi">repo</span>.<span class="pl-en">save</span>(model)
+    .<span class="pl-en">then</span>(() <span class="pl-k">=&gt;</span>  <span class="pl-smi">repo</span>.<span class="pl-en">get</span>(<span class="pl-smi">repo</span>.<span class="pl-en">key</span>(<span class="pl-smi">model</span>.<span class="pl-c1">id</span>)))
+    .<span class="pl-en">then</span>((<span class="pl-smi">sameModel</span>) <span class="pl-k">=&gt;</span> {
+        <span class="pl-k">if</span> (<span class="pl-smi">sameModel</span>.<span class="pl-c1">id</span> <span class="pl-k">!==</span> <span class="pl-smi">model</span>.<span class="pl-c1">id</span>)
+            <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-en">Error</span>(<span class="pl-s"><span class="pl-pds">'</span>You did something WRONG - naughty!<span class="pl-pds">'</span></span>)
+
+        <span class="pl-k">return</span> <span class="pl-smi">repo</span>.<span class="pl-en">findByRandomTest</span>(<span class="pl-smi">model</span>.<span class="pl-smi">randomText</span>)
+    })
+    .<span class="pl-en">then</span>((<span class="pl-smi">finderModels</span>) <span class="pl-k">=&gt;</span> {
+        <span class="pl-k">if</span> (<span class="pl-smi">finderModels</span>.<span class="pl-c1">length</span> <span class="pl-k">!==</span> <span class="pl-c1">1</span> <span class="pl-k">||</span> finderModels[<span class="pl-c1">0</span>].<span class="pl-c1">id</span> <span class="pl-k">!==</span> <span class="pl-smi">model</span>.<span class="pl-c1">id</span>)
+            <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-en">Error</span>(<span class="pl-s"><span class="pl-pds">'</span>You did something WRONG - naughty!<span class="pl-pds">'</span></span>)
+
+        <span class="pl-k">return</span> <span class="pl-smi">repo</span>.<span class="pl-en">remove</span>(<span class="pl-smi">repo</span>.<span class="pl-en">key</span>(<span class="pl-smi">model</span>.<span class="pl-c1">id</span>))
+    })
+    .<span class="pl-en">then</span>(() <span class="pl-k">=&gt;</span> <span class="pl-smi">repo</span>.<span class="pl-en">findByRandomTest</span>(<span class="pl-smi">model</span>.<span class="pl-smi">randomText</span>))
+    .<span class="pl-en">then</span>((<span class="pl-smi">finderModels</span>) <span class="pl-k">=&gt;</span> {
+        <span class="pl-k">if</span> (<span class="pl-smi">finderModels</span>.<span class="pl-c1">length</span> <span class="pl-k">!==</span> <span class="pl-c1">0</span>)
+            <span class="pl-k">throw</span> <span class="pl-k">new</span> <span class="pl-en">Error</span>(<span class="pl-s"><span class="pl-pds">'</span>You did something WRONG - naughty!<span class="pl-pds">'</span></span>)
+    })</pre></div>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Typestore maintained by <a href="https://github.com/densebrain">densebrain</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
