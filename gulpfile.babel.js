@@ -110,6 +110,13 @@ const projects = projectNames.map((projectName) => {
 			devDependencies: _.assign({},devDeps,basePackageJson.devDependencies)
 		})
 
+		if (projectName !== 'typestore') {
+			packageJson.dependencies.typestore = nextMinorVersion
+			if (projectName !== 'typestore-mocks') {
+				packageJson.dependencies['typestore-mocks'] = nextMinorVersion
+			}
+		}
+
 		log.info(`Writing package.json to ${targetPackageJsonFile}`)
 		fs.writeFileSync(targetPackageJsonFile,JSON.stringify(packageJson,null,4))
 
