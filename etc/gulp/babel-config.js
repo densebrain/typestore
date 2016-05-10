@@ -1,10 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const _ = require('lodash')
-
-function readJSONFileSync(filename) {
-	return JSON.parse(fs.readFileSync(filename,'utf-8'))
-}
+const {readJSONFileSync} = require('./helpers')
 
 const babelDefaultConfig = readJSONFileSync(path.resolve(__dirname,'./.babelrc'))
 

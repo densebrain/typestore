@@ -2,6 +2,7 @@
   "name": "typestore-mocks",
   "description": "TypesStore Mocks for Testing Purposes",
   "version": "1.0.0",
+  "author": "Jonathan Glanz",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "scripts": {
@@ -11,6 +12,11 @@
     "type": "git",
     "url": "git+https://github.com/densebrain/typestore.git"
   },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/densebrain/typestore/issues"
+  },
+  "homepage": "https://github.com/densebrain/typestore#readme",
   "keywords": [
     "dynamo",
     "dynamodb",
@@ -21,12 +27,6 @@
     "ts",
     "mapper",
     "db"
-  ],
-  "author": "Jonathan Glanz",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/densebrain/typestore/issues"
-  },
-  "homepage": "https://github.com/densebrain/typestore#readme"
+  ]
 
 }

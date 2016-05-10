@@ -1,5 +1,8 @@
+require('shelljs/global')
 require('./etc/packages-path')
 
+const {readJSONFileSync} = require('./etc/gulp/helpers')
+const semver = require('semver')
 const fs = require('fs')
 const path = require('path')
 const gulp = require('gulp')
@@ -14,6 +17,9 @@ const _ = require('lodash')
 const sourceMaps = require('gulp-sourcemaps')
 const runSequence = require('run-sequence')
 
+const git = require('gulp-git')
+const ghRelease = require('gulp-github-release')
+
 const SourceMapModes = {
 	SourceMap: 1,
 	InlineSourceMap: 2
@@ -23,6 +29,13 @@ const SourceMapModes = {
 const sourceMapMode = SourceMapModes.SourceMap
 const compileTasks = []
 const allWatchConfigs = []
+
+// Config for release and versioning
+const basePackageJson = readJSONFileSync('./package.json')
+const nextMinorVersion = semver.inc(basePackageJson.version,'patch')
+let updateBasePackageVersion = false
+const releaseFiles = []
+const releaseDir = `${process.cwd()}/target/releases`
 
 
 /**
@@ -37,10 +50,6 @@ const projectNames = [
 	'typestore-plugin-cloudsearch'
 ]
 
-
-
-
-
 // Now map and configure all the projects/plugins
 const projects = projectNames.map((projectName) => {
 	const project = {
@@ -48,7 +57,8 @@ const projects = projectNames.map((projectName) => {
 		base: path.resolve(__dirname,'packages',projectName),
 		tasks: {
 			compile: `compile-${projectName}`,
-			test: `test-${projectName}`
+			test: `test-${projectName}`,
+			release: `release-${projectName}`,
 		}
 	}
 
@@ -57,7 +67,7 @@ const projects = projectNames.map((projectName) => {
 	 */
 	const distPath = path.resolve(project.base,'dist')
 	const srcPath = `${project.base}/src`
-	
+	const targetDir = `${process.cwd()}/target/${projectName}`
 	const srcs = project.srcs = _.uniq([
 		`${process.cwd()}/typings/browser.d.ts`,
 		`${process.cwd()}/packages/typestore/typings/typestore.d.ts`,
@@ -76,60 +86,90 @@ const projects = projectNames.map((projectName) => {
 
 	const tsProject = ts.createProject(path.resolve(__dirname,'tsconfig.json'))
 
-	const outPath = distPath //release ? distPath : srcPath
 
+	function release() {
+		const releaseFile = `${releaseDir}/${projectName}-${nextMinorVersion}.tar.gz`
+		releaseFiles.push(releaseFile)
+
+		log.info(`Packaging ${projectName}`)
+		rm('-Rf',targetDir)
+		mkdir('-p',targetDir)
+		mkdir('-p',releaseDir)
+		cp('-Rf',`${project.base}/*`,targetDir)
+		rm('-Rf',`${targetDir}/node_modules`)
+
+		const targetPackageJsonFile = `${targetDir}/package.json`
+		const packageJson = readJSONFileSync(targetPackageJsonFile)
+		const deps = packageJson.dependencies || {}
+		const devDeps = packageJson.devDependencies || {}
+
+		Object.assign(packageJson,{
+			name: projectName,
+			version: nextMinorVersion,
+			dependencies: _.assign({},deps,basePackageJson.dependencies),
+			devDependencies: _.assign({},devDeps,basePackageJson.devDependencies)
+		})
+
+		log.info(`Writing package.json to ${targetPackageJsonFile}`)
+		fs.writeFileSync(targetPackageJsonFile,JSON.stringify(packageJson,null,4))
+
+		log.info(`Compressing to ${releaseFile}`)
+		if (exec(`cd ${targetDir} && tar -cvzf ${releaseFile} .`).code !== 0) {
+			throw new Error('Failed to compress archive')
+		}
+
+		log.info(`${projectName} is ready for release - publish-all will actually publish to npm`)
+	}
+	
+	
 	/**
 	 * Compile compile
 	 * - the actual compilation
 	 *
 	 * @returns {*}
 	 */
-	function compile(release = false) {
+	function compile() {
 
-		return () => {
-			const sourcemapOpts = {
-				sourceRoot: path.resolve(project.base, 'src'),
-				includeContent: false
-			}
 
-			const tsResult = gulp.src(srcs)
-				.pipe(sourceMaps.init())
-				.pipe(ts(tsProject))
-
-			log.info('Compilation Completed')
-
-			const sourceMapHandler = (sourceMapMode === SourceMapModes.SourceMap) ?
-				// External source maps
-				sourceMaps.write('.', sourcemapOpts) :
-				// Inline source maps
-				sourceMaps.write(sourcemapOpts)
-
-			return merge([
-				tsResult.dts
-					.pipe(gulp.dest(outPath)),
-				tsResult.js
-					.pipe(sourceMapHandler)
-					.pipe(gulp.dest(outPath))
-			]).on('end',() => {
-				// Was used for external ambient types
-				// log.info("creating declaration")
-				// dts.bundle({
-				// 	name: projectName,
-				// 	main: `${distPath}/index.d.ts`,
-				// 	exclude: /^test\/$/
-				// })
-			})
+		const sourcemapOpts = {
+			sourceRoot: path.resolve(project.base, 'src'),
+			includeContent: false
 		}
+
+		const tsResult = gulp.src(srcs)
+			.pipe(sourceMaps.init())
+			.pipe(ts(tsProject))
+
+		log.info('Compilation Completed')
+
+		const sourceMapHandler = (sourceMapMode === SourceMapModes.SourceMap) ?
+			// External source maps
+			sourceMaps.write('.', sourcemapOpts) :
+			// Inline source maps
+			sourceMaps.write(sourcemapOpts)
+
+		return merge([
+			tsResult.dts
+				.pipe(gulp.dest(distPath)),
+			tsResult.js
+				.pipe(sourceMapHandler)
+				.pipe(gulp.dest(distPath))
+		]).on('end',() => {
+			// Was used for external ambient types
+			// log.info("creating declaration")
+			// dts.bundle({
+			// 	name: projectName,
+			// 	main: `${distPath}/index.d.ts`,
+			// 	exclude: /^test\/$/
+			// })
+		})
 		
 	}
 
 
-
-
-
-
-	gulp.task(taskCompileName,[],compile(false))
+	gulp.task(taskCompileName,[],compile)
 	gulp.task(taskTestName,[taskCompileName],makeMochaTask(tests))
+	gulp.task(project.tasks.release,[taskCompileName],release)
 
 	compileTasks.push(taskCompileName)
 	allWatchConfigs.push({
@@ -190,7 +230,38 @@ function clean() {
 	return del(['packages/*/dist/**/*.*'])
 }
 
+function releaseAll() {
+	basePackageJson.version = nextMinorVersion
+	fs.writeFileSync(`${process.cwd()}/package.json`,JSON.stringify(basePackageJson,null,4))
+
+	gulp.src('.')
+		.pipe(git.add())
+		.pipe(git.commit('[Release] Bumped version number'))
+
+	gulp.src(releaseFiles)
+		.pipe(ghRelease({
+			token: process.env.GITTOKEN,
+			tag: `v${nextMinorVersion}`,
+			name: `TypeStore Release ${nextMinorVersion}`,
+			draft:false,
+			prerelease:false,
+			manifest:basePackageJson
+		}))
+}
+
+// function publish(project) {
+// 	if (exec(``))
+// }
+
+function publishAll() {
+	// Marker
+
+	//projects.forEach(publish)
+}
+
 gulp.task('clean', [], clean)
 gulp.task('compile-all', compileTasks, () => {})
 gulp.task('compile-watch',[],watch)
+gulp.task('release-all',projects.map((project) => project.tasks.release), releaseAll)
+gulp.task('publish-all',['release-all'],publishAll)
 gulp.task('test-all',[],makeMochaTask())
