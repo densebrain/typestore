@@ -81,7 +81,7 @@ var CloudSearchTest1Repo = (function (_super) {
         }), 
         __metadata('design:type', Function), 
         __metadata('design:paramtypes', [String]), 
-        __metadata('design:returntype', typestore_1.Promise)
+        __metadata('design:returntype', (typeof (_a = typeof typestore_1.Promise !== 'undefined' && typestore_1.Promise) === 'function' && _a) || Object)
     ], CloudSearchTest1Repo.prototype, "findByText", null);
     CloudSearchTest1Repo = __decorate([
         typestore_1.Decorations.RepoDescriptor({
@@ -93,6 +93,7 @@ var CloudSearchTest1Repo = (function (_super) {
         __metadata('design:paramtypes', [])
     ], CloudSearchTest1Repo);
     return CloudSearchTest1Repo;
+    var _a;
 }(typestore_1.Repo));
 exports.CloudSearchTest1Repo = CloudSearchTest1Repo;
 

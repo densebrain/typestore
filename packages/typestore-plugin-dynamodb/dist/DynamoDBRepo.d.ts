@@ -11,7 +11,7 @@ export declare class DynamoDBRepo<M extends Types.IModel> extends Repo<M> {
     constructor(store: DynamoDBStore, repoClazzName: string, repoClazz: any);
     tableName: string;
     private makeParams(params?);
-    protected makeFinder(finderKey: string): void;
+    protected makeFinder(finderKey: string): any;
     key(...args: any[]): DynamoDBKeyValue;
     get(key: DynamoDBKeyValue): Promise<M>;
     save(o: M): Promise<M>;

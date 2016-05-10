@@ -255,14 +255,20 @@ function releaseAll() {
 		}))
 }
 
-// function publish(project) {
-// 	if (exec(``))
-// }
+function publish(project) {
+	const baseUrl = "https://github.com/densebrain/typestore/releases/download"
+	const releaseUrl = `${baseUrl}/v${nextMinorVersion}/${project.name}-${nextMinorVersion}.tar.gz`
+
+	log.info(`Publishing ${project.name}@ ${nextMinorVersion} from ${releaseUrl}`)
+	if (exec(`npm publish --tag ${nextMinorVersion} ${releaseUrl}`).code !== 0) {
+		throw new Error(`Failed to publish ${project.name}`)
+	}
+}
 
 function publishAll() {
 	// Marker
 
-	//projects.forEach(publish)
+	projects.forEach(publish)
 }
 
 gulp.task('clean', [], clean)
