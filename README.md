@@ -2,6 +2,8 @@ TypeStore
 ---
 _Statically typed model persistence for TypeScript, totally pluggable_
 
+[![Circle CI](https://circleci.com/gh/densebrain/typestore/tree/master.svg?style=shield)](https://circleci.com/gh/densebrain/typestore/tree/master)
+
 
 _TypeStore_ by itself won't get you very far, you'll
 need a store to persist your data too.  Implementing a store is
