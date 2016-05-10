@@ -24,11 +24,11 @@ let Fixtures = null
 let store:DynamoDBStore = null
 
 /**
- * Reset Dynotype and start all over
+ * Reset TypeStore and start all over
  *
  * @param syncStrategy
  * @param endpoint
- * @returns {Bluebird<U>}
+ * @returns {Bluebird<Manager>}
  */
 function reset(syncStrategy:SyncStrategy,endpoint:string) {
 	// Init dynamo type
@@ -54,9 +54,7 @@ function reset(syncStrategy:SyncStrategy,endpoint:string) {
 		.then(() => {
 			Fixtures = require('./fixtures/index')
 		})
-
-
-
+		.return(Manager)
 }
 
 

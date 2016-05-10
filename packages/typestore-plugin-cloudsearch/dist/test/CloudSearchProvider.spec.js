@@ -15,7 +15,7 @@ var store = new typestore_mocks_1.MockStore();
 /**
  * Global test suite
  */
-describe('#plugin-cloudsearch', function () {
+xdescribe('#plugin-cloudsearch', function () {
     var t1 = null;
     var Fixtures = require('./fixtures/index');
     function getTestModel() {
