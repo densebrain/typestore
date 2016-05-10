@@ -155,7 +155,7 @@ export declare class DynamoDBStore implements Types.IStore {
      * @param tableDef
      * @returns {any}
      */
-    syncTable(tableDef: DynamoDB.CreateTableInput): any;
+    syncTable(tableDef: DynamoDB.CreateTableInput): Promise<any>;
     syncModels(): Promise<boolean>;
     /**
      * Query a table, likely from a finder

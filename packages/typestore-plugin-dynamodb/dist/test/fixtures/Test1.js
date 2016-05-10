@@ -73,14 +73,13 @@ var Test1Repo = (function (_super) {
         typestore_1.Decorations.FinderDescriptor(), 
         __metadata('design:type', Function), 
         __metadata('design:paramtypes', [String]), 
-        __metadata('design:returntype', (typeof (_a = typeof typestore_1.Promise !== 'undefined' && typestore_1.Promise) === 'function' && _a) || Object)
+        __metadata('design:returntype', typestore_1.Promise)
     ], Test1Repo.prototype, "findByRandomText", null);
     Test1Repo = __decorate([
         typestore_1.Decorations.RepoDescriptor(), 
         __metadata('design:paramtypes', [])
     ], Test1Repo);
     return Test1Repo;
-    var _a;
 }(typestore_1.Repo));
 exports.Test1Repo = Test1Repo;
 

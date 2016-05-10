@@ -237,24 +237,29 @@ function clean() {
 	return del(['packages/*/dist/**/*.*'])
 }
 
-function releaseAll() {
-	runSequence(projects.map((project) => project.tasks.release), () => {
-		basePackageJson.version = nextMinorVersion
-		fs.writeFileSync(`${process.cwd()}/package.json`,JSON.stringify(basePackageJson,null,4))
+function pushRelease() {
 
-		gulp.src('.')
-			.pipe(git.add())
-			.pipe(git.commit('[Release] Bumped version number'))
+	basePackageJson.version = nextMinorVersion
+	fs.writeFileSync(`${process.cwd()}/package.json`,JSON.stringify(basePackageJson,null,4))
 
-		gulp.src(releaseFiles)
-			.pipe(ghRelease({
-				tag: `v${nextMinorVersion}`,
-				name: `TypeStore Release ${nextMinorVersion}`,
-				draft:false,
-				prerelease:false,
-				manifest:basePackageJson
-			}))
-	})
+	gulp.src('.')
+		.pipe(git.add())
+		.pipe(git.commit('[Release] Bumped version number'))
+
+	return gulp.src(releaseFiles)
+		.pipe(ghRelease({
+			tag: `v${nextMinorVersion}`,
+			name: `TypeStore Release ${nextMinorVersion}`,
+			draft:false,
+			prerelease:false,
+			manifest:basePackageJson
+		}))
+
+}
+
+function releaseAll(done) {
+	const releaseTasks = projects.map((project) => project.tasks.release)
+	runSequence(...releaseTasks,'push-release',done)
 
 }
 
@@ -280,5 +285,6 @@ gulp.task('compile-all', [], () => {
 })
 gulp.task('compile-watch',[],watch)
 gulp.task('release-all',[], releaseAll)
+gulp.task('push-release',[],pushRelease)
 gulp.task('publish-all',['release-all'],publishAll)
 gulp.task('test-all',[],makeMochaTask())
