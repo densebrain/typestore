@@ -59,7 +59,6 @@ export abstract class Repo<M extends IModel> {
 						result
 					)
 				})
-
 				
 				return Promise.map(keys,(key) => {
 					return this.get(key)
@@ -140,6 +139,7 @@ export abstract class Repo<M extends IModel> {
 		return NotImplemented('remove')
 	}
 
+	
 	/**
 	 * Count models
 	 *

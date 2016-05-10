@@ -1,21 +1,16 @@
 require('source-map-support').install()
+
 import 'expectations'
 import 'reflect-metadata'
-import {Types,Promise,Manager,Constants,Log} from 'typestore'
+import * as uuid from 'node-uuid'
+import {Types,Promise,Manager,Constants,Log,SyncStrategy,TypeStoreModelKey,TypeStoreAttrKey} from 'typestore'
 
 if (!process.env.DEBUG)
 	Log.setLogThreshold(Log.LogLevel.WARN)
 
-
-
-
-import * as uuid from 'node-uuid'
-
-
 import {IDynamoDBManagerOptions} from "../DynamoDBTypes"
 import {DynamoDBStore} from '../DynamoDBStore'
 import {DynamoDBLocalEndpoint} from '../DynamoDBConstants'
-const {TypeStoreModelKey,TypeStoreAttrKey} = Constants
 
 
 const log = Log.create(__filename)
@@ -24,7 +19,6 @@ log.info('Starting test suite')
 let Fixtures = null
 let store:DynamoDBStore = null
 
-
 /**
  * Reset Dynotype and start all over
  *
@@ -32,7 +26,7 @@ let store:DynamoDBStore = null
  * @param endpoint
  * @returns {Bluebird<U>}
  */
-function reset(syncStrategy:Types.SyncStrategy,endpoint:string) {
+function reset(syncStrategy:SyncStrategy,endpoint:string) {
 	// Init dynamo type
 	// using local
 	store = new DynamoDBStore()

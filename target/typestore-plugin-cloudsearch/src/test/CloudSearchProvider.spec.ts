@@ -10,7 +10,6 @@ import * as sinon from 'sinon'
 import * as uuid from 'node-uuid'
 import {MockStore} from "typestore-mocks"
 
-
 const {TypeStoreModelKey,TypeStoreAttrKey} = Constants
 
 
