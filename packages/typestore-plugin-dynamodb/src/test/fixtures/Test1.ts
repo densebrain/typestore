@@ -1,5 +1,15 @@
 import 'reflect-metadata'
-import {Promise,Log,Repo,Decorations,Types} from 'typestore'
+import {
+	Promise,
+	Log,
+	Repo,
+	Decorations,
+	Types,
+	ModelDescriptor,
+	AttributeDescriptor,
+	RepoDescriptor,
+	FinderDescriptor
+} from 'typestore'
 
 import {DynamoDBFinderDescriptor} from "../../DynamoDBDecorations";
 
@@ -7,17 +17,23 @@ import {DynamoDBFinderDescriptor} from "../../DynamoDBDecorations";
 
 const log = Log.create(__filename)
 
-@Decorations.ModelDescriptor({tableName:'testTable1'})
+@ModelDescriptor({tableName:'testTable1'})
 export class Test1 extends Types.DefaultModel {
 
-	@Decorations.AttributeDescriptor({name:'id',hashKey:true})
+	
+	constructor() {
+		super()
+		log.info(`constructor for ${(this.constructor as any).name}`)
+	}
+
+	@AttributeDescriptor({name:'id',hashKey:true})
 	id:string
 
-	@Decorations.AttributeDescriptor({name:'createdAt',rangeKey:true})
+	@AttributeDescriptor({name:'createdAt',rangeKey:true})
 	createdAt:number
 
 
-	@Decorations.AttributeDescriptor({
+	@AttributeDescriptor({
 		name:'randomText',
 		index:{
 			name: 'RandomTextIndex'
@@ -25,16 +41,12 @@ export class Test1 extends Types.DefaultModel {
 	})
 	randomText:string
 
-	constructor() {
-		super()
-		log.info(`constructor for ${(this.constructor as any).name}`)
-	}
 }
 
 
 
 
-@Decorations.RepoDescriptor()
+@RepoDescriptor()
 export class Test1Repo extends Repo<Test1> {
 
 	constructor() {
@@ -51,7 +63,7 @@ export class Test1Repo extends Repo<Test1> {
 			}
 		}
 	})
-	@Decorations.FinderDescriptor()
+	@FinderDescriptor()
 	findByRandomText(text:string):Promise<Test1[]> {
 		return null
 	}

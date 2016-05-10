@@ -24,15 +24,15 @@ var Test1 = (function (_super) {
         log.info("constructor for " + this.constructor.name);
     }
     __decorate([
-        typestore_1.Decorations.AttributeDescriptor({ name: 'id', hashKey: true }), 
+        typestore_1.AttributeDescriptor({ name: 'id', hashKey: true }), 
         __metadata('design:type', String)
     ], Test1.prototype, "id", void 0);
     __decorate([
-        typestore_1.Decorations.AttributeDescriptor({ name: 'createdAt', rangeKey: true }), 
+        typestore_1.AttributeDescriptor({ name: 'createdAt', rangeKey: true }), 
         __metadata('design:type', Number)
     ], Test1.prototype, "createdAt", void 0);
     __decorate([
-        typestore_1.Decorations.AttributeDescriptor({
+        typestore_1.AttributeDescriptor({
             name: 'randomText',
             index: {
                 name: 'RandomTextIndex'
@@ -41,7 +41,7 @@ var Test1 = (function (_super) {
         __metadata('design:type', String)
     ], Test1.prototype, "randomText", void 0);
     Test1 = __decorate([
-        typestore_1.Decorations.ModelDescriptor({ tableName: 'testTable1' }), 
+        typestore_1.ModelDescriptor({ tableName: 'testTable1' }), 
         __metadata('design:paramtypes', [])
     ], Test1);
     return Test1;
@@ -70,13 +70,13 @@ var Test1Repo = (function (_super) {
                 };
             }
         }),
-        typestore_1.Decorations.FinderDescriptor(), 
+        typestore_1.FinderDescriptor(), 
         __metadata('design:type', Function), 
         __metadata('design:paramtypes', [String]), 
         __metadata('design:returntype', typestore_1.Promise)
     ], Test1Repo.prototype, "findByRandomText", null);
     Test1Repo = __decorate([
-        typestore_1.Decorations.RepoDescriptor(), 
+        typestore_1.RepoDescriptor(), 
         __metadata('design:paramtypes', [])
     ], Test1Repo);
     return Test1Repo;

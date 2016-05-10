@@ -12,6 +12,7 @@
       <excludeFolder url="file://$MODULE_DIR$/packages/typestore-plugin-dynamodb/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/packages/typestore/dist" />
       <excludeFolder url="file://$MODULE_DIR$/packages/typestore/node_modules" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

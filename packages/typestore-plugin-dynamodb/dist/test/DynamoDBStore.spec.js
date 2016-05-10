@@ -2,13 +2,12 @@
 require('source-map-support').install();
 require('expectations');
 require('reflect-metadata');
+var uuid = require('node-uuid');
 var typestore_1 = require('typestore');
 if (!process.env.DEBUG)
     typestore_1.Log.setLogThreshold(typestore_1.Log.LogLevel.WARN);
-var uuid = require('node-uuid');
 var DynamoDBStore_1 = require('../DynamoDBStore');
 var DynamoDBConstants_1 = require('../DynamoDBConstants');
-var TypeStoreModelKey = typestore_1.Constants.TypeStoreModelKey, TypeStoreAttrKey = typestore_1.Constants.TypeStoreAttrKey;
 var log = typestore_1.Log.create(__filename);
 log.info('Starting test suite');
 var Fixtures = null;

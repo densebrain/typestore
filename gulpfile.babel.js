@@ -8,6 +8,7 @@ const path = require('path')
 const gulp = require('gulp')
 const del = require('del')
 const ts = require('gulp-typescript')
+const tsdoc = require('gulp-typedoc')
 const dts = require('dts-bundle')
 const babel = require('gulp-babel')
 const mocha = require('gulp-mocha')
@@ -24,6 +25,7 @@ const SourceMapModes = {
 	SourceMap: 1,
 	InlineSourceMap: 2
 }
+
 
 // Set the sourcemap mode
 const sourceMapMode = SourceMapModes.SourceMap
@@ -161,22 +163,13 @@ const projects = projectNames.map((projectName) => {
 			tsResult.js
 				.pipe(sourceMapHandler)
 				.pipe(gulp.dest(distPath))
-		]).on('end',() => {
-			// Was used for external ambient types
-			// log.info("creating declaration")
-			// dts.bundle({
-			// 	name: projectName,
-			// 	main: `${distPath}/index.d.ts`,
-			// 	exclude: /^test\/$/
-			// })
-		})
-		
+		])
 	}
 
 
 	gulp.task(taskCompileName,[],compile)
 	gulp.task(taskTestName,[taskCompileName],makeMochaTask(tests))
-	gulp.task(project.tasks.release,[taskCompileName],release)
+	gulp.task(project.tasks.release,[taskTestName],release)
 
 	compileTasks.push(taskCompileName)
 	allWatchConfigs.push({
@@ -307,17 +300,39 @@ function publish(project) {
 /**
  * Publish each package to npm
  *
- * TODO: Update dist-tag after all successful
+ * TODO: Update dist-tag after all artifacts are published successfully successful
  */
 function publishAll() {
 	projects.forEach(publish)
 }
 
 
+function docs() {
+	return gulp
+		.src([
+			'packages/*/src/**/*.ts',
+			'!packages/*/src/test/**/*.*'
+		])
+		.pipe(tsdoc({
+			module: 'commonjs',
+			target: 'es5',
+			includeDeclarations: false,
+
+			out: `${process.cwd()}/target/docs`,
+			name: 'TypeStore',
+
+			version:true
+		}))
+
+}
+
+
 gulp.task('clean', [], clean)
 gulp.task('compile-all', [], compileAll)
-gulp.task('compile-watch',['compile-all'],watch)
+gulp.task('compile-watch',[],watch)
 gulp.task('release-all',[], releaseAll)
 gulp.task('release-all-push',[],releaseAllPush)
 gulp.task('publish-all',['release-all'],publishAll)
 gulp.task('test-all',[],makeMochaTask())
+gulp.task('docs',[],docs)
+

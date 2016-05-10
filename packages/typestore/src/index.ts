@@ -53,6 +53,7 @@ export {Types, Promise, Decorations, Constants, Log, Errors,Messages}
 export * from './Repo'
 export * from './Types'
 export * from './Decorations'
+export * from './Constants'
 
 
 

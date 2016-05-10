@@ -48,5 +48,6 @@ __export(require('./Manager'));
 __export(require('./Repo'));
 __export(require('./Types'));
 __export(require('./Decorations'));
+__export(require('./Constants'));
 
 //# sourceMappingURL=index.js.map
