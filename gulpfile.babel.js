@@ -211,6 +211,14 @@ function makeMochaTask(tests = null) {
 	}
 }
 
+
+/**
+ * Run all compile tasks sequentially
+ */
+function compileAll() {
+	runSequence(compileTasks)
+}
+
 /**
  * Gulp watch task, compiles on file change
  *
@@ -237,7 +245,15 @@ function clean() {
 	return del(['packages/*/dist/**/*.*'])
 }
 
-function pushRelease() {
+/**
+ * Push compiled release files to github
+ *
+ * @returns {*}
+ */
+function releaseAllPush() {
+	if (releaseFiles.length < 1)
+		throw new Error('No releases were created')
+
 
 	basePackageJson.version = nextMinorVersion
 	fs.writeFileSync(`${process.cwd()}/package.json`,JSON.stringify(basePackageJson,null,4))
@@ -257,13 +273,28 @@ function pushRelease() {
 
 }
 
+/**
+ * Release all task, sequentially calls
+ * individual release tasks, after all are successful
+ * it then runs release-push
+ *
+ * @param done
+ */
 function releaseAll(done) {
 	const releaseTasks = projects.map((project) => project.tasks.release)
-	runSequence(...releaseTasks,'push-release',done)
+	runSequence(...releaseTasks,'release-all-push',done)
 
 }
 
+/**
+ * Publish packages to NPM
+ *
+ * @param project
+ */
 function publish(project) {
+	if (releaseFiles.length < 1)
+		throw new Error('No releases were created')
+
 	const baseUrl = "https://github.com/densebrain/typestore/releases/download"
 	const releaseUrl = `${baseUrl}/v${nextMinorVersion}/${project.name}-${nextMinorVersion}.tar.gz`
 
@@ -273,18 +304,20 @@ function publish(project) {
 	}
 }
 
+/**
+ * Publish each package to npm
+ *
+ * TODO: Update dist-tag after all successful
+ */
 function publishAll() {
-	// Marker
-
 	projects.forEach(publish)
 }
 
+
 gulp.task('clean', [], clean)
-gulp.task('compile-all', [], () => {
-	runSequence(compileTasks)
-})
-gulp.task('compile-watch',[],watch)
+gulp.task('compile-all', [], compileAll)
+gulp.task('compile-watch',['compile-all'],watch)
 gulp.task('release-all',[], releaseAll)
-gulp.task('push-release',[],pushRelease)
+gulp.task('release-all-push',[],releaseAllPush)
 gulp.task('publish-all',['release-all'],publishAll)
 gulp.task('test-all',[],makeMochaTask())
