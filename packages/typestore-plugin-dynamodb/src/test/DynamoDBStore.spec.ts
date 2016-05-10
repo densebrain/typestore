@@ -61,11 +61,11 @@ function reset(syncStrategy:SyncStrategy,endpoint:string) {
 /**
  * Global test suite
  */
-describe('#store-dynamodb',() => {
+describe('#store-dynamodb', function() {
 	this.timeout(60000)
 
 	before(() => {
-		DynamoDBLocal.launch(DynamoDBPort, null, ['-sharedDb'])
+		return DynamoDBLocal.launch(DynamoDBPort, null, ['-sharedDb'])
 	})
 
 	after(() => {
