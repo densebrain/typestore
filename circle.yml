@@ -6,6 +6,7 @@ machine:
     AWS_SECRET_ACCESS_KEY: sgsfgdsgsdgfsdgfsgsgfd
     AWS_DEFAULT_REGION: us-east-1
     CIRCLE: true
+test:
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/mocha/
     - cp test-results.xml $CIRCLE_TEST_REPORTS/mocha/
