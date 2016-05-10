@@ -62,6 +62,7 @@ function reset(syncStrategy:SyncStrategy,endpoint:string) {
  * Global test suite
  */
 describe('#store-dynamodb',() => {
+	this.timeout(60000)
 
 	before(() => {
 		DynamoDBLocal.launch(DynamoDBPort, null, ['-sharedDb'])
