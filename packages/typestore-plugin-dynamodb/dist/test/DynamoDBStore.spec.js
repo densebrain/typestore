@@ -55,7 +55,7 @@ describe('#store-dynamodb', function () {
         DynamoDBLocal.stop(DynamoDBPort);
     });
     beforeEach(function () {
-        return reset(typestore_1.Types.SyncStrategy.Overwrite, DynamoDBLocalEndpoint);
+        return reset(typestore_1.SyncStrategy.Overwrite, DynamoDBLocalEndpoint);
     });
     /**
      * Creates a valid table definition

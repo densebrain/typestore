@@ -7,17 +7,19 @@ var typestore_1 = require('typestore');
 if (!process.env.DEBUG)
     typestore_1.Log.setLogThreshold(typestore_1.Log.LogLevel.WARN);
 var DynamoDBStore_1 = require('../DynamoDBStore');
-var DynamoDBConstants_1 = require('../DynamoDBConstants');
 var log = typestore_1.Log.create(__filename);
-log.info('Starting test suite');
+//Setup DynamoDBLocal
+var DynamoDBPort = 8787;
+var DynamoDBLocal = require('dynamodb-local');
+var DynamoDBLocalEndpoint = "http://localhost:" + DynamoDBPort;
 var Fixtures = null;
 var store = null;
 /**
- * Reset Dynotype and start all over
+ * Reset TypeStore and start all over
  *
  * @param syncStrategy
  * @param endpoint
- * @returns {Bluebird<U>}
+ * @returns {Bluebird<Manager>}
  */
 function reset(syncStrategy, endpoint) {
     // Init dynamo type
@@ -38,14 +40,22 @@ function reset(syncStrategy, endpoint) {
         .then(function () { return typestore_1.Manager.init(opts); })
         .then(function () {
         Fixtures = require('./fixtures/index');
-    });
+    })
+        .return(typestore_1.Manager);
 }
 /**
  * Global test suite
  */
 describe('#store-dynamodb', function () {
+    this.timeout(60000);
+    before(function () {
+        return DynamoDBLocal.launch(DynamoDBPort, null, ['-sharedDb']);
+    });
+    after(function () {
+        DynamoDBLocal.stop(DynamoDBPort);
+    });
     beforeEach(function () {
-        return reset(typestore_1.Types.SyncStrategy.Overwrite, DynamoDBConstants_1.DynamoDBLocalEndpoint);
+        return reset(typestore_1.SyncStrategy.Overwrite, DynamoDBLocalEndpoint);
     });
     /**
      * Creates a valid table definition

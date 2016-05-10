@@ -10,21 +10,25 @@ if (!process.env.DEBUG)
 
 import {IDynamoDBManagerOptions} from "../DynamoDBTypes"
 import {DynamoDBStore} from '../DynamoDBStore'
-import {DynamoDBLocalEndpoint} from '../DynamoDBConstants'
 
 
 const log = Log.create(__filename)
-log.info('Starting test suite')
+
+//Setup DynamoDBLocal
+const DynamoDBPort = 8787
+const DynamoDBLocal = require('dynamodb-local')
+const DynamoDBLocalEndpoint = `http://localhost:${DynamoDBPort}`
+
 
 let Fixtures = null
 let store:DynamoDBStore = null
 
 /**
- * Reset Dynotype and start all over
+ * Reset TypeStore and start all over
  *
  * @param syncStrategy
  * @param endpoint
- * @returns {Bluebird<U>}
+ * @returns {Bluebird<Manager>}
  */
 function reset(syncStrategy:SyncStrategy,endpoint:string) {
 	// Init dynamo type
@@ -50,19 +54,26 @@ function reset(syncStrategy:SyncStrategy,endpoint:string) {
 		.then(() => {
 			Fixtures = require('./fixtures/index')
 		})
-
-
-
+		.return(Manager)
 }
 
 
 /**
  * Global test suite
  */
-describe('#store-dynamodb',() => {
+describe('#store-dynamodb', function() {
+	this.timeout(60000)
+
+	before(() => {
+		return DynamoDBLocal.launch(DynamoDBPort, null, ['-sharedDb'])
+	})
+
+	after(() => {
+		DynamoDBLocal.stop(DynamoDBPort)
+	})
 
 	beforeEach(() => {
-		return reset(Types.SyncStrategy.Overwrite,DynamoDBLocalEndpoint)
+		return reset(SyncStrategy.Overwrite,DynamoDBLocalEndpoint)
 	})
 
 	/**

@@ -362,8 +362,10 @@ var DynamoDBStore = (function () {
      */
     DynamoDBStore.prototype.waitForTable = function (TableName, resourceState) {
         if (resourceState === void 0) { resourceState = ResourceState.tableExists; }
-        return typestore_1.Promise.resolve(this.dynamoClient.waitFor(ResourceState[resourceState], tableNameParam(TableName))
-            .promise()).then(this.setTableAvailable.bind(this, TableName));
+        return typestore_1.Promise
+            .resolve(this.dynamoClient.waitFor(ResourceState[resourceState], tableNameParam(TableName))
+            .promise())
+            .then(this.setTableAvailable.bind(this, TableName));
     };
     /**
      * Find an existing table
@@ -402,6 +404,11 @@ var DynamoDBStore = (function () {
                 promised.then(function () {
                     return _this.waitForTable(TableName, ResourceState.tableExists);
                 });
+            }
+            else {
+                promised.then(_this.setTableAvailable.bind(_this, {
+                    TableName: tableDef.TableName
+                }));
             }
             return promised.return(true);
         }));

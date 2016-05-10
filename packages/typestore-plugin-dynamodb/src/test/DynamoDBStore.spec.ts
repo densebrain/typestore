@@ -73,7 +73,7 @@ describe('#store-dynamodb', function() {
 	})
 
 	beforeEach(() => {
-		return reset(Types.SyncStrategy.Overwrite,DynamoDBLocalEndpoint)
+		return reset(SyncStrategy.Overwrite,DynamoDBLocalEndpoint)
 	})
 
 	/**

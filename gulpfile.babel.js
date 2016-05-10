@@ -100,6 +100,9 @@ const projects = projectNames.map((projectName) => {
 		cp('-Rf',`${project.base}/*`,targetDir)
 		rm('-Rf',`${targetDir}/node_modules`)
 
+		if (projectName === 'typestore')
+			cp('./README.md',targetDir)
+
 		const targetPackageJsonFile = `${targetDir}/package.json`
 		const packageJson = readJSONFileSync(targetPackageJsonFile)
 		const deps = packageJson.dependencies || {}
@@ -239,7 +242,7 @@ function watch(done) {
  * Clean task
  */
 function clean() {
-	return del(['packages/*/dist/**/*.*'])
+	return del(['target','packages/*/dist/**/*.*'])
 }
 
 /**
@@ -334,7 +337,7 @@ function docs() {
 gulp.task('clean', [], clean)
 gulp.task('compile-all', [], compileAll)
 gulp.task('compile-watch',[],watch)
-gulp.task('release-all',[], releaseAll)
+gulp.task('release-all',['clean'], releaseAll)
 gulp.task('release-all-push',[],releaseAllPush)
 gulp.task('publish-all',['release-all'],publishAll)
 gulp.task('test-all',[],makeMochaTask())

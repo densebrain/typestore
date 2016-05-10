@@ -439,13 +439,15 @@ export class DynamoDBStore implements Types.IStore {
 	 * @returns {Promise<boolean>}
 	 */
 	waitForTable(TableName:string, resourceState:ResourceState = ResourceState.tableExists):Promise<boolean> {
-		return Promise.resolve(
-			this.dynamoClient.waitFor(
-				ResourceState[resourceState],
-				tableNameParam(TableName)
+		return Promise
+			.resolve(
+				this.dynamoClient.waitFor(
+					ResourceState[resourceState],
+					tableNameParam(TableName)
+				)
+				.promise()
 			)
-			.promise()
-		).then(this.setTableAvailable.bind(this,TableName)) as Promise<boolean>
+			.then(this.setTableAvailable.bind(this,TableName)) as Promise<boolean>
 
 	}
 
@@ -493,6 +495,11 @@ export class DynamoDBStore implements Types.IStore {
 					promised.then(() => {
 						return this.waitForTable(TableName, ResourceState.tableExists)
 					})
+				} else {
+					promised.then(
+						this.setTableAvailable.bind(this,{
+							TableName:tableDef.TableName
+						}))
 				}
 				return promised.return(true)
 			})
