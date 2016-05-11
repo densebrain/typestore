@@ -55,7 +55,7 @@ export declare enum IndexType {
 /**
  * Responsible for indexing given models
  */
-export interface IIndexer {
+export interface IIndexer extends IPlugin {
     /**
      * Called in persistence chain after put/save
      * before return.
@@ -100,21 +100,19 @@ export interface ISearchOptions<R extends any> {
 /**
  * Custom external search provider
  */
-export interface ISearchProvider {
+export interface ISearchProvider extends IPlugin {
     search<R extends any>(modelType: IModelType, opts: ISearchOptions<R>, ...args: any[]): Promise<R[]>;
 }
 /**
  * Store interface that must be fulfilled for
  * a valid store to work
  */
-export interface IStore {
+export interface IStore extends IPlugin {
     init(manager: IManager, opts: IManagerOptions): Promise<boolean>;
     start(): Promise<boolean>;
     stop(): Promise<boolean>;
     syncModels(): Promise<boolean>;
-    getRepo<T extends Repo<M>, M extends IModel>(clazz: {
-        new (): T;
-    }): Repo<M>;
+    prepareRepo<T extends Repo<M>, M extends IModel>(repo: T): T;
 }
 /**
  * Sync strategy for updating models in the store
@@ -132,7 +130,6 @@ export declare namespace SyncStrategy {
  * by individual store providers
  */
 export interface IManagerOptions {
-    store: IStore;
     immutable?: boolean;
     syncStrategy?: SyncStrategy;
     autoRegisterModels?: boolean;
@@ -172,6 +169,13 @@ export interface IModelType {
     name: string;
     clazz: any;
 }
+export declare enum PluginType {
+    Indexer = 0,
+    Store = 1,
+}
+export interface IPlugin {
+    type: PluginType;
+}
 /**
  * Manager interface for store provider development
  * and end user management
@@ -184,11 +188,11 @@ export interface IManager {
     getModel(clazz: any): IModelType;
     getModelByName(name: string): any;
     start(...models: any[]): Promise<IManager>;
-    init(opts: IManagerOptions): Promise<IManager>;
+    init(opts: IManagerOptions, ...plugins: IPlugin[]): Promise<IManager>;
     reset(): Promise<IManager>;
     getRepo<T extends Repo<M>, M extends IModel>(clazz: {
         new (): T;
-    }): Repo<M>;
+    }): T;
     getMapper<M extends IModel>(clazz: {
         new (): M;
     }): IModelMapper<M>;

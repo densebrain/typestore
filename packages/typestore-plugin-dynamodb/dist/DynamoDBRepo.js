@@ -22,9 +22,9 @@ var MappedFinderParams = {
     Aliases: 'ExpressionAttributeNames',
     Index: 'IndexName'
 };
-var DynamoDBRepo = (function (_super) {
-    __extends(DynamoDBRepo, _super);
-    function DynamoDBRepo(store, repoClazzName, repoClazz) {
+var DynamoDBRepoWrapper = (function (_super) {
+    __extends(DynamoDBRepoWrapper, _super);
+    function DynamoDBRepoWrapper(store, repoClazzName, repoClazz) {
         var _this = this;
         _super.call(this, repoClazz, new repoClazz().modelClazz);
         this.store = store;
@@ -43,20 +43,20 @@ var DynamoDBRepo = (function (_super) {
             finderKeys.forEach(function (finderKey) { return _this.makeFinder(finderKey); });
         }
     }
-    Object.defineProperty(DynamoDBRepo.prototype, "tableName", {
+    Object.defineProperty(DynamoDBRepoWrapper.prototype, "tableName", {
         get: function () {
             return this.tableDef.TableName;
         },
         enumerable: true,
         configurable: true
     });
-    DynamoDBRepo.prototype.makeParams = function (params) {
+    DynamoDBRepoWrapper.prototype.makeParams = function (params) {
         if (params === void 0) { params = {}; }
         return Object.assign({
             TableName: this.tableName
         }, params);
     };
-    DynamoDBRepo.prototype.makeFinder = function (finderKey) {
+    DynamoDBRepoWrapper.prototype.makeFinder = function (finderKey) {
         var _this = this;
         var finderOpts = Reflect.getMetadata(DynamoDBStore_1.DynamoDBFinderKey, this.repoType, finderKey);
         if (!finderOpts) {
@@ -111,7 +111,7 @@ var DynamoDBRepo = (function (_super) {
             });
         });
     };
-    DynamoDBRepo.prototype.key = function () {
+    DynamoDBRepoWrapper.prototype.key = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i - 0] = arguments[_i];
@@ -119,7 +119,7 @@ var DynamoDBRepo = (function (_super) {
         assert(args && args.length > 0 && args.length < 3, 'Either 1 or two parameters can be used to create dynamo keys');
         return new DynamoDBStore_1.DynamoDBKeyValue(this.tableDef.KeySchema, args[0], args[1]);
     };
-    DynamoDBRepo.prototype.get = function (key) {
+    DynamoDBRepoWrapper.prototype.get = function (key) {
         var _this = this;
         return this.store.get(this.makeParams({
             Key: key.toParam()
@@ -127,25 +127,25 @@ var DynamoDBRepo = (function (_super) {
             return _this.mapper.fromObject(result.Item);
         });
     };
-    DynamoDBRepo.prototype.save = function (o) {
+    DynamoDBRepoWrapper.prototype.save = function (o) {
         return this.store.put(this.makeParams({ Item: o }))
             .then(function (result) {
             return o;
         });
     };
-    DynamoDBRepo.prototype.remove = function (key) {
+    DynamoDBRepoWrapper.prototype.remove = function (key) {
         return this.store.delete(this.makeParams({
             Key: key.toParam()
         }));
     };
-    DynamoDBRepo.prototype.count = function () {
+    DynamoDBRepoWrapper.prototype.count = function () {
         return this.store.describeTable(this.tableName)
             .then(function (tableDesc) {
             return tableDesc.ItemCount;
         });
     };
-    return DynamoDBRepo;
+    return DynamoDBRepoWrapper;
 }(typestore_1.Repo));
-exports.DynamoDBRepo = DynamoDBRepo;
+exports.DynamoDBRepoWrapper = DynamoDBRepoWrapper;
 
 //# sourceMappingURL=DynamoDBRepo.js.map

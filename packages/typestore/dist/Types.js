@@ -83,5 +83,10 @@ var ManagerOptions = (function () {
     return ManagerOptions;
 }());
 exports.ManagerOptions = ManagerOptions;
+(function (PluginType) {
+    PluginType[PluginType["Indexer"] = 0] = "Indexer";
+    PluginType[PluginType["Store"] = 1] = "Store";
+})(exports.PluginType || (exports.PluginType = {}));
+var PluginType = exports.PluginType;
 
 //# sourceMappingURL=Types.js.map

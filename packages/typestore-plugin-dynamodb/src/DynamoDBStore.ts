@@ -16,7 +16,7 @@ import {
 	IDynamoDBProvisioning,
 	IDynamoDBAttributeOptions
 } from "./DynamoDBTypes"
-import {DynamoDBRepo} from "./DynamoDBRepo"
+import {DynamoDBRepoWrapper} from "./DynamoDBRepo"
 
 // Set the aws promise provide to bluebird
 //(AWS.config as any).setPromiseDependency(Promise)
@@ -145,7 +145,7 @@ export class DynamoDBStore implements Types.IStore {
 	private _dynamoClient:AWS.DynamoDB
 	private _availableTables:string[] = []
 	private tableDescs:{[TableName:string]:DynamoDB.TableDescription} = {}
-	private repos:{[clazzName:string]:DynamoDBRepo<any>} = {}
+	private repos:{[clazzName:string]:DynamoDBRepoWrapper<any>} = {}
 
 	private opts:IDynamoDBManagerOptions
 
@@ -245,29 +245,14 @@ export class DynamoDBStore implements Types.IStore {
 	}
 
 
-
-	/**
-	 * Create a repo for the supplied
-	 *
-	 * @param clazz
-	 * @returns {null}
-	 */
-	getRepo<T extends Repo<M>,M extends Types.IModel>(repoClazz:{new(): T; }):Repo<M> {
-		//const repoClazzType = Reflect.getMetadata('design:type',repoClazz.prototype)
-		const repoClazzName = (repoClazz as any).name
-
-		// Check to see if we have created this repo before
-		let repo = this.repos[repoClazzName]
-
-		// If not - create it
-		if (!repo) {
+	prepareRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
+		
 			repo = this.repos[repoClazzName] =
-				new DynamoDBRepo<M>(this,repoClazzName,repoClazz)
-		}
+				new DynamoDBRepoWrapper<M>(this,repoClazzName,repoClazz)
+		
 
 		return repo
 	}
-
 
 	/**
 	 * Determine the attribute type to

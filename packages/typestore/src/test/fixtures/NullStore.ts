@@ -6,9 +6,7 @@ const NotImplemented = Errors.NotImplemented;
 
 export class NullStore implements IStore {
 
-	constructor() {
-
-	}
+	constructor() { }
 
 	get type() {
 		return PluginType.Store

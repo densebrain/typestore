@@ -26,7 +26,7 @@ const MappedFinderParams = {
 
 }
 
-export class DynamoDBRepo<M extends Types.IModel> extends Repo<M> {
+export class DynamoDBRepoWrapper<M extends Types.IModel> extends Repo<M> {
 
 	
 	private repoType:any

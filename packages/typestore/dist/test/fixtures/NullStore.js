@@ -4,6 +4,13 @@ var NotImplemented = index_1.Errors.NotImplemented;
 var NullStore = (function () {
     function NullStore() {
     }
+    Object.defineProperty(NullStore.prototype, "type", {
+        get: function () {
+            return index_1.PluginType.Store;
+        },
+        enumerable: true,
+        configurable: true
+    });
     NullStore.prototype.init = function (manager, opts) {
         return index_1.Promise.resolve(true);
     };
@@ -16,8 +23,9 @@ var NullStore = (function () {
     NullStore.prototype.syncModels = function () {
         return NotImplemented('syncModels');
     };
-    NullStore.prototype.getRepo = function (clazz) {
-        return NotImplemented('getRepo');
+    NullStore.prototype.prepareRepo = function (repo) {
+        return repo;
+        //return NotImplemented('getRepo') as T
     };
     return NullStore;
 }());

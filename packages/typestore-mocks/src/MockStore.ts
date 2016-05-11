@@ -25,9 +25,10 @@ export class MockStore implements IStore {
 	syncModels():Promise<boolean> {
 		return Promise.resolve(true)
 	}
-	
-	getRepo<T extends Repo<M>, M extends IModel>(clazz:{new():T;}):Repo<M> {
-		return new MockRepo<M>(this,clazz) as Repo<M>
-		
+
+
+	prepareRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
+		return repo;
 	}
+
 }

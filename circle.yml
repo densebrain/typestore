@@ -10,4 +10,9 @@ test:
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/mocha/
     - cp test-results.xml $CIRCLE_TEST_REPORTS/mocha/
-
+general:
+  branches:
+    ignore:
+      - gh-pages # list of branches to ignore
+      - docs
+      - /release\/.*/ # or ignore regexes

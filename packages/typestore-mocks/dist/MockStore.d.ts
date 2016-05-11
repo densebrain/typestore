@@ -5,7 +5,5 @@ export declare class MockStore implements IStore {
     start(): Promise<boolean>;
     stop(): Promise<boolean>;
     syncModels(): Promise<boolean>;
-    getRepo<T extends Repo<M>, M extends IModel>(clazz: {
-        new (): T;
-    }): Repo<M>;
+    prepareRepo<T extends Repo<M>, M extends IModel>(repo: T): T;
 }

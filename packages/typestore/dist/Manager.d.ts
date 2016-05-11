@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import './Globals';
 import Promise = require('./Promise');
-import { IStore, IManagerOptions, IModelMapper, IModel, IModelType, IManager } from './Types';
+import { IStore, IManagerOptions, IModelMapper, IModel, IModelType, IManager, IPlugin } from './Types';
 import { Repo } from "./Repo";
 export declare namespace Manager {
     /**
@@ -19,14 +19,11 @@ export declare namespace Manager {
     function getModel(clazz: any): IModelType;
     function getModelByName(name: string): IModelType;
     function getOptions(): IManagerOptions;
-    /**
-     * Ref to aws client
-     */
-    let store: IStore;
+    function stores(): IStore[];
     /**
      * Set the manager options
      */
-    function init(newOptions: IManagerOptions): Promise<IManager>;
+    function init(newOptions: IManagerOptions, ...newPlugins: IPlugin[]): Promise<IManager>;
     /**
      * Start the manager and embedded store from options
      *
@@ -55,7 +52,7 @@ export declare namespace Manager {
      */
     function getRepo<T extends Repo<M>, M extends IModel>(clazz: {
         new (): T;
-    }): Repo<M>;
+    }): T;
     function getMapper<M extends IModel>(clazz: {
         new (): M;
     }): IModelMapper<M>;

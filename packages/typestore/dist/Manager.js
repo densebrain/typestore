@@ -12,6 +12,7 @@ var ModelMapper_1 = require("./ModelMapper");
 var log = Log.create(__filename);
 var Manager;
 (function (Manager) {
+    var plugins = [];
     /**
      * Stores all registrations, enabling
      * them to be configured against a
@@ -71,22 +72,33 @@ var Manager;
         var valid = (not) ? !started : started;
         assert(valid, Messages_1.msg(not ? Messages_1.Strings.ManagerSettled : Messages_1.Strings.ManagerNotSettled));
     }
+    function stores() {
+        return plugins.filter(function (plugin) { return plugin.type === Types_1.PluginType.Store; });
+    }
+    Manager.stores = stores;
     /**
      * Set the manager options
      */
     function init(newOptions) {
+        var _this = this;
+        var newPlugins = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            newPlugins[_i - 1] = arguments[_i];
+        }
         checkStarted(true);
         checkInitialized(true);
         initialized = true;
+        plugins.push.apply(plugins, newPlugins);
         // Update the default options
         options = options || newOptions;
         Object.assign(options, newOptions);
-        Manager.store = options.store;
         // Make sure we got a valid store
-        assert(Manager.store, Messages_1.msg(Messages_1.Strings.ManagerTypeStoreRequired));
+        assert(stores().length > 0, Messages_1.msg(Messages_1.Strings.ManagerTypeStoreRequired));
         // Manager is ready, now initialize the store
         log.debug(Messages_1.msg(Messages_1.Strings.ManagerInitComplete));
-        return Manager.store.init(this, options).return(this);
+        return Promise
+            .map(stores(), function (store) { return store.init(_this, options); })
+            .return(this);
     }
     Manager.init = init;
     /**
@@ -101,7 +113,8 @@ var Manager;
         }
         checkStarted(true);
         models.forEach(registerModel);
-        return startPromise = Manager.store.start()
+        return startPromise = Promise
+            .map(stores(), function (store) { return store.start(); })
             .return(this)
             .catch(function (err) {
             log.error(Messages_1.msg(Messages_1.Strings.ManagerFailedToStart), err);
@@ -145,12 +158,11 @@ var Manager;
         if (startPromise)
             startPromise.cancel();
         return Promise
-            .resolve((Manager.store) ? Manager.store.stop() : true)
+            .map(stores(), function (store) { return store.stop(); })
             .return(this)
             .finally(function () {
-            Manager.store = startPromise = null;
-            if (options)
-                options.store = null;
+            startPromise = null;
+            plugins.length = 0;
             initialized = false;
         });
     }
@@ -186,7 +198,9 @@ var Manager;
      * @returns {T}
      */
     function getRepo(clazz) {
-        return Manager.store.getRepo(clazz);
+        var repo = new clazz();
+        stores().forEach(function (store) { return store.prepareRepo(repo); });
+        return repo;
     }
     Manager.getRepo = getRepo;
     function getMapper(clazz) {

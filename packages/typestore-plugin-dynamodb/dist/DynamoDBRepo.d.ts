@@ -1,6 +1,6 @@
 import { Promise, Types, Repo } from 'typestore';
 import { DynamoDBStore, DynamoDBKeyValue } from "./DynamoDBStore";
-export declare class DynamoDBRepo<M extends Types.IModel> extends Repo<M> {
+export declare class DynamoDBRepoWrapper<M extends Types.IModel> extends Repo<M> {
     private store;
     private repoClazzName;
     private repoClazz;
