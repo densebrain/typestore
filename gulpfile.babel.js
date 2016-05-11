@@ -242,7 +242,7 @@ function watch(done) {
  * Clean task
  */
 function clean() {
-	return del(['target','packages/*/dist/**/*.*'])
+	return del(['target','packages/*/dist'])
 }
 
 /**
