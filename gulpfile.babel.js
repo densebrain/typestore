@@ -61,14 +61,18 @@ const projects = projectNames.map((projectName) => {
 			compile: `compile-${projectName}`,
 			test: `test-${projectName}`,
 			release: `release-${projectName}`,
+			init: `init-${projectName}`
 		}
 	}
 
 	/**
 	 * Build the tasks
 	 */
-	const distPath = path.resolve(project.base,'dist')
-	const srcPath = `${project.base}/src`
+	const
+		distPath = `${project.base}/src`,
+		srcPath = `${project.base}/src`,
+		testsPath = srcPath
+
 	const targetDir = `${process.cwd()}/target/${projectName}`
 	const srcs = project.srcs = _.uniq([
 		`${process.cwd()}/typings/browser.d.ts`,
@@ -80,13 +84,45 @@ const projects = projectNames.map((projectName) => {
 	])
 
 	const tests = project.tests = [
-		`${distPath}/**/*.spec.js`
+		`${testsPath}/**/*.spec.js`
 	]
 
 	const taskCompileName = project.tasks.compile
 	const taskTestName = project.tasks.test
+	
+	const tsConfigPath = path.resolve(project.base,'tsconfig.json') 
+	let tsProject = null
 
-	const tsProject = ts.createProject(path.resolve(__dirname,'tsconfig.json'))
+	let generatedConfig = false
+
+
+	function init() {
+		if (generatedConfig) {
+			log.info(`Already generated on this run ${projectName} @ ${tsConfigPath}`)
+			return
+		}
+		
+		log.info(`Generating TS config for ${projectName} @ ${tsConfigPath}`)
+		generatedConfig = true
+		
+		const tsBaseConfig = require('./tsconfig.json')
+		Object.assign(tsBaseConfig,{
+			rootDirs: projectNames.map(name => path.resolve(__dirname,'packages',name))
+		})
+
+		fs.writeFileSync(tsConfigPath,JSON.stringify(tsBaseConfig,null,4))
+		tsProject = ts.createProject(tsConfigPath)
+	}
+	
+	if (!fs.existsSync(tsConfigPath)) {
+		log.info(`No TS config found @ ${tsConfigPath} - Generating`)
+		init()
+	} else {
+		tsProject = ts.createProject(tsConfigPath)
+	}
+	
+	
+	
 
 
 	function release() {
@@ -169,8 +205,8 @@ const projects = projectNames.map((projectName) => {
 		])
 	}
 
-
-	gulp.task(taskCompileName,[],compile)
+	gulp.task(project.tasks.init,[],init)
+	gulp.task(taskCompileName,[project.tasks.init],compile)
 	gulp.task(taskTestName,[taskCompileName],makeMochaTask(tests))
 	gulp.task(project.tasks.release,[taskTestName],release)
 
@@ -181,8 +217,6 @@ const projects = projectNames.map((projectName) => {
 		task: taskCompileName,
 		base: project.base
 	})
-
-
 
 	return project
 })
@@ -242,7 +276,7 @@ function watch(done) {
  * Clean task
  */
 function clean() {
-	return del(['target','packages/*/dist'])
+	return del(['target','packages/*/dist','packages/*/src/**/*.js','packages/*/src/**/*.map'])
 }
 
 /**
