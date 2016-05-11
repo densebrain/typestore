@@ -1,11 +1,12 @@
 /// <reference path="../packages/typestore-plugin-cloudsearch/node_modules/aws-sdk-typescript/output/typings/aws-config.d.ts" />
-import { Promise, IIndexer, IndexType, IIndexerOptions, ISearchProvider, IModelType, IModel, ISearchOptions, Repo } from 'typestore';
-export declare class CloudSearchProvider implements IIndexer, ISearchProvider {
+import { Promise, IIndexerPlugin, IndexAction, IIndexerOptions, ISearchProvider, IModelType, IModel, PluginType, ISearchOptions, Repo } from 'typestore';
+export declare class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
     private endpoint;
     private awsOptions;
     private client;
     constructor(endpoint: string, awsOptions?: any);
-    index<M extends IModel>(type: IndexType, options: IIndexerOptions, modelType: IModelType, repo: Repo<M>, ...models: IModel[]): Promise<boolean>;
+    type: PluginType;
+    index<M extends IModel>(type: IndexAction, options: IIndexerOptions, modelType: IModelType, repo: Repo<M>, ...models: IModel[]): Promise<boolean>;
     /**
      * This needs to implemented a bit cleaner ;)
      *

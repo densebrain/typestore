@@ -1,10 +1,9 @@
 
-import {Errors,Promise,IStore,IManagerOptions,IManager,Repo,PluginType,IModel} from '../../index'
+import {Errors,Promise,IStorePlugin,ICoordinatorOptions,ICoordinator,Repo,PluginType,IModel} from '../../index'
 
+export class NullStore implements IStorePlugin {
 
-const NotImplemented = Errors.NotImplemented;
-
-export class NullStore implements IStore {
+	private coordinator:ICoordinator
 
 	constructor() { }
 
@@ -12,24 +11,24 @@ export class NullStore implements IStore {
 		return PluginType.Store
 	}
 
-	init(manager:IManager, opts:IManagerOptions):Promise<boolean> {
-		return Promise.resolve(true)
+	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
+		this.coordinator = coordinator
+		return Promise.resolve(coordinator)
 	}
 
-	start():Promise<boolean> {
-		return Promise.resolve(true)
+	start():Promise<ICoordinator> {
+		return Promise.resolve(this.coordinator)
 	}
 
-	stop():Promise<boolean> {
-		return Promise.resolve(true)
+	stop():Promise<ICoordinator> {
+		return Promise.resolve(this.coordinator)
 	}
 
-	syncModels():Promise<boolean> {
-		return NotImplemented('syncModels') as Promise<boolean>
+	syncModels():Promise<ICoordinator> {
+		return Promise.resolve(this.coordinator)
 	}
 
-	prepareRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
+	initRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
 		return repo
-		//return NotImplemented('getRepo') as T
 	}
 }

@@ -1,6 +1,16 @@
 ///<reference path="../typings/typestore-plugin-dynamodb"/>
 import TypeStore = require('typestore')
-import {Promise,Log,Types,Repo,Messages} from 'typestore'
+import {
+	Promise,
+	Log,
+	Types,
+	Repo,
+	Messages,
+	ICoordinator,
+	IStorePlugin,
+	PluginType,
+	IModel
+} from 'typestore'
 
 import * as AWS from 'aws-sdk'
 import {DynamoDB} from 'aws-sdk'
@@ -12,11 +22,11 @@ const {msg, Strings} = Messages
 
 import {
 	IDynamoDBModelOptions,
-	IDynamoDBManagerOptions,
+	IDynamoDBCoordinatorOptions,
 	IDynamoDBProvisioning,
-	IDynamoDBAttributeOptions
+	IDynamoDBAttributeOptions, TableStatus, KeyType, ResourceState, StatusPending
 } from "./DynamoDBTypes"
-import {DynamoDBRepoWrapper} from "./DynamoDBRepo"
+import {DynamoDBRepoPlugin} from "./DynamoDBRepoPlugin"
 
 // Set the aws promise provide to bluebird
 //(AWS.config as any).setPromiseDependency(Promise)
@@ -46,24 +56,8 @@ function tableNameParam(TableName:string) {
 	return {TableName}
 }
 
-export enum KeyType {
-	HASH,
-	RANGE
-}
 
-export enum ResourceState {
-	tableExists,
-	tableNotExists
-}
 
-export enum TableStatus {
-	CREATING,
-	UPDATING,
-	DELETING,
-	ACTIVE
-}
-
-const StatusPending = [TableStatus.CREATING, TableStatus.UPDATING]
 
 function isTableStatusIn(status:string|TableStatus, ...statuses) {
 	if (_.isString(status)) {
@@ -140,16 +134,16 @@ export class DynamoDBKeyValue implements Types.IKeyValue {
 /**
  * Store implementation for DynamoDB
  */
-export class DynamoDBStore implements Types.IStore {
+export class DynamoDBStore implements IStorePlugin {
 	private _docClient:AWS.DynamoDB.DocumentClient
 	private _dynamoClient:AWS.DynamoDB
 	private _availableTables:string[] = []
 	private tableDescs:{[TableName:string]:DynamoDB.TableDescription} = {}
-	private repos:{[clazzName:string]:DynamoDBRepoWrapper<any>} = {}
+	private repos:{[clazzName:string]:DynamoDBRepoPlugin<any>} = {}
 
-	private opts:IDynamoDBManagerOptions
+	private opts:IDynamoDBCoordinatorOptions
 
-	manager:Types.IManager
+	coordinator:ICoordinator
 
 	/**
 	 * Set default provisioning capacity
@@ -164,6 +158,11 @@ export class DynamoDBStore implements Types.IStore {
 	 * Create new dynamodbstore
 	 */
 	constructor() {
+	}
+
+
+	get type() {
+		return PluginType.Store
 	}
 
 	/**
@@ -210,12 +209,12 @@ export class DynamoDBStore implements Types.IStore {
 		return this._docClient
 	}
 
-	init(manager:Types.IManager, opts:Types.IManagerOptions):Promise<boolean> {
-		this.manager = manager
-		this.opts = opts as IDynamoDBManagerOptions
+	init(coordinator:ICoordinator, opts:ICoordinator):Promise<ICoordinator> {
+		this.coordinator = coordinator
+		this.opts = opts as IDynamoDBCoordinatorOptions
 		_.defaultsDeep(this.opts, DefaultDynamoDBOptions)
 
-		return Promise.resolve(true)
+		return Promise.resolve(coordinator)
 	}
 
 	/**
@@ -223,7 +222,7 @@ export class DynamoDBStore implements Types.IStore {
 	 *
 	 * @returns {Promise<boolean>}
 	 */
-	start():Promise<boolean> {
+	start():Promise<ICoordinator> {
 
 
 		if (this.opts.awsOptions)
@@ -238,18 +237,22 @@ export class DynamoDBStore implements Types.IStore {
 	 *
 	 * @returns {Bluebird<boolean>}
 	 */
-	stop():Promise<boolean> {
+	stop():Promise<ICoordinator> {
 		this._docClient = null
 		this._dynamoClient = null
-		return Promise.resolve(true)
+		return Promise.resolve(this.coordinator)
 	}
 
 
-	prepareRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
-		
-			repo = this.repos[repoClazzName] =
-				new DynamoDBRepoWrapper<M>(this,repoClazzName,repoClazz)
-		
+	initRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
+		const {clazzName} = repo.modelOpts
+		if (this.repos[clazzName]) {
+			return this.repos[clazzName].repo as T
+		}
+
+		this.repos[clazzName] =
+			new DynamoDBRepoPlugin<M>(this,repo)
+
 
 		return repo
 	}
@@ -289,9 +292,14 @@ export class DynamoDBStore implements Types.IStore {
 	tableDefinition(clazzName:string):AWS.DynamoDB.CreateTableInput {
 		log.debug(`Creating table definition for ${clazzName}`)
 
-		const models = this.manager.getModels()
-		const model = this.manager.getModelByName(clazzName)
+		const models = this.coordinator.getModels()
+		const model = this.coordinator.getModelByName(clazzName)
 		const modelOptions = model.options as IDynamoDBModelOptions
+		
+		if (!modelOptions) {
+			log.info('No model options found, returning null')
+			return null
+		}
 
 		const prefix = this.opts.prefix || '',
 			TableName = `${prefix}${modelOptions.tableName}`
@@ -582,14 +590,14 @@ export class DynamoDBStore implements Types.IStore {
 
 	}
 
-	syncModels():Promise<boolean> {
+	syncModels():Promise<ICoordinator> {
 
 
 		log.info('Creating table definitions')
 
 		// Get all table definitions no matter what
 		const tableDefs:DynamoDB.CreateTableInput[] = []
-		const models = this.manager.getModels()
+		const models = this.coordinator.getModels()
 
 		for (let modelType of models) {
 			tableDefs.push(this.tableDefinition(modelType.name))
@@ -598,10 +606,12 @@ export class DynamoDBStore implements Types.IStore {
 		// If create is not enabled then skip
 		if (this.opts.syncStrategy === Types.SyncStrategy.None) {
 			log.debug(msg(Strings.ManagerNoSyncModels))
-			return Promise.resolve(true)
+			return Promise.resolve(this.coordinator)
 		}
 
-		return Promise.each(tableDefs, this.syncTable.bind(this)).return(true)
+		return Promise
+			.each(tableDefs, this.syncTable.bind(this))
+			.return(this.coordinator)
 
 	}
 

@@ -22,6 +22,13 @@ var CloudSearchProvider = (function () {
         this.awsOptions = awsOptions;
         this.client = getClient(endpoint, awsOptions);
     }
+    Object.defineProperty(CloudSearchProvider.prototype, "type", {
+        get: function () {
+            return typestore_1.PluginType.Indexer;
+        },
+        enumerable: true,
+        configurable: true
+    });
     CloudSearchProvider.prototype.index = function (type, options, modelType, repo) {
         var models = [];
         for (var _i = 4; _i < arguments.length; _i++) {
@@ -38,7 +45,7 @@ var CloudSearchProvider = (function () {
             }, {
                 fields: doc
             }, {
-                type: (typestore_1.IndexType.Remove === type) ? 'delete' : 'add'
+                type: (typestore_1.IndexAction.Remove === type) ? 'delete' : 'add'
             });
         });
         var params = { contentType: 'application/json', documents: JSON.stringify(data) };

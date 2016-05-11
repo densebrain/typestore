@@ -1,6 +1,5 @@
 "use strict";
 var index_1 = require('../../index');
-var NotImplemented = index_1.Errors.NotImplemented;
 var NullStore = (function () {
     function NullStore() {
     }
@@ -11,21 +10,21 @@ var NullStore = (function () {
         enumerable: true,
         configurable: true
     });
-    NullStore.prototype.init = function (manager, opts) {
-        return index_1.Promise.resolve(true);
+    NullStore.prototype.init = function (coordinator, opts) {
+        this.coordinator = coordinator;
+        return index_1.Promise.resolve(coordinator);
     };
     NullStore.prototype.start = function () {
-        return index_1.Promise.resolve(true);
+        return index_1.Promise.resolve(this.coordinator);
     };
     NullStore.prototype.stop = function () {
-        return index_1.Promise.resolve(true);
+        return index_1.Promise.resolve(this.coordinator);
     };
     NullStore.prototype.syncModels = function () {
-        return NotImplemented('syncModels');
+        return index_1.Promise.resolve(this.coordinator);
     };
-    NullStore.prototype.prepareRepo = function (repo) {
+    NullStore.prototype.initRepo = function (repo) {
         return repo;
-        //return NotImplemented('getRepo') as T
     };
     return NullStore;
 }());

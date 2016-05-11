@@ -1,7 +1,7 @@
 require('source-map-support').install()
 import 'expectations'
 import 'reflect-metadata'
-import {Types,Promise,Manager,Constants,Log,IndexType} from 'typestore'
+import {Types,Promise,Coordinator,Constants,Log,IndexAction} from 'typestore'
 
 if (!process.env.DEBUG)
 	Log.setLogThreshold(Log.LogLevel.WARN)
@@ -38,10 +38,10 @@ xdescribe('#plugin-cloudsearch',() => {
 	 * Set it up
 	 */
 	before(() => {
-		return Manager
+		return Coordinator
 			.reset()
-			.then(() => Manager.init({store}))
-			.then(() => Manager.start(Fixtures.CloudSearchTestModel))
+			.then(() => Coordinator.init({},store))
+			.then(() => Coordinator.start(Fixtures.CloudSearchTestModel))
 			.return(true)
 	})
 
@@ -55,12 +55,12 @@ xdescribe('#plugin-cloudsearch',() => {
 		it('#add', () => {
 			getTestModel()
 
-			let repo = Manager.getRepo(Fixtures.CloudSearchTest1Repo)
+			let repo = Coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
 
 			//const mock = sinon.mock(repo)
 			const stub = sinon.stub(repo,'save', function (o) {
 				expect(o.id).toBe(t1.id)
-				return this.index(IndexType.Add,o)
+				return this.index(IndexAction.Add,o)
 			})
 
 
@@ -70,11 +70,11 @@ xdescribe('#plugin-cloudsearch',() => {
 		})
 
 		it('#remove', () => {
-			let repo = Manager.getRepo(Fixtures.CloudSearchTest1Repo)
+			let repo = Coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
 			const stub = sinon.stub(repo, 'remove', function (o) {
 				log.info('Fake remove object', o)
 				expect(o.id).toBe(t1.id)
-				return this.index(IndexType.Remove, o)
+				return this.index(IndexAction.Remove, o)
 			})
 
 			//const mock = sinon.mock(repo)

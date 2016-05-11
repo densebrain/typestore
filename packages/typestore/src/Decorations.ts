@@ -2,7 +2,7 @@ import Promise = require('bluebird')
 import 'reflect-metadata'
 
 import * as Log from './log'
-import {Manager} from './Manager'
+import {Coordinator} from './Coordinator'
 import {IModelOptions, IRepoOptions, IModelAttributeOptions, IModel, IFinderOptions} from './Types'
 import {
 	TypeStoreFinderKey, TypeStoreFindersKey, TypeStoreAttrKey, TypeStoreModelKey,
@@ -40,8 +40,8 @@ export function ModelDescriptor(opts:IModelOptions) {
 		log.debug('Decorating: ', finalOpts.clazzName)
 		Reflect.defineMetadata(TypeStoreModelKey,finalOpts,constructor)
 
-		//if (Manager.getOptions().autoRegisterModels)
-		Manager.registerModel(constructor)
+		//if (Coordinator.getOptions().autoRegisterModels)
+		Coordinator.registerModel(constructor)
 	}
 }
 

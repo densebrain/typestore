@@ -3,12 +3,12 @@ require('source-map-support').install()
 import 'expectations'
 import 'reflect-metadata'
 import * as uuid from 'node-uuid'
-import {Types,Promise,Manager,Constants,Log,SyncStrategy,TypeStoreModelKey,TypeStoreAttrKey} from 'typestore'
+import {Types,Promise,Coordinator,Constants,Log,SyncStrategy,TypeStoreModelKey,TypeStoreAttrKey} from 'typestore'
 
 if (!process.env.DEBUG)
 	Log.setLogThreshold(Log.LogLevel.WARN)
 
-import {IDynamoDBManagerOptions} from "../DynamoDBTypes"
+import {IDynamoDBCoordinatorOptions} from "../DynamoDBTypes"
 import {DynamoDBStore} from '../DynamoDBStore'
 
 
@@ -28,18 +28,17 @@ let store:DynamoDBStore = null
  *
  * @param syncStrategy
  * @param endpoint
- * @returns {Bluebird<Manager>}
+ * @returns {Bluebird<Coordinator>}
  */
 function reset(syncStrategy:SyncStrategy,endpoint:string) {
 	// Init dynamo type
 	// using local
 	store = new DynamoDBStore()
 
-	const opts:IDynamoDBManagerOptions = {
+	const opts:IDynamoDBCoordinatorOptions = {
 		dynamoEndpoint: endpoint,
 		prefix: `test_${process.env.USER}_`,
-		syncStrategy,
-		store
+		syncStrategy
 	}
 
 	if (!endpoint)
@@ -47,14 +46,14 @@ function reset(syncStrategy:SyncStrategy,endpoint:string) {
 
 	delete require['./fixtures/index']
 
-	return Manager.reset().then(() => {
-			log.info('Manager reset, now init')
+	return Coordinator.reset().then(() => {
+			log.info('Coordinator reset, now init')
 		})
-		.then(() => Manager.init(opts))
+		.then(() => Coordinator.init(opts,store))
 		.then(() => {
 			Fixtures = require('./fixtures/index')
 		})
-		.return(Manager)
+		.return(Coordinator)
 }
 
 
@@ -80,9 +79,9 @@ describe('#store-dynamodb', function() {
 	 * Creates a valid table definition
 	 */
 	it('#tableDef', () => {
-		Manager.start(Fixtures.Test1)
+		Coordinator.start(Fixtures.Test1)
 
-		const modelOpts = Manager.getModel(Fixtures.Test1)
+		const modelOpts = Coordinator.getModel(Fixtures.Test1)
 		const tableDef = store.tableDefinition(modelOpts.name)
 
 
@@ -93,9 +92,9 @@ describe('#store-dynamodb', function() {
 	})
 
 	it("#sync",() => {
-		return Manager.start(Fixtures.Test1).then(() => {
+		return Coordinator.start(Fixtures.Test1).then(() => {
 			expect(store.availableTables.length).toBeGreaterThan(0)
-			expect(Manager.getModel(Fixtures.Test1)).not.toBeNull()
+			expect(Coordinator.getModel(Fixtures.Test1)).not.toBeNull()
 		})
 	})
 
@@ -108,8 +107,8 @@ describe('#store-dynamodb', function() {
 			t1.createdAt = new Date().getTime()
 			t1.randomText = 'asdfasdfadsf'
 
-			return Manager.start().then(() => {
-				test1Repo = Manager.getRepo(Fixtures.Test1Repo)
+			return Coordinator.start(Fixtures.Test1).then(() => {
+				test1Repo = Coordinator.getRepo(Fixtures.Test1Repo)
 			})
 		})
 

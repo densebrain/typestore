@@ -24,9 +24,9 @@ import * as Constants from './Constants';
 import * as Log from './log';
 import * as Errors from './Errors';
 /**
- * Export the manager and manager functions
+ * Export the coordinator and coordinator functions
  */
-export * from './Manager';
+export * from './Coordinator';
 /**
  * Export all general types
  */

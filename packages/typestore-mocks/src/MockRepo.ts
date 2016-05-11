@@ -1,22 +1,45 @@
 
-import {DefaultModel,IKeyValue,Errors,Promise,IStore,IManagerOptions,IManager,Repo,IModel} from 'typestore'
+import {
+	DefaultModel,
+	IKeyValue,
+	Errors,
+	Promise,
+	IStorePlugin,
+	ICoordinatorOptions,
+	ICoordinator,
+	Repo,
+	IModel,
+	IRepoPlugin,
+	PluginType
+} from 'typestore'
+import {MockKeyValue} from "./MockStore";
 
-export class MockRepo<M extends IModel> extends Repo<M> {
+
+
+
+export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	private recordCount = 0
 	
-	constructor(private store:IStore,private repoClazz:any) {
-		super(repoClazz,new repoClazz().modelClazz)
+	constructor(private store:IStorePlugin,private repo:Repo<M>) {
+		repo.attach(this)
+	}
+	
+	get type() {
+		return PluginType.Repo
 	}
 
-	key(...args):IKeyValue {
-		return {args}
+	key(...args):MockKeyValue {
+		return new MockKeyValue(args)
 	}
 
 	
 	get(key:IKeyValue):Promise<M> {
-
-		return Promise.resolve(new this.modelClazz())  as Promise<M>
+		if (!(key instanceof MockKeyValue)) {
+			return null
+		}
+		
+		return Promise.resolve(new this.repo.modelClazz()) as Promise<M>
 	}
 
 	save(o:M):Promise<M> {

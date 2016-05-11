@@ -36,9 +36,9 @@ exports.Log = Log;
 var Errors = require('./Errors');
 exports.Errors = Errors;
 /**
- * Export the manager and manager functions
+ * Export the coordinator and coordinator functions
  */
-__export(require('./Manager'));
+__export(require('./Coordinator'));
 /**
  * Export all general types
  */

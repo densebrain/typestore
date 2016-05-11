@@ -28,10 +28,10 @@ xdescribe('#plugin-cloudsearch', function () {
      * Set it up
      */
     before(function () {
-        return typestore_1.Manager
+        return typestore_1.Coordinator
             .reset()
-            .then(function () { return typestore_1.Manager.init({ store: store }); })
-            .then(function () { return typestore_1.Manager.start(Fixtures.CloudSearchTestModel); })
+            .then(function () { return typestore_1.Coordinator.init({}, store); })
+            .then(function () { return typestore_1.Coordinator.start(Fixtures.CloudSearchTestModel); })
             .return(true);
     });
     /**
@@ -40,21 +40,21 @@ xdescribe('#plugin-cloudsearch', function () {
     describe('#indexer', function () {
         it('#add', function () {
             getTestModel();
-            var repo = typestore_1.Manager.getRepo(Fixtures.CloudSearchTest1Repo);
+            var repo = typestore_1.Coordinator.getRepo(Fixtures.CloudSearchTest1Repo);
             //const mock = sinon.mock(repo)
             var stub = sinon.stub(repo, 'save', function (o) {
                 expect(o.id).toBe(t1.id);
-                return this.index(typestore_1.IndexType.Add, o);
+                return this.index(typestore_1.IndexAction.Add, o);
             });
             //mock.expects('save').once()
             return repo.save(t1);
         });
         it('#remove', function () {
-            var repo = typestore_1.Manager.getRepo(Fixtures.CloudSearchTest1Repo);
+            var repo = typestore_1.Coordinator.getRepo(Fixtures.CloudSearchTest1Repo);
             var stub = sinon.stub(repo, 'remove', function (o) {
                 log.info('Fake remove object', o);
                 expect(o.id).toBe(t1.id);
-                return this.index(typestore_1.IndexType.Remove, o);
+                return this.index(typestore_1.IndexAction.Remove, o);
             });
             //const mock = sinon.mock(repo)
             //mock.expects('remove').once()

@@ -1,41 +1,46 @@
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
 var typestore_1 = require('typestore');
-var MockRepo = (function (_super) {
-    __extends(MockRepo, _super);
-    function MockRepo(store, repoClazz) {
-        _super.call(this, repoClazz, new repoClazz().modelClazz);
+var MockStore_1 = require("./MockStore");
+var MockRepoPlugin = (function () {
+    function MockRepoPlugin(store, repo) {
         this.store = store;
-        this.repoClazz = repoClazz;
+        this.repo = repo;
         this.recordCount = 0;
+        repo.attach(this);
     }
-    MockRepo.prototype.key = function () {
+    Object.defineProperty(MockRepoPlugin.prototype, "type", {
+        get: function () {
+            return typestore_1.PluginType.Repo;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    MockRepoPlugin.prototype.key = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i - 0] = arguments[_i];
         }
-        return { args: args };
+        return new MockStore_1.MockKeyValue(args);
     };
-    MockRepo.prototype.get = function (key) {
-        return typestore_1.Promise.resolve(new this.modelClazz());
+    MockRepoPlugin.prototype.get = function (key) {
+        if (!(key instanceof MockStore_1.MockKeyValue)) {
+            return null;
+        }
+        return typestore_1.Promise.resolve(new this.repo.modelClazz());
     };
-    MockRepo.prototype.save = function (o) {
+    MockRepoPlugin.prototype.save = function (o) {
         this.recordCount++;
         return typestore_1.Promise.resolve(o);
     };
-    MockRepo.prototype.remove = function (key) {
+    MockRepoPlugin.prototype.remove = function (key) {
         this.recordCount--;
         return typestore_1.Promise.resolve({});
     };
-    MockRepo.prototype.count = function () {
+    MockRepoPlugin.prototype.count = function () {
         return typestore_1.Promise.resolve(this.recordCount);
     };
-    return MockRepo;
-}(typestore_1.Repo));
-exports.MockRepo = MockRepo;
+    return MockRepoPlugin;
+}());
+exports.MockRepoPlugin = MockRepoPlugin;
 
 //# sourceMappingURL=MockRepo.js.map

@@ -1,10 +1,11 @@
-import { Promise, IStore, IManagerOptions, IManager, Repo, PluginType, IModel } from '../../index';
-export declare class NullStore implements IStore {
+import { Promise, IStorePlugin, ICoordinatorOptions, ICoordinator, Repo, PluginType, IModel } from '../../index';
+export declare class NullStore implements IStorePlugin {
+    private coordinator;
     constructor();
     type: PluginType;
-    init(manager: IManager, opts: IManagerOptions): Promise<boolean>;
-    start(): Promise<boolean>;
-    stop(): Promise<boolean>;
-    syncModels(): Promise<boolean>;
-    prepareRepo<T extends Repo<M>, M extends IModel>(repo: T): T;
+    init(coordinator: ICoordinator, opts: ICoordinatorOptions): Promise<ICoordinator>;
+    start(): Promise<ICoordinator>;
+    stop(): Promise<ICoordinator>;
+    syncModels(): Promise<ICoordinator>;
+    initRepo<T extends Repo<M>, M extends IModel>(repo: T): T;
 }

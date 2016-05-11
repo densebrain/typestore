@@ -7,7 +7,7 @@ require('expectations');
 require('reflect-metadata');
 var Types_1 = require("../Types");
 var NullStore_1 = require("./fixtures/NullStore");
-var Manager_1 = require('../Manager');
+var Coordinator_1 = require('../Coordinator');
 var Constants_1 = require('../Constants');
 var log = Log.create(__filename);
 log.info('Starting test suite');
@@ -21,15 +21,14 @@ var store = null;
  */
 function reset(syncStrategy) {
     store = new NullStore_1.NullStore();
-    var opts = new Types_1.ManagerOptions(store, {
-        syncStrategy: syncStrategy,
-        store: store
+    var opts = new Types_1.CoordinatorOptions({
+        syncStrategy: syncStrategy
     });
     delete require['./fixtures/Fixtures'];
-    return Manager_1.Manager.reset().then(function () {
-        log.info('Manager reset, now init');
+    return Coordinator_1.Coordinator.reset().then(function () {
+        log.info('Coordinator reset, now init');
     })
-        .then(function () { return Manager_1.Manager.init(opts); })
+        .then(function () { return Coordinator_1.Coordinator.init(opts, store); })
         .then(function () {
         Fixtures = require('./fixtures/Fixtures');
     });
@@ -46,7 +45,7 @@ describe('#typestore', function () {
             return reset(Types_1.SyncStrategy.None);
         });
         it('#model', function () {
-            Manager_1.Manager.start(Fixtures.ModelTest1);
+            Coordinator_1.Coordinator.start(Fixtures.ModelTest1);
             var test1 = new Fixtures.ModelTest1();
             var constructorFn = Fixtures.ModelTest1;
             expect(constructorFn).toBe(Fixtures.ModelTest1);

@@ -1,12 +1,12 @@
 "use strict";
 exports.Strings = {
     BadMessageKey: 'Bad Message Key: ?0',
-    ManagerFailedToStart: 'Manager failed to start',
-    ManagerErrorFn: 'Manager Function failed ?0',
-    ManagerInitialized: 'Manager is already initialized',
-    ManagerNotInitialized: 'Manager not initialized',
-    ManagerSettled: 'Manager is settled',
-    ManagerNotSettled: 'Manager not settled',
+    ManagerFailedToStart: 'Coordinator failed to start',
+    ManagerErrorFn: 'Coordinator Function failed ?0',
+    ManagerInitialized: 'Coordinator is already initialized',
+    ManagerNotInitialized: 'Coordinator not initialized',
+    ManagerSettled: 'Coordinator is settled',
+    ManagerNotSettled: 'Coordinator not settled',
     ManagerInitComplete: 'dont forget to start when models are prepared, start triggers model prep, including table create',
     ManagerNoSyncModels: 'Create tables is disabled, nothing to prepare',
     ManagerOnlyOneKeyType: 'An attribute can only have 1 key type ?0',

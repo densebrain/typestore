@@ -6,13 +6,14 @@
 
 import {
 	Promise,
-	IIndexer,
-	IndexType,
+	IIndexerPlugin,
+	IndexAction,
 	IIndexerOptions,
 	ISearchProvider,
 	IModelType,
 	IModel,
-	IStore,
+	IStorePlugin,
+	PluginType,
 	ISearchOptions,
 	Repo
 } from 'typestore'
@@ -32,15 +33,19 @@ function getClient(endpoint:string,awsOptions:any = {}) {
 }
 
 
-export class CloudSearchProvider implements IIndexer, ISearchProvider {
+export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 
 	private client:CloudSearchDomain
 
 	constructor(private endpoint:string,private awsOptions:any = {}) {
 		this.client = getClient(endpoint,awsOptions)
 	}
+	
+	get type() {
+		return PluginType.Indexer
+	}
 
-	index<M extends IModel>(type:IndexType,options:IIndexerOptions,modelType:IModelType,repo:Repo<M>,...models:IModel[]):Promise<boolean> {
+	index<M extends IModel>(type:IndexAction,options:IIndexerOptions,modelType:IModelType,repo:Repo<M>,...models:IModel[]):Promise<boolean> {
 
 		const docs = models.map((model) => {
 			const doc = {}
@@ -54,7 +59,7 @@ export class CloudSearchProvider implements IIndexer, ISearchProvider {
 			},{
 				fields:doc
 			},{
-				type:(IndexType.Remove === type) ? 'delete' : 'add'
+				type:(IndexAction.Remove === type) ? 'delete' : 'add'
 			})
 		})
 

@@ -9,9 +9,9 @@ import 'reflect-metadata'
 
 import Promise = require('../Promise')
 
-import {SyncStrategy, IManagerOptions,ManagerOptions} from "../Types";
-import {NullStore} from "./fixtures/NullStore";
-import {Manager} from '../Manager'
+import {SyncStrategy,CoordinatorOptions} from "../Types";
+import {NullStore} from "./fixtures/NullStore"
+import {Coordinator} from '../Coordinator'
 import {TypeStoreModelKey,TypeStoreAttrKey} from '../Constants'
 
 
@@ -33,17 +33,16 @@ function reset(syncStrategy:SyncStrategy) {
 
 	store = new NullStore()
 
-	const opts = new ManagerOptions(store,{
-		syncStrategy,
-		store
+	const opts = new CoordinatorOptions({
+		syncStrategy
 	})
 
 	delete require['./fixtures/Fixtures']
 
-	return Manager.reset().then(() => {
-			log.info('Manager reset, now init')
+	return Coordinator.reset().then(() => {
+			log.info('Coordinator reset, now init')
 		})
-		.then(() => Manager.init(opts))
+		.then(() => Coordinator.init(opts,store))
 		.then(() => {
 			Fixtures = require('./fixtures/Fixtures')
 		})
@@ -66,7 +65,7 @@ describe('#typestore',() => {
 		})
 
 		it('#model',() => {
-			Manager.start(Fixtures.ModelTest1)
+			Coordinator.start(Fixtures.ModelTest1)
 			const test1 = new Fixtures.ModelTest1()
 
 			const constructorFn = Fixtures.ModelTest1

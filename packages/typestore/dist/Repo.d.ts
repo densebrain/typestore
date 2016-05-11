@@ -1,13 +1,60 @@
 import Promise = require('./Promise');
-import { IModelOptions, IKeyValue, IModel, IndexType, IRepoOptions } from "./Types";
-export declare abstract class Repo<M extends IModel> {
-    protected modelClazz: any;
-    protected modelOpts: IModelOptions;
-    protected repoOpts: IRepoOptions;
+import { IModelOptions, IKeyValue, IModel, IndexAction, IRepoOptions, IPlugin, IModelMapper } from "./Types";
+import { IRepoPlugin, IFinderPlugin } from "./PluginTypes";
+import { IModelType } from "./ModelTypes";
+/**
+ * The core Repo implementation
+ *
+ * When requested from the coordinator,
+ * it offers itself to all configured plugins for
+ * them to attach to the model pipeline
+ *
+ *
+ */
+export declare class Repo<M extends IModel> {
+    repoClazz: any;
+    modelClazz: {
+        new (): M;
+    };
+    modelOpts: IModelOptions;
+    repoOpts: IRepoOptions;
+    modelType: IModelType;
+    mapper: any;
+    protected plugins: IPlugin[];
+    /**
+     * Core repo is instantiated by providing the implementing/extending
+     * class and the model that will be supported
+     *
+     * @param repoClazz
+     * @param modelClazz
+     */
     constructor(repoClazz: any, modelClazz: {
         new (): M;
     });
-    protected makeFinder(finderKey: string): void;
+    start(): void;
+    getMapper<M extends IModel>(clazz: {
+        new (): M;
+    }): IModelMapper<M>;
+    protected getRepoPlugins(): IRepoPlugin<M>[];
+    protected getFinderPlugins(): IFinderPlugin[];
+    /**
+     * Attach a plugin to the repo - could be a store,
+     * indexer, etc, etc
+     *
+     * @param plugin
+     * @returns {Repo}
+     */
+    attach(plugin: IPlugin): this;
+    decorateFinders(): void;
+    /**
+     * Create a generic finder, in order
+     * to do this search options must have been
+     * annotated on the model
+     *
+     * @param finderKey
+     * @returns {any}
+     */
+    protected genericFinder(finderKey: string): (...args: any[]) => Promise<M[]>;
     /**
      * Set a finder function on the repo
      *
@@ -22,7 +69,8 @@ export declare abstract class Repo<M extends IModel> {
      * @param models
      * @returns {Bluebird<boolean>}
      */
-    index(type: IndexType, ...models: IModel[]): Promise<boolean>;
+    index(type: IndexAction, ...models: IModel[]): Promise<boolean>;
+    indexPromise(action: IndexAction): (models: IModel[]) => Promise<IModel[]>;
     /**
      * Not implemented
      *

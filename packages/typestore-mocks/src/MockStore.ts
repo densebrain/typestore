@@ -1,33 +1,57 @@
-
-import {Errors,Promise,IStore,IManagerOptions,IManager,Repo,IModel} from 'typestore'
-import {MockRepo} from './MockRepo'
+import {
+	Errors, 
+	Promise, 
+	IStorePlugin, 
+	IKeyValue, 
+	ICoordinatorOptions, 
+	ICoordinator,
+	Repo, 
+	IModel,
+	PluginType
+} from 'typestore'
+import {MockRepoPlugin} from './MockRepo'
 
 const NotImplemented = Errors.NotImplemented;
 
-export class MockStore implements IStore {
+export class MockKeyValue implements IKeyValue {
+	
+	args
+
+	constructor(...args:any[]) {
+		this.args = args
+	}
+}
+
+export class MockStore implements IStorePlugin {
+
+	coordinator:ICoordinator
 
 	constructor() {
 
 	}
 
-	init(manager:IManager, opts:IManagerOptions):Promise<boolean> {
-		return Promise.resolve(true)
+	get type() {
+		return PluginType.Store
 	}
 
-	start():Promise<boolean> {
-		return Promise.resolve(true)
+	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
+		return Promise.resolve(coordinator)
 	}
 
-	stop():Promise<boolean> {
-		return Promise.resolve(true)
+	start():Promise<ICoordinator> {
+		return Promise.resolve(this.coordinator)
 	}
 
-	syncModels():Promise<boolean> {
-		return Promise.resolve(true)
+	stop():Promise<ICoordinator> {
+		return Promise.resolve(this.coordinator)
+	}
+
+	syncModels():Promise<ICoordinator> {
+		return Promise.resolve(this.coordinator)
 	}
 
 
-	prepareRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
+	initRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
 		return repo;
 	}
 

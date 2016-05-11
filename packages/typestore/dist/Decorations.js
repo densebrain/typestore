@@ -1,7 +1,7 @@
 "use strict";
 require('reflect-metadata');
 var Log = require('./log');
-var Manager_1 = require('./Manager');
+var Coordinator_1 = require('./Coordinator');
 var Constants_1 = require("./Constants");
 var log = Log.create(__filename);
 /**
@@ -26,8 +26,8 @@ function ModelDescriptor(opts) {
         }, opts);
         log.debug('Decorating: ', finalOpts.clazzName);
         Reflect.defineMetadata(Constants_1.TypeStoreModelKey, finalOpts, constructor);
-        //if (Manager.getOptions().autoRegisterModels)
-        Manager_1.Manager.registerModel(constructor);
+        //if (Coordinator.getOptions().autoRegisterModels)
+        Coordinator_1.Coordinator.registerModel(constructor);
     };
 }
 exports.ModelDescriptor = ModelDescriptor;

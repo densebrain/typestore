@@ -1,146 +1,26 @@
 import 'reflect-metadata'
 import Promise = require('./Promise')
-import {Repo} from "./Repo";
-import {NoReflectionMetataError} from "./Errors";
+import {Repo} from "./Repo"
+import {IModel, IModelKey, IModelOptions, IModelType, IKeyValue} from "./ModelTypes"
+import {ISearchOptions, IIndexerOptions, IStorePlugin, IPlugin} from "./PluginTypes";
 
 
-export interface IModel {
-	clazzType:string
-}
+export * from './ModelTypes'
+export * from './PluginTypes'
+
 
 /**
- * Simple base model implementation
- * uses reflection to determine type
+ * Options for repo decorations
  */
-export class DefaultModel implements IModel {
-	get clazzType() {
-		const type = Reflect.getOwnMetadata('design:type',this)
-		if (!type)
-			throw new NoReflectionMetataError('Unable to reflect type information')
-
-		return type.name
-	}
-}
-
-export interface IModelIndex {
-	name:string
-	isAlternateRangeKey?:boolean
-	rangeKey?:string
-}
-
-export interface IModelAttributeOptions {
-	name?:string
-	type?:any
-	hashKey?:boolean
-	rangeKey?:boolean
-	index?: IModelIndex
-}
-
-/**
- * Options provided to model
- * decorator annotation
- */
-export interface IModelOptions {
-	clazzName?:string
-	clazz?:any
-	tableName:string
-	attrs?:IModelAttributeOptions[]
-}
-
-export interface IModelKey {
-
-}
-
-export interface IKeyValue {
-
-}
-
-export interface IIndexerOptions {
-	indexer:IIndexer,
-	fields:string[]
-}
 export interface IRepoOptions {
 	indexers?:IIndexerOptions[]
 }
 
+/**
+ * Options for finder decorations
+ */
 export interface IFinderOptions {
 	searchOptions?:ISearchOptions<any>
-}
-
-export enum IndexType {
-	Add,
-	Update,
-	Remove
-}
-
-/**
- * Responsible for indexing given models
- */
-export interface IIndexer extends IPlugin {
-
-	/**
-	 * Called in persistence chain after put/save
-	 * before return.
-	 * 
-	 * Note: indexing can be done asynchronously based on your
-	 * requirements, but we suggest whenever possible to do this sync
-	 * 
-	 * Obviously if you have a high write throughput solution
-	 * THIS IS A BAD IDEA - do indexing async or offline
-	 * 
-	 * @param modelType
-	 * @param model
-	 * @param store
-	 */
-	index<M extends IModel>(type:IndexType,options:IIndexerOptions,modelType:IModelType,repo:Repo<M>,...models:IModel[]):Promise<boolean>
-}
-
-/**
- * Maps search results to keys for a given repo
- */
-export type ISearchResultToKeyMapper<R> = (repo:Repo<any>,resultType:{new():R},result:R) => IModelKey
-
-/**
- * Super simply default key mapper for search results
- * field names in, key out, must all be top level in result object
- * 
- * @param fields
- * @returns {function(Repo<any>, {new(): R}, R): IModelKey}
- * @constructor
- */
-export function DefaultKeyMapper<R extends any>(...fields):ISearchResultToKeyMapper<R> {
-	return function (repo:Repo<any>,resultType:{new():R},result:R):IModelKey {
-		const values = fields.map((field) => result[field])
-		return repo.key(values)
-	}
-}
-
-/**
- * Custom search options for search(s)
- */
-export interface ISearchOptions<R extends any> {
-	resultType:{new():R}
-	resultKeyMapper: ISearchResultToKeyMapper<R>
-	provider: ISearchProvider
-}
-
-/**
- * Custom external search provider
- */
-export interface ISearchProvider extends IPlugin {
-	search<R extends any>(modelType:IModelType,opts:ISearchOptions<R>,...args):Promise<R[]>
-}
-
-/**
- * Store interface that must be fulfilled for
- * a valid store to work
- */
-export interface IStore extends IPlugin {
-	init(manager:IManager,opts:IManagerOptions):Promise<boolean>
-	start():Promise<boolean>
-	stop():Promise<boolean>
-	syncModels():Promise<boolean>
-	prepareRepo<T extends Repo<M>,M extends IModel>(repo:T):T
 }
 
 
@@ -159,20 +39,20 @@ export namespace SyncStrategy {
 	}
 }
 /**
- * Manager configuration, this is usually extend
+ * Coordinator configuration, this is usually extend
  * by individual store providers
  */
 
-export interface IManagerOptions {
+export interface ICoordinatorOptions {
 	immutable?:boolean
 	syncStrategy?: SyncStrategy
 	autoRegisterModels?: boolean
 }
 
 /**
- * Manager options default implementation
+ * Coordinator options default implementation
  */
-export class ManagerOptions implements IManagerOptions {
+export class CoordinatorOptions implements ICoordinatorOptions {
 
 	/**
 	 * Default manager options
@@ -185,8 +65,8 @@ export class ManagerOptions implements IManagerOptions {
 		immutable: false
 	}
 	
-	constructor(public store:IStore,opts = {}) {
-		Object.assign(this,opts,ManagerOptions.Defaults)
+	constructor(opts = {}) {
+		Object.assign(this,opts,CoordinatorOptions.Defaults)
 	}
 }
 
@@ -202,40 +82,24 @@ export interface IModelMapper<M extends IModel> {
 	fromJson(json:string):M
 }
 
-/**
- * Model definition
- */
-export interface IModelType {
-	options:IModelOptions
-	name:string
-	clazz:any
-}
 
-export enum PluginType {
-	Indexer,
-	Store
-}
 
-export interface IPlugin {
-	type:PluginType
-}
 
 /**
- * Manager interface for store provider development
+ * Coordinator interface for store provider development
  * and end user management
  *
  * TODO: Rename coordinator
  */
-export interface IManager {
+export interface ICoordinator {
 	getOptions():IModelOptions
 	getModels():IModelType[]
 	getModel(clazz:any):IModelType
 	getModelByName(name:string)
-	start(...models):Promise<IManager>
-	init(opts:IManagerOptions,...plugins:IPlugin[]):Promise<IManager>
-	reset():Promise<IManager>
+	start(...models):Promise<ICoordinator>
+	init(opts:ICoordinatorOptions, ...plugins:IPlugin[]):Promise<ICoordinator>
+	reset():Promise<ICoordinator>
 	getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T
-	getMapper<M extends IModel>(clazz:{new():M;}):IModelMapper<M>
 }
 
 

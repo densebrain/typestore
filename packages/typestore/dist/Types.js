@@ -1,51 +1,10 @@
 "use strict";
-require('reflect-metadata');
-var Errors_1 = require("./Errors");
-/**
- * Simple base model implementation
- * uses reflection to determine type
- */
-var DefaultModel = (function () {
-    function DefaultModel() {
-    }
-    Object.defineProperty(DefaultModel.prototype, "clazzType", {
-        get: function () {
-            var type = Reflect.getOwnMetadata('design:type', this);
-            if (!type)
-                throw new Errors_1.NoReflectionMetataError('Unable to reflect type information');
-            return type.name;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    return DefaultModel;
-}());
-exports.DefaultModel = DefaultModel;
-(function (IndexType) {
-    IndexType[IndexType["Add"] = 0] = "Add";
-    IndexType[IndexType["Update"] = 1] = "Update";
-    IndexType[IndexType["Remove"] = 2] = "Remove";
-})(exports.IndexType || (exports.IndexType = {}));
-var IndexType = exports.IndexType;
-/**
- * Super simply default key mapper for search results
- * field names in, key out, must all be top level in result object
- *
- * @param fields
- * @returns {function(Repo<any>, {new(): R}, R): IModelKey}
- * @constructor
- */
-function DefaultKeyMapper() {
-    var fields = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        fields[_i - 0] = arguments[_i];
-    }
-    return function (repo, resultType, result) {
-        var values = fields.map(function (field) { return result[field]; });
-        return repo.key(values);
-    };
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
-exports.DefaultKeyMapper = DefaultKeyMapper;
+require('reflect-metadata');
+__export(require('./ModelTypes'));
+__export(require('./PluginTypes'));
 /**
  * Sync strategy for updating models in the store
  */
@@ -62,31 +21,25 @@ var SyncStrategy;
     };
 })(SyncStrategy = exports.SyncStrategy || (exports.SyncStrategy = {}));
 /**
- * Manager options default implementation
+ * Coordinator options default implementation
  */
-var ManagerOptions = (function () {
-    function ManagerOptions(store, opts) {
+var CoordinatorOptions = (function () {
+    function CoordinatorOptions(opts) {
         if (opts === void 0) { opts = {}; }
-        this.store = store;
-        Object.assign(this, opts, ManagerOptions.Defaults);
+        Object.assign(this, opts, CoordinatorOptions.Defaults);
     }
     /**
      * Default manager options
      *
      * @type {{autoRegisterModules: boolean, syncStrategy: SyncStrategy, immutable: boolean}}
      */
-    ManagerOptions.Defaults = {
+    CoordinatorOptions.Defaults = {
         autoRegisterModules: true,
         syncStrategy: SyncStrategy.None,
         immutable: false
     };
-    return ManagerOptions;
+    return CoordinatorOptions;
 }());
-exports.ManagerOptions = ManagerOptions;
-(function (PluginType) {
-    PluginType[PluginType["Indexer"] = 0] = "Indexer";
-    PluginType[PluginType["Store"] = 1] = "Store";
-})(exports.PluginType || (exports.PluginType = {}));
-var PluginType = exports.PluginType;
+exports.CoordinatorOptions = CoordinatorOptions;
 
 //# sourceMappingURL=Types.js.map

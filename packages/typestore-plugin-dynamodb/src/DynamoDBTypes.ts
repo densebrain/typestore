@@ -1,27 +1,85 @@
 import * as AWS from 'aws-sdk'
-import {Types} from 'typestore'
+import {IModelAttributeOptions,IModelOptions,ICoordinatorOptions} from 'typestore'
 
+/**
+ * Types of keys for dynamo
+ */
+export enum KeyType {
+	HASH,
+	RANGE
+}
+
+/**
+ * Resource status exists/notExists
+ */
+export enum ResourceState {
+	tableExists,
+	tableNotExists
+}
+
+/**
+ * Current table status for monitoring
+ * creation and deletion
+ */
+export enum TableStatus {
+	CREATING,
+	UPDATING,
+	DELETING,
+	ACTIVE
+}
+
+export const StatusPending = [
+	TableStatus.CREATING,
+	TableStatus.UPDATING
+]
+
+
+
+/**
+ * Finder types, in DynamoDB there are
+ * two, Query & Scan
+ */
 export enum DynamoDBFinderType {
 	Query,
 	Scan
 }
 
+/**
+ * AWS attr type options
+ */
+export interface IDynamoDBAttributeOptions extends IModelAttributeOptions {
 
-export interface IDynamoDBAttributeOptions extends Types.IModelAttributeOptions {
+	/**
+	 * Amazon DynamoDB type
+	 * directly maps to value class
+	 * using this table
+	 * 
+	 * @see http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html
+	 */
 	awsAttrType?:string
 }
 
+/**
+ * Table throughput provisioning
+ */
 export interface IDynamoDBProvisioning {
 	writeCapacityUnits?:number
 	readCapacityUnits?:number
 }
 
-export interface IDynamoDBModelOptions extends Types.IModelOptions {
+/**
+ * Additional model options for DynamoDB backed mode
+ * 
+ * provisioning & tableDef
+ * 
+ * tableDef is automatically populated - dont touch
+ */
+export interface IDynamoDBModelOptions extends IModelOptions {
 	provisioning?:IDynamoDBProvisioning
 	tableDef?:AWS.DynamoDB.CreateTableInput
 }
 
-export interface IDynamoDBManagerOptions extends Types.IManagerOptions {
+export interface IDynamoDBCoordinatorOptions extends ICoordinatorOptions {
 	dynamoEndpoint?:string
 	region?:string
 	awsOptions?:AWS.ClientConfigPartial
