@@ -7,7 +7,7 @@ import * as Log from './log'
 import {TypeStoreModelKey,TypeStoreAttrKey} from './Constants'
 import {
 	IModelOptions, IModelAttributeOptions, IStore, IManagerOptions, IModelMapper, IModel, IModelType,
-	ManagerOptions, IManager
+	ManagerOptions, IManager, IPlugin, PluginType
 } from './Types'
 import {msg, Strings} from "./Messages"
 import {Repo} from "./Repo";
@@ -17,6 +17,8 @@ import {ModelMapper} from "./ModelMapper";
 const log = Log.create(__filename)
 
 export namespace Manager {
+
+	const plugins:IPlugin[] = []
 
 	/**
 	 * Model registration map type
@@ -96,32 +98,32 @@ export namespace Manager {
 		assert(valid, msg(not ? Strings.ManagerSettled : Strings.ManagerNotSettled))
 	}
 
-	/**
-	 * Ref to aws client
-	 */
-	export let store:IStore
+	export function stores() {
+		return plugins.filter((plugin) => plugin.type === PluginType.Store) as IStore[]
+	}
 
 	/**
 	 * Set the manager options
 	 */
-	export function init(newOptions:IManagerOptions):Promise<IManager> {
+	export function init(newOptions:IManagerOptions,...newPlugins:IPlugin[]):Promise<IManager> {
 		checkStarted(true)
 		checkInitialized(true)
 		initialized = true
+		plugins.push(...newPlugins)
 
 		// Update the default options
 		options = options || newOptions
 		Object.assign(options,newOptions)
 
 
-		store = options.store
-
 		// Make sure we got a valid store
-		assert(store,msg(Strings.ManagerTypeStoreRequired))
+		assert(stores().length > 0,msg(Strings.ManagerTypeStoreRequired))
 
 		// Manager is ready, now initialize the store
 		log.debug(msg(Strings.ManagerInitComplete))
-		return store.init(this,options).return(this) as Promise<IManager>
+		return Promise
+			.map(stores(),(store:IStore) => store.init(this,options))
+			.return(this) as Promise<IManager>
 	}
 
 
@@ -134,7 +136,8 @@ export namespace Manager {
 		checkStarted(true)
 		models.forEach(registerModel)
 
-		return startPromise = store.start()
+		return startPromise = Promise
+			.map(stores(), (store:IStore) => store.start())
 			.return(this)
 			.catch((err) => {
 				log.error(msg(Strings.ManagerFailedToStart),err)
@@ -181,11 +184,11 @@ export namespace Manager {
 			(startPromise as any).cancel()
 
 		return Promise
-			.resolve((store) ? store.stop() : true)
+			.map(stores(), (store:IStore) => store.stop())
 			.return(this)
 			.finally(() => {
-				store = startPromise = null
-				if (options) options.store = null
+				startPromise = null
+				plugins.length = 0
 				initialized = false
 			}) as Promise<IManager>
 
@@ -227,8 +230,10 @@ export namespace Manager {
 	 * @param clazz
 	 * @returns {T}
 	 */
-	export function getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):Repo<M> {
-		return store.getRepo(clazz) as Repo<M>
+	export function getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T {
+		const repo = new clazz()
+		stores().forEach((store) => store.prepareRepo(repo))
+		return repo
 	}
 
 	export function getMapper<M extends IModel>(clazz:{new():M;}):IModelMapper<M> {

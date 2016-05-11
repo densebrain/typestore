@@ -1,5 +1,6 @@
 
-import {Errors,Promise,IStore,IManagerOptions,IManager,Repo,IModel} from '../../index'
+import {Errors,Promise,IStore,IManagerOptions,IManager,Repo,PluginType,IModel} from '../../index'
+
 
 const NotImplemented = Errors.NotImplemented;
 
@@ -7,6 +8,10 @@ export class NullStore implements IStore {
 
 	constructor() {
 
+	}
+
+	get type() {
+		return PluginType.Store
 	}
 
 	init(manager:IManager, opts:IManagerOptions):Promise<boolean> {
@@ -25,7 +30,8 @@ export class NullStore implements IStore {
 		return NotImplemented('syncModels') as Promise<boolean>
 	}
 
-	getRepo<T extends Repo<M>, M extends IModel>(clazz:{new():T;}):T {
-		return NotImplemented('getRepo') as T
+	prepareRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
+		return repo
+		//return NotImplemented('getRepo') as T
 	}
 }
