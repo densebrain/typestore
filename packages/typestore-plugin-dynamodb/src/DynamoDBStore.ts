@@ -1,5 +1,5 @@
 ///<reference path="../typings/typestore-plugin-dynamodb"/>
-import TypeStore = require('typestore')
+
 import {
 	Promise,
 	Log,

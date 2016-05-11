@@ -46,7 +46,7 @@
     "gulp-relative-sourcemaps-source": "^0.1.2",
     "gulp-sourcemaps": "^2.0.0-alpha",
     "gulp-typedoc": "^2.0.0",
-    "gulp-typescript": "^2.13.0",
+    "gulp-typescript": "^2.13.4",
     "gulp-util": "^3.0.7",
     "lodash": "^4.11.2",
     "merge2": "^1.0.2",

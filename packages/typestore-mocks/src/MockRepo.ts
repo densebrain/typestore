@@ -15,8 +15,6 @@ import {
 import {MockKeyValue} from "./MockStore";
 
 
-
-
 export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	private recordCount = 0

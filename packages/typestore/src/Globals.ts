@@ -14,7 +14,6 @@ declare global {
 	
 }
 
-
 /**
  * Polyfill Array.prototype.includes
  */

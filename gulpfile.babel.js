@@ -1,5 +1,8 @@
+require('source-map-support').install()
 require('shelljs/global')
 require('./etc/packages-path')
+// exec(`rm -Rf node_modules/gulp-typescript/node_modules/typescript &&
+// ln -s ${process.cwd()}/node_modules/typescript node_modules/gulp-typescript/node_modules/typescript`)
 
 const {readJSONFileSync} = require('./etc/gulp/helpers')
 const semver = require('semver')
@@ -80,6 +83,7 @@ const projects = projectNames.map((projectName) => {
 		`${project.base}/typings/browser.d.ts`,
 		`${project.base}/typings/${project.name}.d.ts`,
 		`${srcPath}/**/*.ts`,
+		`!${srcPath}/**/*.d.ts`,
 		`${project.base}/test/**/*.ts`
 	])
 
@@ -89,40 +93,7 @@ const projects = projectNames.map((projectName) => {
 
 	const taskCompileName = project.tasks.compile
 	const taskTestName = project.tasks.test
-	
-	const tsConfigPath = path.resolve(project.base,'tsconfig.json') 
-	let tsProject = null
 
-	let generatedConfig = false
-
-
-	function init() {
-		if (generatedConfig) {
-			log.info(`Already generated on this run ${projectName} @ ${tsConfigPath}`)
-			return
-		}
-		
-		log.info(`Generating TS config for ${projectName} @ ${tsConfigPath}`)
-		generatedConfig = true
-		
-		const tsBaseConfig = require('./tsconfig.json')
-		Object.assign(tsBaseConfig,{
-			rootDirs: projectNames.map(name => path.resolve(__dirname,'packages',name))
-		})
-
-		fs.writeFileSync(tsConfigPath,JSON.stringify(tsBaseConfig,null,4))
-		tsProject = ts.createProject(tsConfigPath)
-	}
-	
-	if (!fs.existsSync(tsConfigPath)) {
-		log.info(`No TS config found @ ${tsConfigPath} - Generating`)
-		init()
-	} else {
-		tsProject = ts.createProject(tsConfigPath)
-	}
-	
-	
-	
 
 
 	function release() {
@@ -151,8 +122,9 @@ const projects = projectNames.map((projectName) => {
 			devDependencies: _.assign({},devDeps,basePackageJson.devDependencies)
 		})
 
+		// Add core package dependencies
 		if (projectName !== 'typestore') {
-			packageJson.dependencies.typestore = nextMinorVersion
+			packageJson.dependencies['typestore'] = nextMinorVersion
 			if (projectName !== 'typestore-mocks') {
 				packageJson.dependencies['typestore-mocks'] = nextMinorVersion
 			}
@@ -168,7 +140,7 @@ const projects = projectNames.map((projectName) => {
 
 		log.info(`${projectName} is ready for release - publish-all will actually publish to npm`)
 	}
-	
+
 	
 	/**
 	 * Compile compile
@@ -177,8 +149,10 @@ const projects = projectNames.map((projectName) => {
 	 * @returns {*}
 	 */
 	function compile() {
-
-
+		const tsProject = ts.createProject('tsconfig.json',{
+			typescript: require('typescript')
+		})
+		
 		const sourcemapOpts = {
 			sourceRoot: path.resolve(project.base, 'src'),
 			includeContent: false
@@ -205,8 +179,7 @@ const projects = projectNames.map((projectName) => {
 		])
 	}
 
-	gulp.task(project.tasks.init,[],init)
-	gulp.task(taskCompileName,[project.tasks.init],compile)
+	gulp.task(taskCompileName,[],compile)
 	gulp.task(taskTestName,[taskCompileName],makeMochaTask(tests))
 	gulp.task(project.tasks.release,[taskTestName],release)
 
@@ -246,11 +219,13 @@ function makeMochaTask(tests = null) {
 }
 
 
+
+
 /**
  * Run all compile tasks sequentially
  */
-function compileAll() {
-	runSequence(compileTasks)
+function compileAll(done) {
+	runSequence(...compileTasks,done)
 }
 
 /**
@@ -276,7 +251,14 @@ function watch(done) {
  * Clean task
  */
 function clean() {
-	return del(['target','packages/*/dist','packages/*/src/**/*.js','packages/*/src/**/*.map'])
+	return del([
+		'target',
+		'packages/*/dist',
+		'packages/*/tsconfig.json',
+		'packages/*/src/**/*.js',
+		'packages/*/src/**/*.map',
+		'packages/*/src/**/*.d.ts'
+	])
 }
 
 /**
@@ -371,7 +353,7 @@ function docs() {
 gulp.task('clean', [], clean)
 gulp.task('compile-all', [], compileAll)
 gulp.task('compile-watch',[],watch)
-gulp.task('release-all',['clean'], releaseAll)
+gulp.task('release-all',[], releaseAll)
 gulp.task('release-all-push',[],releaseAllPush)
 gulp.task('publish-all',['release-all'],publishAll)
 gulp.task('test-all',[],makeMochaTask())
