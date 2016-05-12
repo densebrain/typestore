@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+link_disabled=true
+
 function installPackage() {
 	link=$2
 
@@ -14,9 +16,11 @@ function installPackage() {
 	fi
 	popd
 
-	if [ "$link" == "true" ]; then
-		echo "Linking to top level modules"
-		npm link $1
+	if [ "$link_disabled" != "true" ]; then
+		if [ "$link" == "true" ]; then
+			echo "Linking to top level modules"
+			npm link $1
+		fi
 	fi
 
 	echo "Prepared $1"

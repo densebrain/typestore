@@ -1,5 +1,6 @@
 import 'reflect-metadata'
-import Promise = require('./Promise')
+import './Globals'
+import BBPromise = require('./Promise')
 import {IKeyValue, IModel, IModelType, IModelKey} from "./ModelTypes";
 import {Repo} from "./Repo";
 import {ICoordinator, ICoordinatorOptions} from "./Types";
@@ -58,7 +59,7 @@ export interface IIndexerPlugin extends IPlugin {
 	 * @param modelType
 	 * @param repo
 	 */
-	index<M extends IModel>(type:IndexAction, options:IIndexerOptions, modelType:IModelType, repo:Repo<M>, ...models:IModel[]):Promise<boolean>
+	index<M extends IModel>(type:IndexAction, options:IIndexerOptions, modelType:IModelType, repo:Repo<M>, ...models:IModel[]):BBPromise<boolean>
 }
 
 
@@ -95,18 +96,19 @@ export interface ISearchOptions<R extends any> {
  * Custom external search provider
  */
 export interface ISearchProvider extends IPlugin {
-	search<R extends any>(modelType:IModelType,opts:ISearchOptions<R>,...args):Promise<R[]>
+	search<R extends any>(modelType:IModelType,opts:ISearchOptions<R>,...args):BBPromise<R[]>
 }
+
 
 /**
  * Store interface that must be fulfilled for
  * a valid store to work
  */
 export interface IStorePlugin extends IPlugin {
-	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator>
-	start():Promise<ICoordinator>
-	stop():Promise<ICoordinator>
-	syncModels():Promise<ICoordinator>
+	init(coordinator:ICoordinator, opts:ICoordinatorOptions):BBPromise<ICoordinator>
+	start():BBPromise<ICoordinator>
+	stop():BBPromise<ICoordinator>
+	syncModels():BBPromise<ICoordinator>
 	initRepo<T extends Repo<M>,M extends IModel>(repo:T):T
 }
 
@@ -116,10 +118,10 @@ export interface IFinderPlugin extends IPlugin {
 
 export interface IRepoPlugin<M extends IModel> extends IPlugin {
 	key?(...args):IKeyValue
-	get(key:IKeyValue):Promise<M>
-	save(o:M):Promise<M>
-	remove(key:IKeyValue):Promise<any>
-	count():Promise<number>
+	get(key:IKeyValue):BBPromise<M>
+	save(o:M):BBPromise<M>
+	remove(key:IKeyValue):BBPromise<any>
+	count():BBPromise<number>
 }
 
 
@@ -140,7 +142,7 @@ export interface IPlugin {
 	 * @param event - type of event being called
 	 * @param model - the model the event applies to
 	 *
-	 * @return Promise<M> a promise to complete the event handling
+	 * @return BBPromise<M> a BBPromise to complete the event handling
 	 */
-	handleModelEvent?<M extends IModel>(event:ModelEvent,model:M):Promise<M>
+	handleModelEvent?<M extends IModel>(event:ModelEvent,model:M):BBPromise<M>
 }

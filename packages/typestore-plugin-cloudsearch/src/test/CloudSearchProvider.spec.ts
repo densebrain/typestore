@@ -1,7 +1,16 @@
 require('source-map-support').install()
 import 'expectations'
 import 'reflect-metadata'
-import {Types,Promise,Coordinator,Constants,Log,IndexAction} from 'typestore'
+import * as Faker from 'faker'
+import * as Fixtures from './fixtures/index'
+import {
+	Types,
+	Promise,
+	Coordinator,
+	Constants,
+	Log,
+	IndexAction
+} from 'typestore'
 
 if (!process.env.DEBUG)
 	Log.setLogThreshold(Log.LogLevel.WARN)
@@ -24,13 +33,11 @@ let store:MockStore = new MockStore()
  */
 xdescribe('#plugin-cloudsearch',() => {
 	let t1 = null
-	let Fixtures = require('./fixtures/index')
-
 	function getTestModel() {
 		t1 = new Fixtures.CloudSearchTestModel()
 		t1.id = uuid.v4()
 		t1.date = new Date()
-		t1.text = 'asdfasdfadsf'
+		t1.text = Faker.lorem.words(15)
 	}
 
 
@@ -38,7 +45,7 @@ xdescribe('#plugin-cloudsearch',() => {
 	 * Set it up
 	 */
 	before(() => {
-		return Coordinator
+		Coordinator
 			.reset()
 			.then(() => Coordinator.init({},store))
 			.then(() => Coordinator.start(Fixtures.CloudSearchTestModel))
@@ -83,7 +90,33 @@ xdescribe('#plugin-cloudsearch',() => {
 		})
 	})
 
-	//TODO: Add search test
+
+	describe('#search',() => {
+
+		it('#add+search+remove', () => {
+			getTestModel()
+
+			let repo = Coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
+
+			//const mock = sinon.mock(repo)
+			const stub = sinon.stub(repo, 'save', function (o) {
+				expect(o.id).toBe(t1.id)
+				return this.index(IndexAction.Add, o)
+			})
+
+			return repo.save(t1)
+				.then((t2) => {
+					return repo.findByText(t1.text.split(' ')[0])
+				})
+				.then((searchResults) => {
+					expect(searchResults.length).toBeGreaterThan(0)
+					log.info(searchResults)
+					return true
+				})
+		})
+	})
+
+			//TODO: Add search test
 
 
 })

@@ -13,7 +13,9 @@ import {
 	Constants,
 	IModel,
 	IPlugin,
-	PluginType
+	PluginType,
+	IRepoPlugin,
+	IFinderPlugin
 } from 'typestore'
 import * as assert from 'assert'
 import * as _ from 'lodash'
@@ -21,7 +23,7 @@ import * as AWS from 'aws-sdk'
 import {DynamoDB} from 'aws-sdk'
 import {DynamoDBStore, DynamoDBFinderKey, DynamoDBModelKey, DynamoDBKeyValue} from "./DynamoDBStore";
 import {IDynamoDBFinderOptions, DynamoDBFinderType} from "./DynamoDBTypes";
-import {IRepoPlugin, IFinderPlugin} from "../../typestore/src/PluginTypes";
+
 
 
 const {IncorrectKeyTypeError} = Errors;

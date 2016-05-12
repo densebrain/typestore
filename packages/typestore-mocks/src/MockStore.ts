@@ -9,10 +9,12 @@ import {
 	IModel,
 	PluginType
 } from 'typestore'
-import {MockRepoPlugin} from './MockRepo'
+import {IRepoPlugin} from "../../typestore/src/PluginTypes";
+import {MockRepoPlugin} from "./MockRepoPlugin";
 
-const NotImplemented = Errors.NotImplemented;
-
+/**
+ * Mock key value, gives whatever it gets
+ */
 export class MockKeyValue implements IKeyValue {
 	
 	args
@@ -22,10 +24,14 @@ export class MockKeyValue implements IKeyValue {
 	}
 }
 
+/**
+ * Mock store for testing, spying, etc
+ */
 export class MockStore implements IStorePlugin {
 
 	coordinator:ICoordinator
-
+	repoPlugins:IRepoPlugin<any>[]  = []
+	
 	constructor() {
 
 	}
@@ -52,6 +58,7 @@ export class MockStore implements IStorePlugin {
 
 
 	initRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
+		this.repoPlugins.push(new MockRepoPlugin(this,repo))
 		return repo;
 	}
 

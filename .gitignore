@@ -25,9 +25,11 @@ atlassian-ide-plugin.xml
 node_modules/
 
 # Typestore Files
-**/src/**/*.js
-**/src/**/*.map
-**/src/**/*.d.ts
+packages/*/src/**/*.js
+packages/*/src/**/*.map
+packages/*/src/**/*.d.ts
+packages/*/dist
+packages/*/tsconfig.json
 
 # Any log file
 *.log

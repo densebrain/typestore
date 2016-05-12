@@ -1,6 +1,20 @@
-import Bluebird = require('bluebird')
-declare var Promise:Bluebird<any>
+// import * as Bluebird from 'bluebird'
+// declare var Promise:Bluebird<any>
+//
+// interface Bluebird<R> {
+//
+// }
+//
+// declare namespace bluebird {
+// 	var Promise:Bluebird<any>
+// }
+//declare var BBPromise:Function
 
-interface Bluebird<R> {
-
-}
+//
+//
+// declare module NodeJS  {
+// 	interface Global {
+// 		Promise:Function
+// 		BBPromise:Function
+// 	}
+// }

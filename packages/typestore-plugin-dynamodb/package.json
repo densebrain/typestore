@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "scripts": {
-    "test": "gulp ts-compile && mocha dist/test/**/*.spec.js"
+    "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
   },
   "repository": {
     "type": "git",

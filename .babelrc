@@ -2,6 +2,7 @@
 	"presets": [
 		"es2015"
 	],
+	"sourceMaps": "true",
 	"plugins": [
 //		[
 //			"module-alias",

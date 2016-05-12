@@ -1,7 +1,6 @@
+///<reference path="../../../typings/browser/definitions/bluebird/index.d.ts"/>
 
-export {
-
-}
+export { }
 
 declare global {
 	interface ObjectConstructor {
@@ -11,7 +10,6 @@ declare global {
 	interface Array<T> {
 		includes(element:T):boolean
 	}
-	
 }
 
 
@@ -46,4 +44,3 @@ if (!Array.prototype.includes) {
 		return false;
 	};
 }
-

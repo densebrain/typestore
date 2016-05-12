@@ -1,0 +1,17 @@
+{
+  "sessions": [
+    {
+      "id": "daa6dab9-2a44-4da9-880c-9b8b63917cbe",
+      "openTabs": [
+        {
+          "relativeUrl": "file://./dist/Coordinator.d.ts"
+        },
+        {
+          "relativeUrl": "file://./src/Coordinator.ts"
+        }
+      ],
+      "lastUsed": 1463066204572
+    }
+  ],
+  "relativePathToTsconfig": "./tsconfig.json"
+}

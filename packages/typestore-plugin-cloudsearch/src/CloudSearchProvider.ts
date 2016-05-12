@@ -2,7 +2,7 @@
 ///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-cloudsearchdomain"/>
 ///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-config.d.ts"/>
 ///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-sdk"/>
-
+import * as _ from 'lodash'
 
 import {
 	Promise,
@@ -12,14 +12,18 @@ import {
 	ISearchProvider,
 	IModelType,
 	IModel,
-	IStorePlugin,
 	PluginType,
 	ISearchOptions,
-	Repo
+	Repo,
+	Log
 } from 'typestore'
 
 import {CloudSearchDomain} from 'aws-sdk'
+import {ICloudSearchOptions} from "./CloudSearchTypes";
+import {CloudSearchDefaults} from "./CloudSearchConstants";
 
+
+const log = Log.create(__filename)
 const clients:{[endpoint:string]:CloudSearchDomain} = {}
 
 function getClient(endpoint:string,awsOptions:any = {}) {
@@ -36,9 +40,16 @@ function getClient(endpoint:string,awsOptions:any = {}) {
 export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 
 	private client:CloudSearchDomain
+	private endpoint:string
+	private awsOptions:any
+	private typeField:string
 
-	constructor(private endpoint:string,private awsOptions:any = {}) {
-		this.client = getClient(endpoint,awsOptions)
+	constructor(private options:ICloudSearchOptions) {
+		_.defaultsDeep(options,CloudSearchDefaults)
+		
+		Object.assign(this,options)
+		
+		this.client = getClient(this.endpoint,this.awsOptions)
 	}
 	
 	get type() {
@@ -47,12 +58,17 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 
 	index<M extends IModel>(type:IndexAction,options:IIndexerOptions,modelType:IModelType,repo:Repo<M>,...models:IModel[]):Promise<boolean> {
 
+		// Destructure all the import fields into 'docs'
 		const docs = models.map((model) => {
-			const doc = {}
-			options.fields.forEach((field) => doc[field] = model[field])
-			return doc
+			return options.fields.reduce((doc,field) => {
+				doc[field] = model[field]
+				return doc
+			},{
+				[this.typeField]: modelType.name
+			})
 		})
 
+		// Now convert to cloudsearch data
 		const data = docs.map((doc) => {
 			return Object.assign({
 				id:doc[options.fields[0]]
@@ -63,6 +79,7 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 			})
 		})
 
+		// Create request params
 		const params = {contentType: 'application/json',documents:JSON.stringify(data)}
 		return Promise.resolve(
 			this.client.uploadDocuments(params)
@@ -82,8 +99,16 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 	 * @returns {any}
 	 */
 	search<R extends any>(modelType:IModelType, opts:ISearchOptions<R>, ...args):Promise<R[]> {
+		const params = {
+			query: `(and ${this.typeField}:'${modelType.name}' (term '${encodeURIComponent(args.join(' '))}'))`,
+			queryParser: 'structured'
+		}
+
+		log.info('Querying with params', params)
+
 		return Promise.resolve(
-			this.client.search({query: args.join(' ')})
+			this.client
+				.search(params)
 				.promise()
 				.then((results) => {
 					return results.hits.hit
