@@ -2,6 +2,8 @@
   "devDependencies": {
     "sinon": "registry:npm/sinon#1.16.0+20160427193336"
   },
-  "ambientDependencies": {
+  "ambientDependencies": {},
+  "ambientDevDependencies": {
+    "faker": "registry:dt/faker#0.0.0+20160406111603"
   }
 }

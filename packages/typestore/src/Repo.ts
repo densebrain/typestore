@@ -1,5 +1,10 @@
-import Promise = require('./Promise')
-import {TypeStoreModelKey, TypeStoreFinderKey, TypeStoreRepoKey, TypeStoreFindersKey} from "./Constants"
+import BBPromise = require('./Promise')
+import {
+	TypeStoreModelKey,
+	TypeStoreFinderKey,
+	TypeStoreRepoKey,
+	TypeStoreFindersKey
+} from "./Constants"
 import {
 	IModelKey,
 	IModelOptions,
@@ -17,7 +22,7 @@ import {
 import {Coordinator} from './Coordinator'
 import {NotImplemented} from "./Errors"
 import * as Log from './log'
-import {IRepoPlugin, IFinderPlugin, PluginType} from "./PluginTypes"
+import {IRepoPlugin, IFinderPlugin, PluginType, ISearchProvider} from "./PluginTypes"
 import {isFunction, isRepoPlugin, isFinderPlugin, PluginFilter} from "./Util"
 import {ModelMapper} from "./ModelMapper"
 import {IModelType} from "./ModelTypes"
@@ -103,7 +108,7 @@ export class Repo<M extends IModel> {
 		if (finderKeys) {
 
 			finderKeys.forEach((finderKey) => {
-				let finder = null
+				let finder
 
 				for (let plugin of this.plugins) {
 					if (!isFunction((plugin as any).decorateFinder))
@@ -149,12 +154,15 @@ export class Repo<M extends IModel> {
 
 
 		return (...args) => {
-			return searchOpts.provider.search(
-				this.modelType,
-				searchOpts,
-				args
+			const searchProvider = searchOpts.provider as ISearchProvider
+			return BBPromise.resolve(
+				searchProvider.search(
+					this.modelType,
+					searchOpts,
+					args
+				)
 			).then((results) => {
-				
+
 				// Once the provider returns the resulting data,
 				// pass it to the mapper to get keys
 				const keys:IModelKey[] = results.map((result:any) => {
@@ -164,11 +172,13 @@ export class Repo<M extends IModel> {
 						result
 					)
 				})
-				
-				return Promise.map(keys,(key) => {
+
+				return BBPromise.map(keys,(key) => {
 					return this.get(key)
 				})
 			})
+		
+			
 		}
 
 	}
@@ -190,8 +200,8 @@ export class Repo<M extends IModel> {
 	 * @param models
 	 * @returns {Bluebird<boolean>}
 	 */
-	index(type:IndexAction,...models:IModel[]):Promise<boolean> {
-		return Promise.map(this.repoOpts.indexers || [], (indexerConfig:IIndexerOptions) => {
+	index(type:IndexAction,...models:IModel[]):BBPromise<boolean> {
+		return BBPromise.map(this.repoOpts.indexers || [], (indexerConfig:IIndexerOptions) => {
 			return indexerConfig.indexer
 				.index(
 					type,
@@ -203,14 +213,11 @@ export class Repo<M extends IModel> {
 		}).return(true)
 	}
 
+
 	indexPromise(action:IndexAction)  {
 		return (models:IModel[]) => {
-			return this
-				.index(
-					action,
-					...models.filter((model) => !!model)
-				)
-				.return(models)
+			const indexPromise = this.index(action,...models.filter((model) => !!model))
+			return BBPromise.resolve(indexPromise).return(models)
 		}
 	}
 
@@ -236,8 +243,8 @@ export class Repo<M extends IModel> {
 	 * @param key
 	 * @returns {null}
 	 */
-	get(key:IKeyValue):Promise<M> {
-		return Promise
+	get(key:IKeyValue):BBPromise<M> {
+		return BBPromise
 			.map(this.getRepoPlugins(),(plugin:IRepoPlugin<M>) => plugin.get(key))
 			.then((results:M[]) => {
 				for (let result of results) {
@@ -257,8 +264,8 @@ export class Repo<M extends IModel> {
 	 * @param o
 	 * @returns {null}
 	 */
-	save(o:M):Promise<M> {
-		return Promise
+	save(o:M):BBPromise<M> {
+		return BBPromise
 			.map(this.getRepoPlugins(),(plugin:IRepoPlugin<M>) => plugin.save(o))
 
 			// After they're saved successfully we
@@ -281,7 +288,7 @@ export class Repo<M extends IModel> {
 	 * @param key
 	 * @returns {null}
 	 */
-	remove(key:IKeyValue):Promise<any> {
+	remove(key:IKeyValue):BBPromise<any> {
 		return this
 			.get(key)
 			.then((model) => {
@@ -290,7 +297,7 @@ export class Repo<M extends IModel> {
 					return null
 				}
 
-				return Promise
+				return BBPromise
 					.map(this.getRepoPlugins(),(plugin:IRepoPlugin<M>) => plugin.remove(key))
 
 					// After they're removed successfully we
@@ -309,8 +316,8 @@ export class Repo<M extends IModel> {
 	 *
 	 * @returns {null}
 	 */
-	count():Promise<number> {
-		return Promise
+	count():BBPromise<number> {
+		return BBPromise
 			.map(this.getRepoPlugins(),(plugin:IRepoPlugin<M>) => plugin.count())
 			.then((results:number[]) => {
 				return results.reduce((prev,current) => prev + current)

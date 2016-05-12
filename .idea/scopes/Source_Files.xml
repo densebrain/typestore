@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Source Files" pattern="(file[typestore-workspace]:typings//*||file:.babelrc||file:.eslintrc||file:.gitignore||file:circle.yml||file:gulpfile.babel.js||file:jsconfig.json||file:LICENSE.txt||file:package.json||file:README.md||file:tsconfig.base.json||file:typings.json||file[typestore-workspace]:etc//*||file[typestore-workspace]:packages//*)&amp;&amp;!file:packages/typestore*/src//*.js&amp;&amp;!file:packages/typestore*/src//*.map&amp;&amp;!file:packages/typestore*/src//*.d.ts&amp;&amp;!file:packages/typestore*/dist//*.d.ts" />
+</component>

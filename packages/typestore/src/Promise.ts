@@ -1,8 +1,10 @@
-import * as BBPromise from 'bluebird'
+import BBPromise = require('bluebird')
 import * as Log from './log'
 import {msg, Strings} from "./Messages";
 
 const log = Log.create(__filename)
+
+
 
 BBPromise.config({
 	cancellation: true,
@@ -21,7 +23,5 @@ process.on("unhandledRejection", function (reason, promise) {
 process.on("rejectionHandled", function (promise) {
 	//log.debug(msg(Strings.PromiseRejected))
 })
-
-global.Promise = BBPromise
 
 export = BBPromise
