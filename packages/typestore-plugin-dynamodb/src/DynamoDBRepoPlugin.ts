@@ -44,7 +44,6 @@ const MappedFinderParams = {
 export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	
-	private repoType:any
 	private tableDef:DynamoDB.CreateTableInput
 	private coordinator:Types.ICoordinator
 	private mapper
@@ -64,7 +63,10 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		this.tableDef = this.store.tableDefinition(repo.modelOpts.clazzName)
 
 	}
-	
+
+	/**
+	 * PluginType.Repo
+	 */
 	get type() {
 		return PluginType.Repo
 	}

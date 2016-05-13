@@ -1,0 +1,21 @@
+{
+    "typestore": {
+        "type": "node",
+        "excludeCore": true,
+        "excludeMocks": true
+    },
+    "typestore-mocks": {
+        "type": "node",
+        "excludeMocks": true
+    },
+    "typestore-plugin-dynamodb": {
+        "type": "node"
+    },
+    "typestore-plugin-cloudsearch": {
+        "type": "node"
+    },
+    "typestore-plugin-localstorage": {
+        "type": "browser",
+        "description": "typestore-plugin-localstorage"
+    }
+}

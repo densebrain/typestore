@@ -1,3 +1,5 @@
+
+
 // import * as Bluebird from 'bluebird'
 // declare var Promise:Bluebird<any>
 //
@@ -12,9 +14,12 @@
 
 //
 //
-// declare module NodeJS  {
-// 	interface Global {
-// 		Promise:Function
-// 		BBPromise:Function
-// 	}
-// }
+
+
+declare module NodeJS  {
+	interface Global {
+		getLogger:Function
+	}
+}
+
+declare var getLogger:Function

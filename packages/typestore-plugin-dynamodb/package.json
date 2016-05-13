@@ -7,10 +7,6 @@
   "scripts": {
     "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/densebrain/typestore.git"
-  },
   "keywords": [
     "dynamo",
     "dynamodb",
@@ -22,12 +18,6 @@
     "mapper",
     "db"
   ],
-  "author": "Jonathan Glanz",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/densebrain/typestore/issues"
-  },
-  "homepage": "https://github.com/densebrain/typestore#readme",
   "dependencies": {
     "aws-sdk": "^2.3.7",
     "lodash": "^4.11.1",

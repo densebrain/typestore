@@ -251,7 +251,7 @@ export class DynamoDBStore implements IStorePlugin {
 		}
 
 		this.repos[clazzName] =
-			new DynamoDBRepoPlugin<M>(this,repo)
+			new DynamoDBRepoPlugin(this,repo)
 
 
 		return repo

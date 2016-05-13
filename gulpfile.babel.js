@@ -4,19 +4,20 @@ require('shelljs/global')
 // exec(`rm -Rf node_modules/gulp-typescript/node_modules/typescript &&
 // ln -s ${process.cwd()}/node_modules/typescript node_modules/gulp-typescript/node_modules/typescript`)
 
-const {readJSONFileSync} = require('./etc/gulp/helpers')
-const semver = require('semver')
-const fs = require('fs')
-const path = require('path')
-const gulp = require('gulp')
-const del = require('del')
-const tsdoc = require('gulp-typedoc')
-
-const log = console
-const runSequence = require('run-sequence')
-
-const git = require('gulp-git')
-const ghRelease = require('gulp-github-release')
+const {readJSONFileSync} = require('./etc/tools/helpers')
+const 
+	semver = require('semver'),
+	fs = require('fs'),
+	path = require('path'),
+	gulp = require('gulp'),
+	del = require('del'),
+	tsdoc = require('gulp-typedoc'),
+	log = console,
+	runSequence = require('run-sequence'),
+	git = require('gulp-git'),
+	ghRelease = require('gulp-github-release'),
+	projectConfigs = require('./etc/projects.json'),
+	projectNames = Object.keys(projectConfigs)
 
 Object.assign(global,{
 	processDir: process.cwd(),
@@ -30,12 +31,20 @@ Object.assign(global,{
 	compileTasks:[],
 	allWatchConfigs:[],
 	releaseDir: `${process.cwd()}/target/releases`,
-	projectNames: require('./etc/gulp/projects')
+	projectConfigs,
+	projectNames
 })
 
 
 // Now map and configure all the projects/plugins
 global.projects = projectNames.map(require('./etc/gulp/project-tasks'))
+
+
+/**
+ * Load auxillary tasks
+ */
+
+require('./etc/gulp/tasks')
 
 /**
  * Run all compile tasks sequentially

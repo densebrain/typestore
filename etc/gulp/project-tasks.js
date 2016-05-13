@@ -1,9 +1,12 @@
 require('shelljs/global')
 
-const {readJSONFileSync} = require('./helpers')
+const {readJSONFileSync} = require('../tools/helpers')
+const {makeBabelConfig} = require('./babel-config')
+
 const tsBaseConfig = readJSONFileSync(`${process.cwd()}/tsconfig.base.json`)
 const path = require('path')
 const gulp = require('gulp')
+const babel = require('gulp-babel')
 const fs = require('fs')
 const log = console
 const merge = require('merge2')
@@ -20,6 +23,7 @@ const SourceMapModes = {
 const sourceMapMode = SourceMapModes.SourceMap
 
 module.exports = function(projectName) {
+	const projectConfig = projectConfigs[projectName]
 	const project = {
 		name: projectName,
 		base: path.resolve(process.cwd(),'packages',projectName),
@@ -75,13 +79,25 @@ module.exports = function(projectName) {
 			name: projectName,
 			version: nextMinorVersion,
 			dependencies: _.assign({},deps,basePackageJson.dependencies),
-			devDependencies: _.assign({},devDeps,basePackageJson.devDependencies)
+			devDependencies: _.assign({},devDeps,basePackageJson.devDependencies),
+			keywords: _.uniq(basePackageJson.keywords.concat(packageJson.keywords)),
+			license: basePackageJson.license,
+			author: basePackageJson.author,
+			bugs: basePackageJson.bugs,
+			repository: basePackageJson.repository,
+			homepage: basePackageJson.homepage
+		})
+
+		_.defaultsDeep(packageJson,{
+			main: "dist/index.js",
+			typings: "dist/index.d.ts"
+
 		})
 
 		// Add core package dependencies
-		if (projectName !== 'typestore') {
+		if (!projectConfig.excludeCore) {
 			packageJson.dependencies['typestore'] = nextMinorVersion
-			if (projectName !== 'typestore-mocks') {
+			if (!projectConfig.excludeMocks) {
 				packageJson.dependencies['typestore-mocks'] = nextMinorVersion
 			}
 		}
@@ -97,60 +113,54 @@ module.exports = function(projectName) {
 		log.info(`${projectName} is ready for release - publish-all will actually publish to npm`)
 	}
 
+	/**
+	 * Create a TS config for this project
+	 * using tsconfig.base.json, write it to disk
+	 * append the latest compiler
+	 * return
+	 *
+	 * @returns {{tsConfig,tsSettings,tsConfig}}
+	 */
+	function makeTypeScriptConfig() {
+		const tsConfig = _.cloneDeep(tsBaseConfig)
+		const tsCompilerOptions = tsConfig.compilerOptions
+
+		function makePackageDir(packageName,suffix) {
+			return `${processDir}/packages/${packageName}/src/${suffix}`
+		}
+
+		_.assign(tsCompilerOptions,{
+			baseUrl: project.base,
+			paths: projectNames.reduce((projectPaths,name) => {
+				return Object.assign(projectPaths, {
+					[name]: [makePackageDir(name,'index')],
+					[`${name}/*`]: [makePackageDir(name,'*')]
+				})
+
+			},{})
+		})
 
 
-	const tsConfig = _.cloneDeep(tsBaseConfig)
-	const tsCompilerOptions = tsConfig.compilerOptions
+		const tsConfigFile = project.base + "/tsconfig.json"
+		log.info('Going to write ts config',tsConfigFile)
+		fs.writeFileSync(tsConfigFile,JSON.stringify(tsConfig,null,4))
 
-	function makePackageDir(packageName,suffix) {
-		return `${processDir}/packages/${packageName}/src/${suffix}`
+		const tsSettings = Object.assign({},tsConfig.compileOptions,{
+			typescript: tsc
+		})
+
+		const tsProject = ts.createProject(tsConfigFile,tsSettings)
+
+		return {
+			tsConfig,
+			tsSettings,
+			tsProject
+		}
 	}
 
-	_.assign(tsCompilerOptions,{
-		baseUrl: project.base,
-		paths: projectNames.reduce((projectPaths,name) => {
-			return Object.assign(projectPaths, {
-				[name]: [makePackageDir(name,'index')],
-				[`${name}/*`]: [makePackageDir(name,'*')]
-			})
-
-		},{})
-		// {
-		// 	"typestore": [makePackageDir('typestore','index')],
-		// 	"typestore/*": [makePackageDir('typestore','*')],
-		// 	"typestore-mocks": [makePackageDir('typestore-mocks','index')],
-		// 	"typestore-mocks/*": [makePackageDir('typestore-mocks','*')],
-		// 	"typestore-plugin-dynamodb": ["../packages/typestore-plugin-dynamodb/src/index.js"],
-		// 	"typestore-plugin-cloudsearch": ["../packages/typestore-plugin-cloudsearch/src/index"]
-		//
-		//
-		// 	// "typestore": path.resolve(processDir,"packages/typestore/src/index"),
-		// 	// "typestore/*": path.resolve(processDir,"packages/typestore/src/*")
-		//
-		// 	// "typestore-mocks": ["../packages/typestore-mocks/src/index"],
-		// 	// "typestore-mocks/*": ["../packages/typestore-mocks/src/*"],
-		// 	// "typestore-plugin-dynamodb": ["../packages/typestore-plugin-dynamodb/src/index.js"],
-		// 	// "typestore-plugin-cloudsearch": ["../packages/typestore-plugin-cloudsearch/src/index"]
-		// }
-	})
-
-
-	const tsConfigFile = project.base + "/tsconfig.json"
-	log.info('Going to write ts config',tsConfigFile)
-	fs.writeFileSync(tsConfigFile,JSON.stringify(tsConfig,null,4))
-
-	const tsSettings = Object.assign({},tsConfig.compileOptions,{
-		typescript: tsc,
-		//target: "es5",//tsc.ScriptTarget.ES5,
-		//module: "commonjs",//tsc.ModuleKind.CommonJS,
-		//declaration: true,
-		// preserveConstEnums: true,
-		// "emitDecoratorMetadata": true,
-		// "experimentalDecorators": true,
-		// "allowSyntheticDefaultImports": true
-	})
-
-	const tsProject = ts.createProject(tsConfigFile,tsSettings)
+	// Grab the project for the compilation task
+	const {tsProject} = makeTypeScriptConfig()
+	const babelConfig = makeBabelConfig(project)
 
 	/**
 	 * Compile compile
@@ -184,6 +194,7 @@ module.exports = function(projectName) {
 			tsResult.dts
 				.pipe(gulp.dest(distPath)),
 			tsResult.js
+				.pipe(babel(babelConfig))
 				.pipe(sourceMapHandler)
 				.pipe(gulp.dest(distPath))
 		])
