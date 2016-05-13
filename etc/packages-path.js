@@ -5,7 +5,7 @@ var packagesPath = path.resolve(__dirname,'../packages')
 //require.main.paths.unshift(nodeModulesPath)
 
 global.addToNodePath = function(newPath) {
-	console.log(`Adding new node path ${newPath}`)
+	//console.log(`Adding new node path ${newPath}`)
 	require.main.paths.unshift(newPath)
 
 	// Then use this module - probably can remove

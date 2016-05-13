@@ -3,12 +3,13 @@ const FakeIndexedDB:any = require('fake-indexeddb')
 const FDBKeyRange:any = require('fake-indexeddb/lib/FDBKeyRange')
 import {Coordinator,Repo} from 'typestore'
 import {Fixtures} from 'typestore-mocks'
-import Faker = require('faker')
+import * as Faker from 'faker'
 import {IndexedDBPlugin} from "../IndexedDBPlugin";
 
 const log = getLogger(__filename)
 
 //Setup DynamoDBLocal
+let coordinator:Coordinator = null
 let store:IndexedDBPlugin = null
 const storeOpts = {
 	databaseName: 'test-database',
@@ -27,9 +28,12 @@ async function reset() {
 	// using local
 	store = new IndexedDBPlugin(storeOpts)
 
-	await Coordinator.reset()
-	await Coordinator.init({},store)
-	return Coordinator
+	if (coordinator)
+		await coordinator.reset()
+
+	coordinator = new Coordinator()
+	await coordinator.init({},store)
+	return coordinator
 }
 
 
@@ -43,16 +47,16 @@ describe('#plugin-indexeddb',() => {
 
 	it('#open', async () => {
 
-		await Promise.resolve(Coordinator.start(Fixtures.SimpleModel1))
+		await coordinator.start(Fixtures.SimpleModel1)
 		
-		expect(store.db.tables.length).toBeGreaterThan(1)
+		expect(store.db.tables.length).toBe(1)
 		expect(store.db.name).toBe(storeOpts.databaseName)
 
 	})
 
 	it('#puts',async () => {
 		const model = new Fixtures.SimpleModel1()
-		const repo:Fixtures.SimpleModel1Repo = Coordinator.getRepo(Fixtures.SimpleModel1Repo)
+		const repo:Fixtures.SimpleModel1Repo = coordinator.getRepo(Fixtures.SimpleModel1Repo)
 
 		Object.assign(model,{
 			id: uuid.v4(),

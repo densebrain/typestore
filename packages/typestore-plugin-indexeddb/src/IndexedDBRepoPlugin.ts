@@ -7,7 +7,8 @@ import {
 	IModel,
 	Repo,
 	ICoordinator,
-	ICoordinatorOptions
+	ICoordinatorOptions,
+	PluginEventType
 } from 'typestore'
 
 import {IndexedDBPlugin} from "./IndexedDBPlugin";
@@ -44,6 +45,11 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		repo.attach(this)
 		
 		
+	}
+
+
+	handle(eventType:PluginEventType, ...args):boolean|any {
+		return false;
 	}
 
 	get table():Dexie.Table<any,any> {

@@ -1,5 +1,5 @@
 
-require('./etc/packages-path')
+//require('./etc/packages-path')
 
 var path = require('path')
 var projectRoot = path.resolve(__dirname)
@@ -9,8 +9,8 @@ var nodeModulePaths = _.map(nodeModuleRelativePaths,function(modPath) {
 	return path.resolve('.',modPath)
 })
 var nodePath = (process.env.NODE_PATH || "") + ':' + nodeModulePaths.join(':')
-
-console.log('Using runner node path\n',nodeModulePaths,'\n',nodePath)
+//var tsConfig = require('./tsconfig.json').compilerOptions
+//console.log('Using runner node path\n',nodeModulePaths,'\n',nodePath)
 // nodeModulePaths.forEach(function(newPath) {
 // 	addToNodePath(newPath)
 // })
@@ -31,7 +31,7 @@ module.exports = function (wallaby) {
 			'packages/*/src/**/*.ts',
 			'!packages/*/src/**/*.d.ts',
 			'!packages/*/src/test/**/*.spec.ts',
-			{ pattern: 'src/test/fixtures/*.ts', instrument:false }
+			{ pattern: 'packages/*/src/test/fixtures/*.ts', instrument:false }
 		],
 
 
@@ -48,7 +48,7 @@ module.exports = function (wallaby) {
 		env: {
 			type: 'node',
 			params: {
-				env:'NODE_PATH=' + nodePath
+				env:'DEBUG=true;NODE_PATH=' + nodePath
 			}
 		},
 
@@ -56,15 +56,21 @@ module.exports = function (wallaby) {
 		// go through babel - this needs to be fixed at somepont
 		compilers: {
 			'**/*.ts': wallaby.compilers.typeScript({
-				typescript: require('typescript')
-				// module: 5,  // ES6
-				// target: 2  // ES6
+				typescript: require('typescript'),
+				module: 5,  // ES6
+				target: 2,  // ES6
+				emitDecoratorMetadata: true,
+				experimentalDecorators: true,
+				preserveConstEnums: true,
+				allowSyntheticDefaultImports: true
 			})
 		},
 		preprocessors: {
-			'**/*.js': file => require('babel-core').transform(
-				file.content,
-				{sourceMap: true, presets: ['es2015']})
+			'**/*.js': file => {
+				return require('babel-core').transform(file.content,{
+					sourceMap: true, presets: ['es2015','stage-0']
+				})
+			}
 		},
 
 		delays: {
@@ -72,11 +78,17 @@ module.exports = function (wallaby) {
 			run: 150
 		},
 
+		workers: {
+			initial: 1,
+			regular: 1
+		},
+
 		// Override the global Promise
 		bootstrap: function() {
 			var path = require('path')
 			var mochaPath = path.resolve(wallaby.localProjectDir,'./etc/mocha/mocha-setup')
-			console.log('mocha path', mochaPath)
+			//console.log('mocha path', mochaPath)
+			global.assert = require('assert')
 			require(mochaPath)
 
 

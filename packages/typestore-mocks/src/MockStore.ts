@@ -6,7 +6,8 @@ import {
 	ICoordinator,
 	Repo, 
 	IModel,
-	PluginType
+	PluginType,
+	PluginEventType
 } from 'typestore'
 import {IRepoPlugin} from "../../typestore/src/PluginTypes";
 import {MockRepoPlugin} from "./MockRepoPlugin";
@@ -25,6 +26,7 @@ export class MockKeyValue implements IKeyValue {
 	}
 }
 
+
 /**
  * Mock store for testing, spying, etc
  */
@@ -38,6 +40,18 @@ export class MockStore implements IStorePlugin {
 	
 	constructor() {
 
+	}
+
+
+	handle(eventType:PluginEventType, ...args):boolean|any {
+		switch(eventType) {
+			case PluginEventType.RepoInit:
+				const repo:Repo<any> = args[0]
+				return this.initRepo(repo)
+
+
+		}
+		return false;
 	}
 
 	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {

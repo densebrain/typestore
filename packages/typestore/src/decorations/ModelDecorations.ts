@@ -36,6 +36,7 @@ export interface IModelIndex {
 export interface IModelAttributeOptions {
 	name?:string
 	type?:any
+	typeName?:string
 	primaryKey?:boolean
 	secondaryKey?:boolean
 	index?: IModelIndex
@@ -87,8 +88,6 @@ export function ModelDescriptor(opts:IModelOptions) {
 		log.debug('Decorating: ', finalOpts.clazzName)
 		Reflect.defineMetadata(TypeStoreModelKey,finalOpts,constructor)
 
-		//if (Coordinator.getOptions().autoRegisterModels)
-		Coordinator.registerModel(constructor)
 	}
 }
 
@@ -99,10 +98,11 @@ export function ModelDescriptor(opts:IModelOptions) {
  * @returns {function(any, string): undefined}
  * @constructor
  */
+
 export function AttributeDescriptor(opts: IModelAttributeOptions) {
 	return function (target:any,propertyKey:string) {
 		const attrType = Reflect.getMetadata('design:type',target,propertyKey)
-
+		log.debug('attr type = ',propertyKey,attrType)
 		opts = Object.assign({},{
 			type:attrType,
 			name: propertyKey,

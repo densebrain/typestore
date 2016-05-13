@@ -35,8 +35,8 @@ module.exports = function(projectName) {
 	 * Build the tasks
 	 */
 	const
-		distPath = `${project.base}/src`,
-		//distPath = `${project.base}/dist`,
+		//distPath = `${project.base}/src`,
+		distPath = `${project.base}/dist`,
 		srcPath = `${project.base}/src`,
 		testsPath = distPath
 
@@ -131,8 +131,8 @@ module.exports = function(projectName) {
 		}
 
 
-		//const tsResult = gulp.src(project.srcs,{cwd:processDir})
-		const tsResult = gulp.src(project.srcs)
+		const tsResult = gulp.src(project.srcs,{cwd:processDir})
+		//const tsResult = gulp.src(project.srcs)
 			.pipe(sourceMaps.init())
 			//.pipe(ts(tsSettings))
 			.pipe(ts(tsProject))

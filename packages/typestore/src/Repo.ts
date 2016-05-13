@@ -41,6 +41,7 @@ export class Repo<M extends IModel> {
 	repoOpts:IRepoOptions
 	modelType:IModelType
 	mapper
+	coordinator:Coordinator
 	protected plugins = Array<IPlugin>()
 
 	/**
@@ -51,12 +52,13 @@ export class Repo<M extends IModel> {
 	 * @param modelClazz
 	 */
 	constructor(public repoClazz:any,public modelClazz:{new ():M;}) {
-		this.modelType = Coordinator.getModel(modelClazz)
+	}
+
+	init(coordinator) {
+		this.coordinator = coordinator
+		this.modelType = coordinator.getModel(this.modelClazz)
 		this.modelOpts = this.modelType.options
-		this.repoOpts = Reflect.getMetadata(TypeStoreRepoKey,repoClazz)
-
-
-
+		this.repoOpts = Reflect.getMetadata(TypeStoreRepoKey,this.repoClazz)
 
 	}
 
@@ -150,33 +152,28 @@ export class Repo<M extends IModel> {
 		}
 
 
-		return (...args) => {
+		return async (...args) => {
 			const searchProvider = searchOpts.provider as ISearchProvider
-			return Promise.resolve(
-				searchProvider.search(
+			let results = await searchProvider.search(
 					this.modelType,
 					searchOpts,
 					args
 				)
-			).then((results) => {
-
-				// Once the provider returns the resulting data,
-				// pass it to the mapper to get keys
-				const keys:IModelKey[] = results.map((result:any) => {
-					return searchOpts.resultKeyMapper(
-						this,
-						searchOpts.resultType,
-						result
-					)
-				})
-
-				return keys.map(async key => await this.get(key))
-
-			})
 		
+
+			// Once the provider returns the resulting data,
+			// pass it to the mapper to get keys
+			const keys:IModelKey[] = results.map((result:any) => {
+				return searchOpts.resultKeyMapper(
+					this,
+					searchOpts.resultType,
+					result
+				)
+			})
+
+			return keys.map(async key => await this.get(key))
 			
 		}
-
 	}
 
 	/**

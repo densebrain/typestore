@@ -16,7 +16,8 @@ import {
 	Repo,
 	Log,
 	ICoordinator,
-	ICoordinatorOptions
+	ICoordinatorOptions,
+	PluginEventType
 } from 'typestore'
 
 import {CloudSearchDomain} from 'aws-sdk'
@@ -47,8 +48,15 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 	private awsOptions:any
 	private typeField:string
 	private coordinator
+	private supportedModels:any[]
 
-	constructor(private options:ICloudSearchOptions) {
+	/**
+	 * Create a new AWS CloudSearch Provider
+	 *
+	 * @param options
+	 */
+	constructor(private options:ICloudSearchOptions,...supportedModels:any[]) {
+		this.supportedModels = supportedModels
 		_.defaultsDeep(options,CloudSearchDefaults)
 		
 		Object.assign(this,options)
@@ -56,6 +64,19 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 		this.client = getClient(this.endpoint,this.awsOptions)
 	}
 
+
+	handle(eventType:PluginEventType, ...args):boolean|any {
+		switch(eventType) {
+			case PluginEventType.RepoInit:
+				const repo:Repo<any> = args[0]
+				if (this.supportedModels.length === 0 || this.supportedModels.includes(repo.modelClazz)) {
+					repo.attach(this)
+					return repo
+				}
+
+		}
+		return false;
+	}
 
 	async init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
 		return (this.coordinator = coordinator);
@@ -110,7 +131,7 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 	 * @param args
 	 * @returns {any}
 	 */
-	search<R extends any>(modelType:IModelType, opts:ISearchOptions<R>, ...args):Promise<R[]> {
+	async search<R extends any>(modelType:IModelType, opts:ISearchOptions<R>, ...args):Promise<R[]> {
 		const params = {
 			query: `(and ${this.typeField}:'${modelType.name}' (term '${encodeURIComponent(args.join(' '))}'))`,
 			queryParser: 'structured'
@@ -118,13 +139,7 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 
 		log.info('Querying with params', params)
 
-		return Promise.resolve(
-			this.client
-				.search(params)
-				.promise()
-				.then((results) => {
-					return results.hits.hit
-				})
-		) as Promise<R[]>
+		let results = await this.client.search(params).promise()
+		return results.hits.hit
 	}
 }

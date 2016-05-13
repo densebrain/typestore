@@ -1,6 +1,8 @@
 import 'reflect-metadata'
 import './Globals'
 
+Promise = require('bluebird')
+
 import assert = require('assert')
 import * as Log from './log'
 import {TypeStoreModelKey} from './Constants'
@@ -17,18 +19,25 @@ import {msg, Strings} from "./Messages"
 import {Repo} from "./Repo";
 import {PluginFilter, PromiseMap} from "./Util";
 import {IModelOptions} from "./decorations/ModelDecorations";
+import {PluginEventType} from "./PluginTypes";
 
 // Create logger
 const log = Log.create(__filename)
 
-export namespace Coordinator {
+export type TModelTypeMap = {[clazzName:string]:IModelType}
 
-	const plugins:IPlugin[] = []
+export class Coordinator implements ICoordinator {
 
+	private plugins:IPlugin[] = []
+
+	notify(eventType:PluginEventType,...args:any[]) {
+		this.plugins.forEach(plugin => plugin.handle(eventType,...args))
+	}
+	
 	/**
 	 * Model registration map type
 	 */
-	export type TModelTypeMap = {[clazzName:string]:IModelType}
+
 
 
 	/**
@@ -40,8 +49,8 @@ export namespace Coordinator {
 	 * @type {{}}
 	 */
 	
-	const modelMap:TModelTypeMap = {}
-	const models:IModelType[] = [] 
+	private modelMap:TModelTypeMap = {}
+	private models:IModelType[] = []
 	
 	
 	/**
@@ -49,62 +58,73 @@ export namespace Coordinator {
 	 *
 	 * @returns {TModelTypeMap}
 	 */
-	export function getModels():IModelType[] {
-		return models
+	getModels():IModelType[] {
+		return this.models
 	}
 
-	function findModel(predicate) {
-		for (let modelType of models) {
+	private findModel(predicate) {
+		for (let modelType of this.models) {
 			if (predicate(modelType)) {
 				return modelType
 			}
 		}
 
-		log.info('unable to find registered model for clazz in',Object.keys(modelMap))
+		log.info('unable to find registered model for clazz in',Object.keys(this.modelMap))
 		return null
 	}
 	
-	export function getModel(clazz:any):IModelType {
-		return findModel((model) => model.clazz === clazz)
+	getModel(clazz:any):IModelType {
+		return this.findModel((model) => model.clazz === clazz)
 	}
 	
-	export function getModelByName(name:string):IModelType {
-		return findModel((model) => model.name === name)
+	getModelByName(name:string):IModelType {
+		return this.findModel((model) => model.name === name)
 	}
 
 	/**
 	 * Default options
 	 */
-	let options:ICoordinatorOptions = new CoordinatorOptions(null)
+	private options:ICoordinatorOptions = new CoordinatorOptions(null)
 
-	export function getOptions() {
-		return options
+	getOptions() {
+		return this.options
 	}
 	
 	
-	let initialized = false
+	private initialized = false
 
 	// NOTE: settled and settling Promise are overriden properties - check below namespace
-	let started = false
-	let startPromise = null
 
+	private startPromise:Promise<any> = null
+	private internal = {
+		started:false
+	}
+	get started() {
+		return this.startPromise !== null && this.internal.started
+	}
+	
+	set started(newVal:boolean) {
+		this.internal.started = newVal
+	}
+	
+	
 
-	function checkInitialized(not:boolean = false) {
-		checkStarted(true)
-		assert(not ? !initialized : initialized,
+	private checkInitialized(not:boolean = false) {
+		this.checkStarted(true)
+		assert(not ? !this.initialized : this.initialized,
 			msg(not ? Strings.ManagerInitialized : Strings.ManagerNotInitialized))
 	}
 
 
 
-	function checkStarted(not:boolean = false) {
-		const valid = (not) ? !started : started
+	private checkStarted(not:boolean = false) {
+		const valid = (not) ? !this.started : this.started
 
 		assert(valid, msg(not ? Strings.ManagerSettled : Strings.ManagerNotSettled))
 	}
 
-	export function stores() {
-		return PluginFilter<IStorePlugin>(plugins,PluginType.Store)
+	stores() {
+		return PluginFilter<IStorePlugin>(this.plugins,PluginType.Store)
 	}
 	
 	
@@ -112,28 +132,29 @@ export namespace Coordinator {
 	/**
 	 * Set the coordinator options
 	 */
-	export async function init(newOptions:ICoordinatorOptions, ...newPlugins:IPlugin[]):Promise<ICoordinator> {
-		checkStarted(true)
-		checkInitialized(true)
-		initialized = true
-		plugins.push(...newPlugins)
+	async init(newOptions:ICoordinatorOptions, ...newPlugins:IPlugin[]):Promise<ICoordinator> {
+		this.checkStarted(true)
+		this.checkInitialized(true)
+		this.initialized = true
+		this.plugins.push(...newPlugins)
 
 		// Update the default options
-		options = options || newOptions
-		Object.assign(options,newOptions)
+		this.options = this.options || newOptions
+		Object.assign(this.options,newOptions)
 
 
 		// Make sure we got a valid store
-		assert(stores().length > 0,msg(Strings.ManagerTypeStoreRequired))
+		assert(this.stores().length > 0,msg(Strings.ManagerTypeStoreRequired))
 
 		// Coordinator is ready, now initialize the store
 		log.debug(msg(Strings.ManagerInitComplete))
-		await PromiseMap(plugins, async (plugin) =>  {
+		await PromiseMap(this.plugins, async (plugin) =>  {
 			if (plugin)
-				await plugin.init(this,options)
+				await plugin.init(this,this.options)
 		})
-		return Coordinator
+		return this
 	}
+
 
 
 	/**
@@ -141,21 +162,40 @@ export namespace Coordinator {
 	 *
 	 * @returns {Bluebird<boolean>}
 	 */
-	export async function start(...models):Promise<ICoordinator> {
-		checkStarted(true)
-		models.forEach(registerModel)
+	async start(...models):Promise<ICoordinator> {
+		this.checkStarted(true)
+		models.forEach(this.registerModel.bind(this))
 
 		try {
-			startPromise = PromiseMap(plugins, async (plugin) => {
-				if (plugin)
-					await plugin.start()
-			})
-			await startPromise
+			this.startPromise = PromiseMap(this.plugins, plugin => (plugin) && plugin.start())
+			await this.startPromise
 		} finally {
-			startPromise = null
+			this.started = true
+			this.startPromise = null
 		}
-		return Coordinator
+		return this
 
+	}
+	
+	async stop():Promise<ICoordinator> {
+		if (!this.started)
+			return this
+		
+		try {
+			await (this.startPromise) ? 
+				this.startPromise.then(this.stopPlugins.bind(this)) :
+				this.stopPlugins()
+		} catch (err) {
+			log.error(`Coordinator shutdown was not clean`)
+		} finally {
+			this.startPromise = null
+			this.started = false
+			this.initialized = false
+			this.plugins = []
+			this.models = []
+			this.modelMap = {}
+		}
+		return this
 	}
 
 
@@ -166,7 +206,7 @@ export namespace Coordinator {
 	 *
 	 * @param fn
 	 */
-	function execute<T>(fn:Function):Promise<T> {
+	async execute<T>(fn:Function):Promise<T> {
 		return new Promise<T>((resolve,reject) => {
 
 			function executeFn(...args) {
@@ -180,20 +220,16 @@ export namespace Coordinator {
 				reject(err)
 			}
 
-			return (startPromise) ?
-				startPromise.then(executeFn).catch(handleError) :
+			return (this.startPromise) ?
+				this.startPromise.then(executeFn).catch(handleError) :
 				Promise.resolve(executeFn).catch(handleError)
 
 		})
 
 	}
 
-	function stopPlugins() {
-		return PromiseMap(plugins, async (plugin) => {
-			if (plugin)
-				await plugin.stop()
-		})
-
+	async stopPlugins() {
+		await PromiseMap(this.plugins, plugin => (plugin) && plugin.stop())
 	} 
 	
 	/**
@@ -201,22 +237,11 @@ export namespace Coordinator {
 	 *
 	 * @returns {Coordinator.reset}
 	 */
-	export function reset():Promise<ICoordinator> {
-		const doReset = async () => {
-
-			try {
-				await stopPlugins()
-			} finally {
-				startPromise = null
-				plugins.length = 0
-				initialized = false
-			}
-			
-			return Coordinator
-
-		}
+	async reset():Promise<ICoordinator> {
+		await this.stop()
 		
-		return (startPromise) ? startPromise.then(doReset) : doReset()
+
+		return this
 
 	}
 
@@ -227,10 +252,10 @@ export namespace Coordinator {
 	 * @param constructor
 	 * @param opts
 	 */
-	export function registerModel(constructor:Function) {
-		checkStarted(true)
+	registerModel(constructor:Function) {
+		this.checkStarted(true)
 
-		let model = getModel(constructor)
+		let model = this.getModel(constructor)
 		if (model) {
 			log.info(`Trying to register ${model.name} a second time? is autoregister enabled?`)
 			return
@@ -243,10 +268,10 @@ export namespace Coordinator {
 			clazz: constructor
 		}
 
-		modelMap[modelOpts.clazzName] = model
-		models.push(model)
-
-
+		this.modelMap[modelOpts.clazzName] = model
+		this.models.push(model)
+		this.notify(PluginEventType.ModelRegister,model)
+		return this
 	}
 
 
@@ -256,60 +281,14 @@ export namespace Coordinator {
 	 * @param clazz
 	 * @returns {T}
 	 */
-	export function getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T {
+	getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T {
 		const repo = new clazz()
-		stores().forEach((store) => store.initRepo(repo))
+		repo.init(this)
+		
+		this.notify(PluginEventType.RepoInit,repo)
+		
 		repo.start()
 		return repo
 	}
 
 }
-
-/**
- * Internal vals
- *
- * @type {{}}
- */
-const internal:any = {}
-
-/**
- * Add getter/setters
- */
-Object.defineProperties(Coordinator,{
-	startPromise: {
-		set: (newVal:any) => {
-			internal.startPromise = newVal
-		},
-		get: () => {
-			return internal.startPromise
-		},
-		configurable: false
-	},
-	started: {
-		get: () => {
-			const startPromise = internal.startPromise
-			return internal.startPromise !== null && startPromise.isResolved()
-		},
-		configurable: false
-	}
-})
-
-/**
- * Management service
- */
-// export const Service = {
-
-// 	/**
-// 	 * Save a persistable model
-// 	 */
-// 	save<T extends PersistableModel>(model:T):T {
-
-// 		return null
-// 	},
-
-
-// 	get<T,K>(key:K):T {
-
-// 		return null
-// 	}
-// }

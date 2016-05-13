@@ -1,5 +1,6 @@
 //import 'es6-shim'
 
+import './Promise'
 
 /**
  * Export types as a a namespace and export all
@@ -47,7 +48,7 @@ export * from './Repo'
 export * from './Types'
 export * from './Decorations'
 export * from './Constants'
-
+export * from './Util'
 
 
 

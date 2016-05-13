@@ -6,7 +6,7 @@ import {
 	Log,
 	Types,
 	Repo,
-	ModelEvent,
+	PluginEventType,
 	Messages,
 	Errors,
 	Constants,
@@ -47,10 +47,7 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 	private coordinator:Types.ICoordinator
 	private mapper
 
-	constructor(
-		private store:DynamoDBStore,
-		public repo:Repo<M>
-	) {
+	constructor(private store:DynamoDBStore,public repo:Repo<M>) {
 		assert(repo,'Repo is required and must have a valid prototype')
 
 		
@@ -63,6 +60,10 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	}
 
+
+	handle(eventType:PluginEventType, ...args):boolean|any {
+		return false;
+	}
 
 	async init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
 		this.coordinator = coordinator
@@ -99,18 +100,7 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 	}
 
 
-	/**
-	 * Handle model events from the attached repository
-	 * 
-	 * @param event
-	 * @param model
-	 */
-	handleModelEvent<M extends IModel>(event:ModelEvent,model:M):Promise<M> {
-		switch(event) {
-			default:
-				return Promise.resolve(model)
-		}
-	}
+	
 
 
 

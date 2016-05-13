@@ -1,5 +1,5 @@
 ///<reference path="../typings/typestore-plugin-dynamodb"/>
-
+import 'reflect-metadata'
 import {
 	Log,
 	Types,
@@ -10,7 +10,11 @@ import {
 	PluginType,
 	IModel,
 	IModelKey,
-	IKeyValue
+	IKeyValue,
+	PluginEventType,
+	SyncStrategy,
+	ICoordinatorOptions,
+	PromiseMap
 } from 'typestore'
 
 import * as AWS from 'aws-sdk'
@@ -23,12 +27,11 @@ const {msg, Strings} = Messages
 
 import {
 	IDynamoDBModelOptions,
-	IDynamoDBCoordinatorOptions,
+	IDynamoDBStorePluginOptions,
 	IDynamoDBProvisioning,
 	IDynamoDBAttributeOptions, TableStatus, KeyType, ResourceState, StatusPending
 } from "./DynamoDBTypes"
 import {DynamoDBRepoPlugin} from "./DynamoDBRepoPlugin"
-import {PromiseMap} from "../../typestore/src/Util";
 
 // Set the aws promise provide to bluebird
 //(AWS.config as any).setPromiseDependency(Promise)
@@ -68,10 +71,11 @@ function isTableStatusIn(status:string|TableStatus, ...statuses) {
 	return _.includes(statuses, status)
 }
 
-function typeToDynamoType(type:any) {
-	return (type === String) ? 'S' : //string
-		(type === Number) ? 'N' :  //number
-			(type === Array) ? 'L' : // array
+function typeToDynamoType(type:any,typeName:string = null) {
+	log.debug('type = ',type,typeName)
+	return (type === String || typeName === 'String') ? 'S' : //string
+		(type === Number || typeName === 'Number') ? 'N' :  //number
+			(type === Array || typeName === 'Array') ? 'L' : // array
 				'M' //object
 }
 
@@ -137,15 +141,18 @@ export class DynamoDBKeyValue implements IKeyValue {
  * Store implementation for DynamoDB
  */
 export class DynamoDBStore implements IStorePlugin {
+
+	type = PluginType.Store
+
 	private _docClient:AWS.DynamoDB.DocumentClient
 	private _dynamoClient:AWS.DynamoDB
 	private _availableTables:string[] = []
 	private tableDescs:{[TableName:string]:DynamoDB.TableDescription} = {}
 	private repos:{[clazzName:string]:DynamoDBRepoPlugin<any>} = {}
 
-	private opts:IDynamoDBCoordinatorOptions
-
+	supportedModels:any[]
 	coordinator:ICoordinator
+	coordinatorOpts:ICoordinatorOptions
 
 	/**
 	 * Set default provisioning capacity
@@ -159,12 +166,22 @@ export class DynamoDBStore implements IStorePlugin {
 	/**
 	 * Create new dynamodbstore
 	 */
-	constructor() {
+	constructor(private opts:IDynamoDBStorePluginOptions = {},...supportedModels:any[]) {
+		this.supportedModels = supportedModels
+		_.defaultsDeep(this.opts, DefaultDynamoDBOptions)
 	}
 
 
-	get type() {
-		return PluginType.Store
+	handle(eventType:PluginEventType, ...args):boolean|any {
+		switch(eventType) {
+			case PluginEventType.RepoInit:
+				const repo:Repo<any> = args[0]
+				if (this.supportedModels.length === 0 || this.supportedModels.includes(repo.modelClazz)) {
+					return this.initRepo(repo)
+				}
+				
+		}
+		return false;
 	}
 
 	/**
@@ -211,10 +228,16 @@ export class DynamoDBStore implements IStorePlugin {
 		return this._docClient
 	}
 
-	init(coordinator:ICoordinator, opts:ICoordinator):Promise<ICoordinator> {
+	/**
+	 * Called during the coordinators initialization process
+	 * 
+	 * @param coordinator
+	 * @param opts
+	 * @returns {Promise<ICoordinator>}
+	 */
+	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
 		this.coordinator = coordinator
-		this.opts = opts as IDynamoDBCoordinatorOptions
-		_.defaultsDeep(this.opts, DefaultDynamoDBOptions)
+		this.coordinatorOpts = opts
 
 		return Promise.resolve(coordinator)
 	}
@@ -225,11 +248,8 @@ export class DynamoDBStore implements IStorePlugin {
 	 * @returns {Promise<boolean>}
 	 */
 	async start():Promise<ICoordinator> {
-
-
 		if (this.opts.awsOptions)
 			AWS.config.update(this.opts.awsOptions)
-
 
 		return await this.syncModels()
 	}
@@ -277,7 +297,7 @@ export class DynamoDBStore implements IStorePlugin {
 		const type = attr.type
 		log.info(`Checking attribute type for ${attr.name}`, type)
 
-		attr.awsAttrType = typeToDynamoType(type)
+		attr.awsAttrType = typeToDynamoType(type,attr.typeName)
 
 
 		log.debug(`Resolved type ${attr.awsAttrType}`)
@@ -294,7 +314,6 @@ export class DynamoDBStore implements IStorePlugin {
 	tableDefinition(clazzName:string):AWS.DynamoDB.CreateTableInput {
 		log.debug(`Creating table definition for ${clazzName}`)
 
-		const models = this.coordinator.getModels()
 		const model = this.coordinator.getModelByName(clazzName)
 		const modelOptions = model.options as IDynamoDBModelOptions
 		
@@ -334,7 +353,7 @@ export class DynamoDBStore implements IStorePlugin {
 			allAttrs[attr.name] = awsAttr
 
 			if (attr.primaryKey || attr.secondaryKey) {
-				log.debug(`Adding key ${attr.name}`)
+				log.debug(`Adding key ${attr.name}`,awsAttr)
 				// make sure its one or the other
 				if (attr.primaryKey && attr.secondaryKey)
 					assert(msg(Strings.ManagerOnlyOneKeyType, attr.name))
@@ -404,10 +423,13 @@ export class DynamoDBStore implements IStorePlugin {
 			}
 		}
 
+
 		if (!globalIndexes.length) {
 			delete modelOptions.tableDef['GlobalSecondaryIndexes']
 		}
 
+
+		log.debug('Table def',JSON.stringify(modelOptions.tableDef,null,4))
 		return modelOptions.tableDef
 
 	}
@@ -466,9 +488,10 @@ export class DynamoDBStore implements IStorePlugin {
 	}
 
 
+
 	async createTable(tableDef:DynamoDB.CreateTableInput):Promise<boolean> {
 		const TableName = tableDef.TableName
-		log.info(`In create ${TableName}`)
+		log.info(`In create ${TableName}`,tableDef)
 
 		let createResult = await this.dynamoClient.createTable(tableDef).promise()
 		const status = createResult.TableDescription.TableStatus
@@ -537,7 +560,7 @@ export class DynamoDBStore implements IStorePlugin {
 		log.info(`Creating table ${TableName}`)
 		// If the table exists and in OVERWRITE MODE
 		const tableInfo = await this.describeTable(TableName)
-		if (tableInfo && this.opts.syncStrategy === Types.SyncStrategy.Overwrite) {
+		if (tableInfo && this.coordinatorOpts.syncStrategy === Types.SyncStrategy.Overwrite) {
 			await this.deleteTable(tableDef)
 			return await this.createTable(tableDef)
 		}
@@ -571,8 +594,10 @@ export class DynamoDBStore implements IStorePlugin {
 			const tableDefs = models.map(modelType => this.tableDefinition(modelType.name))
 
 			// If create is not enabled then skip
-			if (this.opts.syncStrategy !== Types.SyncStrategy.None) {
-				await PromiseMap(tableDefs, async tableDef => await this.syncTable(tableDef))
+			if (this.coordinatorOpts.syncStrategy !== SyncStrategy.None) {
+				await PromiseMap(tableDefs, async (tableDef) => {
+					await this.syncTable(tableDef)
+				})
 			}
 
 

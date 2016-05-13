@@ -7,6 +7,9 @@ import {Coordinator} from '../Coordinator'
 import {TypeStoreModelKey,TypeStoreAttrKey} from '../Constants'
 import * as Fixtures from './fixtures/Fixtures'
 
+
+let coordinator:Coordinator = null
+
 /**
  * Reset TypeStore and start all over
  *
@@ -16,9 +19,11 @@ import * as Fixtures from './fixtures/Fixtures'
 async function reset(syncStrategy:SyncStrategy) {
 
 	log.info('Coordinator reset, now init')
+	if (coordinator)
+		await coordinator.stop()
 
-	await Coordinator.reset()
-	return await Coordinator.init(new CoordinatorOptions({syncStrategy}),new NullStore())
+	coordinator = new Coordinator()
+	return await coordinator.init(new CoordinatorOptions({syncStrategy}),new NullStore())
 	
 }
 
@@ -37,7 +42,7 @@ describe('#typestore',() => {
 		})
 
 		it('#model', async () => {
-			await Coordinator.start(Fixtures.ModelTest1)
+			await coordinator.start(Fixtures.ModelTest1)
 
 			//new Fixtures.ModelTest1()
 

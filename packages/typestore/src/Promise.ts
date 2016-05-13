@@ -1,16 +1,26 @@
+const Bluebird = require('bluebird')
+Bluebird.config({
+	cancellation: true,
+	longStackTraces: true,
+	warnings: true,
+	monitoring: false
+})
+
 const Log = require('./Log')
 const log = Log.create(__filename)
 const {msg,Strings} = require('./Messages')
 
 process.on("unhandledRejection", function (reason, promise) {
-
 	log.error(msg(Strings.PromiseUnhandledRejection, reason), reason.stack, reason,promise)
-	throw reason
 })
 
 process.on("rejectionHandled", function (promise) {
 
 })
+
+Promise = Bluebird
+
+
 
 
 //import Bluebird = require('bluebird')

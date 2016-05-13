@@ -9,12 +9,9 @@ import {IModelKey, IKeyValue} from "./decorations/ModelDecorations";
 /**
  * Model persistence events
  */
-export enum ModelEvent {
-	PreSave,
-	PostSave,
-	
-	PreRemove,
-	PostRemove
+export enum PluginEventType {
+	RepoInit = 1,
+	ModelRegister
 }
 
 
@@ -133,17 +130,8 @@ export enum PluginType {
 export interface IPlugin {
 	type:PluginType
 
+	handle(eventType:PluginEventType,...args:any[]):boolean|any
 	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator>
 	start():Promise<ICoordinator>
 	stop():Promise<ICoordinator>
-
-	/**
-	 * Repo event pipeline
-	 *
-	 * @param event - type of event being called
-	 * @param model - the model the event applies to
-	 *
-	 * @return Promise<M> a Promise to complete the event handling
-	 */
-	handleModelEvent?<M extends IModel>(event:ModelEvent,model:M):Promise<M>
 }

@@ -1,14 +1,20 @@
 
 import {Errors, IStorePlugin,ICoordinatorOptions,ICoordinator,Repo,PluginType,IModel} from '../../index'
+import {PluginEventType} from "../../PluginTypes";
 
 export class NullStore implements IStorePlugin {
 
+	type = PluginType.Store
+
 	private coordinator:ICoordinator
 
-	constructor() { }
+	constructor() {
 
-	get type() {
-		return PluginType.Store
+	}
+
+
+	handle(eventType:PluginEventType, ...args):boolean|any {
+		return false;
 	}
 
 	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {

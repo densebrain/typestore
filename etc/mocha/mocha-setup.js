@@ -1,6 +1,11 @@
 require('source-map-support').install()
 require('../packages-path')
-
+require('bluebird').config({
+	cancellation: true,
+	longStackTraces: true,
+	warnings: true,
+	monitoring: false
+})
 require("babel-polyfill")
 require('expectations')
 require('reflect-metadata')

@@ -1,3 +1,6 @@
+Promise = require('bluebird')
+const log = getLogger(__filename)
+
 import * as Faker from 'faker'
 import * as Fixtures from './fixtures/index'
 import {
@@ -14,12 +17,11 @@ import {MockStore} from "typestore-mocks"
 
 const {TypeStoreModelKey,TypeStoreAttrKey} = Constants
 
-const log = Log.create(__filename)
 log.info('Starting test suite')
 
-
+let cloudSearchProvider = Fixtures.cloudSearchProvider
 let store:MockStore = new MockStore()
-
+let coordinator:Coordinator = null
 /**
  * Global test suite
  */
@@ -37,9 +39,12 @@ xdescribe('#plugin-cloudsearch',() => {
 	 * Set it up
 	 */
 	before(async () => {
-		await Coordinator.reset()
-		await Coordinator.init({},store)
-		await Coordinator.start(Fixtures.CloudSearchTestModel)
+		if (coordinator)
+			await coordinator.stop()
+
+		coordinator = new Coordinator()
+		await coordinator.init({},store,cloudSearchProvider)
+		await coordinator.start(Fixtures.CloudSearchTestModel)
 	})
 
 
@@ -52,7 +57,7 @@ xdescribe('#plugin-cloudsearch',() => {
 		it('#add', () => {
 			getTestModel()
 
-			let repo = Coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
+			let repo = coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
 
 			//const mock = sinon.mock(repo)
 			const stub = sinon.stub(repo,'save', function (o) {
@@ -67,7 +72,7 @@ xdescribe('#plugin-cloudsearch',() => {
 		})
 
 		it('#remove', () => {
-			let repo = Coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
+			let repo = coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
 			const stub = sinon.stub(repo, 'remove', function (o) {
 				log.info('Fake remove object', o)
 				expect(o.id).toBe(t1.id)
@@ -83,10 +88,10 @@ xdescribe('#plugin-cloudsearch',() => {
 
 	describe('#search',() => {
 
-		it('#add+search+remove', () => {
+		it('#add+search+remove', async () => {
 			getTestModel()
 
-			let repo = Coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
+			let repo = coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
 
 			//const mock = sinon.mock(repo)
 			const stub = sinon.stub(repo, 'save', function (o) {
@@ -94,15 +99,13 @@ xdescribe('#plugin-cloudsearch',() => {
 				return this.index(IndexAction.Add, o)
 			})
 
-			return repo.save(t1)
-				.then((t2) => {
-					return repo.findByText(t1.text.split(' ')[0])
-				})
-				.then((searchResults) => {
-					expect(searchResults.length).toBeGreaterThan(0)
-					log.info(searchResults)
-					return true
-				})
+			let t2 = await repo.save(t1)
+			let searchResults = await repo.findByText(t1.text.split(' ')[0])
+
+			expect(searchResults.length).toBeGreaterThan(0)
+			log.info(searchResults)
+			return true
+
 		})
 	})
 

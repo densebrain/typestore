@@ -9,7 +9,8 @@ import {
 	PluginType,
 	IStorePlugin,
 	IModelType, 
-	Log
+	Log,
+	PluginEventType
 } from 'typestore'
 import {IndexedDBRepoPlugin} from "./IndexedDBRepoPlugin";
 
@@ -49,6 +50,16 @@ export class IndexedDBPlugin implements IStorePlugin {
 	
 	constructor(private opts:IIndexedDBOptions = {}) {
 		this.opts = Object.assign({},LocalStorageOptionDefaults,opts)
+	}
+
+
+	handle(eventType:PluginEventType, ...args):boolean|any {
+		switch(eventType) {
+			case PluginEventType.RepoInit:
+				const repo:Repo<any> = args[0]
+				return this.initRepo(repo)
+		}
+		return false
 	}
 
 	private open() {

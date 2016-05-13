@@ -1,8 +1,6 @@
 import 'reflect-metadata'
 import * as Log from '../../log'
-
-import {Repo} from "../../Repo";
-import {RepoDescriptor, FinderDescriptor,ModelDescriptor, AttributeDescriptor} from "../../Decorations";
+import {ModelDescriptor, AttributeDescriptor} from "../../Decorations";
 
 
 const log = Log.create(__filename)

@@ -1,8 +1,10 @@
+Promise = require('bluebird')
+
 const log = getLogger(__filename)
 
 import * as uuid from 'node-uuid'
 import {Coordinator,SyncStrategy} from 'typestore'
-import {IDynamoDBCoordinatorOptions} from "../DynamoDBTypes"
+import {IDynamoDBStorePluginOptions} from "../DynamoDBTypes"
 import {DynamoDBStore} from '../DynamoDBStore'
 import * as Fixtures from './fixtures/index'
 
@@ -13,6 +15,7 @@ const DynamoDBLocalEndpoint = `http://localhost:${DynamoDBPort}`
 
 
 let store:DynamoDBStore = null
+let coordinator:Coordinator = null
 
 /**
  * Reset TypeStore and start all over
@@ -24,22 +27,25 @@ let store:DynamoDBStore = null
 async function reset(syncStrategy:SyncStrategy,endpoint:string) {
 	// Init dynamo type
 	// using local
-	store = new DynamoDBStore()
+	
 
-	const opts:IDynamoDBCoordinatorOptions = {
+	const opts:IDynamoDBStorePluginOptions = {
 		dynamoEndpoint: endpoint,
-		prefix: `test_${process.env.USER}_`,
-		syncStrategy
+		prefix: `test_${process.env.USER}_`
 	}
+	
+	store = new DynamoDBStore(opts,Fixtures.Test1)
 
 	if (!endpoint)
 		delete opts['endpoint']
 
 
+	if (coordinator)
+		await coordinator.stop()
 
-	await Coordinator.reset()
-	await Coordinator.init(opts,store)
-	return Coordinator
+	coordinator = new Coordinator()
+	await coordinator.init({syncStrategy},store)
+	return coordinator
 }
 
 
@@ -59,16 +65,15 @@ describe('#plugin-dynamodb', function() {
 
 	beforeEach(async () => {
 		await reset(SyncStrategy.Overwrite,DynamoDBLocalEndpoint)
-
 	})
 
 	/**
 	 * Creates a valid table definition
 	 */
-	it('#tableDef', () => {
-		Coordinator.start(Fixtures.Test1)
+	it('#tableDef', async () => {
+		await coordinator.start(Fixtures.Test1)
 
-		const modelOpts = Coordinator.getModel(Fixtures.Test1)
+		const modelOpts = coordinator.getModel(Fixtures.Test1)
 		const tableDef = store.tableDefinition(modelOpts.name)
 
 		expect(tableDef.KeySchema.length).toBe(2)
@@ -78,10 +83,10 @@ describe('#plugin-dynamodb', function() {
 	})
 
 	it("#sync", async () => {
-		await Coordinator.start(Fixtures.Test1)
+		await coordinator.start(Fixtures.Test1)
 
 		expect(store.availableTables.length).toBeGreaterThan(0)
-		expect(Coordinator.getModel(Fixtures.Test1)).not.toBeNull()
+		expect(coordinator.getModel(Fixtures.Test1)).not.toBeNull()
 	})
 
 	describe('#repo',() => {
@@ -93,8 +98,8 @@ describe('#plugin-dynamodb', function() {
 			t1.createdAt = new Date().getTime()
 			t1.randomText = 'asdfasdfadsf'
 
-			await Coordinator.start(Fixtures.Test1)
-			test1Repo = Coordinator.getRepo(Fixtures.Test1Repo)
+			await coordinator.start(Fixtures.Test1)
+			test1Repo = coordinator.getRepo(Fixtures.Test1Repo)
 		})
 
 		it('#create', async () => {

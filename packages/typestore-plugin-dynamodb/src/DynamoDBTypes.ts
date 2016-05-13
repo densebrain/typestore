@@ -79,7 +79,7 @@ export interface IDynamoDBModelOptions extends IModelOptions {
 	tableDef?:AWS.DynamoDB.CreateTableInput
 }
 
-export interface IDynamoDBCoordinatorOptions extends ICoordinatorOptions {
+export interface IDynamoDBStorePluginOptions {
 	dynamoEndpoint?:string
 	region?:string
 	awsOptions?:AWS.ClientConfigPartial

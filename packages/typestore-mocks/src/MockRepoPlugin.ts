@@ -10,7 +10,7 @@ import {
 	IModel,
 	IRepoPlugin,
 	PluginType,
-	ModelEvent
+	PluginEventType
 } from 'typestore'
 import {MockKeyValue} from "./MockStore";
 
@@ -25,9 +25,11 @@ export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 	constructor(private store:IStorePlugin,private repo:Repo<M>) {
 		repo.attach(this)
 	}
-	
 
 
+	handle(eventType:PluginEventType, ...args):boolean|any {
+		return false;
+	}
 
 	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
 		this.coordinator = coordinator
