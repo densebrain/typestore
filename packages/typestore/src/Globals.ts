@@ -2,6 +2,8 @@
 
 export { }
 
+
+
 declare global {
 	interface ObjectConstructor {
 		assign(target: any, ...sources: any[]): any;
@@ -9,23 +11,29 @@ declare global {
 
 	interface Array<T> {
 		includes(element:T):boolean
-		equals(any:T):boolean
+
 	}
+
+	interface ArrayConstructor {
+		arraysEqual(arr1:any[],arr2:any[]):boolean
+	}
+	
+	
 }
 
 
-if (!Array.prototype.equals) {
-	Array.prototype.equals = function(arr) {
+if (!Array.arraysEqual) {
+	Array.arraysEqual = function(arr1,arr2) {
 
-		if (this === arr) return true;
-		if (this == null || arr == null) return false;
-		if (this.length != arr.length) return false;
+		if (arr1 === arr2) return true;
+		if (!Array.isArray(arr1) || !Array.isArray(arr2)) return false;
+		if (arr1.length != arr2.length) return false;
 
 		// If you don't care about the order of the elements inside
 		// the array, you should sort both arrays here.
 
-		for (var i = 0; i < this.length; ++i) {
-			if (this[i] !== arr[i]) return false;
+		for (var i = 0; i < arr1.length; ++i) {
+			if (arr1[i] !== arr2[i]) return false;
 		}
 		return true;
 

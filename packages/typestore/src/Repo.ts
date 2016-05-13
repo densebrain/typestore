@@ -1,4 +1,3 @@
-import BBPromise = require('./Promise')
 import {
 	TypeStoreModelKey,
 	TypeStoreFinderKey,
@@ -6,9 +5,6 @@ import {
 	TypeStoreFindersKey
 } from "./Constants"
 import {
-	IModelKey,
-	IModelOptions,
-	IKeyValue,
 	IModel,
 	IFinderOptions,
 	IStorePlugin,
@@ -23,9 +19,10 @@ import {Coordinator} from './Coordinator'
 import {NotImplemented} from "./Errors"
 import * as Log from './log'
 import {IRepoPlugin, IFinderPlugin, PluginType, ISearchProvider} from "./PluginTypes"
-import {isFunction, isRepoPlugin, isFinderPlugin, PluginFilter} from "./Util"
+import {isFunction, isRepoPlugin, isFinderPlugin, PluginFilter, PromiseMap} from "./Util"
 import {ModelMapper} from "./ModelMapper"
 import {IModelType} from "./ModelTypes"
+import {IModelOptions, IModelKey, IKeyValue} from "./decorations/ModelDecorations";
 
 const log = Log.create(__filename)
 
@@ -155,7 +152,7 @@ export class Repo<M extends IModel> {
 
 		return (...args) => {
 			const searchProvider = searchOpts.provider as ISearchProvider
-			return BBPromise.resolve(
+			return Promise.resolve(
 				searchProvider.search(
 					this.modelType,
 					searchOpts,
@@ -173,9 +170,8 @@ export class Repo<M extends IModel> {
 					)
 				})
 
-				return BBPromise.map(keys,(key) => {
-					return this.get(key)
-				})
+				return keys.map(async key => await this.get(key))
+
 			})
 		
 			
@@ -200,24 +196,30 @@ export class Repo<M extends IModel> {
 	 * @param models
 	 * @returns {Bluebird<boolean>}
 	 */
-	index(type:IndexAction,...models:IModel[]):BBPromise<boolean> {
-		return BBPromise.map(this.repoOpts.indexers || [], (indexerConfig:IIndexerOptions) => {
-			return indexerConfig.indexer
-				.index(
-					type,
-					indexerConfig,
-					this.modelType,
-					this,
-					...models
-				)
-		}).return(true)
+	index(type:IndexAction,...models:IModel[]):Promise<boolean> {
+
+		let indexers = this.repoOpts.indexers
+		if (indexers)
+			indexers.forEach(async(indexerConfig:IIndexerOptions) => {
+				await indexerConfig.indexer
+					.index(
+						type,
+						indexerConfig,
+						this.modelType,
+						this,
+						...models
+					)
+			})
+
+		return Promise.resolve(true)
 	}
 
-
 	indexPromise(action:IndexAction)  {
-		return (models:IModel[]) => {
+		return async (models:M[]) => {
 			const indexPromise = this.index(action,...models.filter((model) => !!model))
-			return BBPromise.resolve(indexPromise).return(models)
+
+			await Promise.resolve(indexPromise)
+			return models
 		}
 	}
 
@@ -243,17 +245,14 @@ export class Repo<M extends IModel> {
 	 * @param key
 	 * @returns {null}
 	 */
-	get(key:IKeyValue):BBPromise<M> {
-		return BBPromise
-			.map(this.getRepoPlugins(),(plugin:IRepoPlugin<M>) => plugin.get(key))
-			.then((results:M[]) => {
-				for (let result of results) {
-					if (result)
-						return result
-				}
+	async get(key:IKeyValue):Promise<M> {
+		let results = this.getRepoPlugins().map(async plugin => await plugin.get(key))
+		for (let result of results) {
+			if (result)
+				return result
+		}
 
-				return null
-			})
+		return null
 	}
 
 
@@ -264,21 +263,16 @@ export class Repo<M extends IModel> {
 	 * @param o
 	 * @returns {null}
 	 */
-	save(o:M):BBPromise<M> {
-		return BBPromise
-			.map(this.getRepoPlugins(),(plugin:IRepoPlugin<M>) => plugin.save(o))
+	async save(o:M):Promise<M> {
+		let results =  await PromiseMap(this.getRepoPlugins(), plugin => plugin.save(o))
+		await this.indexPromise(IndexAction.Add)(results)
+		for (let result of results) {
+			if (result)
+				return result
+		}
 
-			// After they're saved successfully we
-			// pass them off for indexing
-			.then(this.indexPromise(IndexAction.Add))
-			.then((results:M[]) => {
-				for (let result of results) {
-					if (result)
-						return result
-				}
+		return null
 
-				return null
-			})
 	}
 
 
@@ -288,25 +282,15 @@ export class Repo<M extends IModel> {
 	 * @param key
 	 * @returns {null}
 	 */
-	remove(key:IKeyValue):BBPromise<any> {
-		return this
-			.get(key)
-			.then((model) => {
-				if (!model) {
-					log.warn(`No model found to remove with key`,key)
-					return null
-				}
+	async remove(key:IKeyValue):Promise<any> {
+		let model = await this.get(key)
+		if (!model) {
+			log.warn(`No model found to remove with key`,key)
+			return null
+		}
 
-				return BBPromise
-					.map(this.getRepoPlugins(),(plugin:IRepoPlugin<M>) => plugin.remove(key))
-
-					// After they're removed successfully we
-					// pass them off for indexing
-					.return([model])
-					.then(this.indexPromise(IndexAction.Remove))
-			})
-
-
+		await PromiseMap(this.getRepoPlugins(), plugin => plugin.remove(key))
+		return this.indexPromise(IndexAction.Remove)([model])
 
 	}
 
@@ -316,11 +300,9 @@ export class Repo<M extends IModel> {
 	 *
 	 * @returns {null}
 	 */
-	count():BBPromise<number> {
-		return BBPromise
-			.map(this.getRepoPlugins(),(plugin:IRepoPlugin<M>) => plugin.count())
-			.then((results:number[]) => {
-				return results.reduce((prev,current) => prev + current)
-			})
+	async count():Promise<number> {
+		let results = await Promise.all(this.getRepoPlugins().map(async plugin => await plugin.count()))
+		return results.reduce((prev,current) => prev + current)
+
 	}
 }

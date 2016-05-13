@@ -1,7 +1,6 @@
 import 'reflect-metadata'
-import BBPromise = require('./Promise')
 import {Repo} from "./Repo"
-import {IModel, IModelKey, IModelOptions, IModelType, IKeyValue} from "./ModelTypes"
+import {IModel, IModelType} from "./ModelTypes"
 import {ISearchOptions, IIndexerOptions, IStorePlugin, IPlugin} from "./PluginTypes";
 
 
@@ -96,9 +95,9 @@ export interface ICoordinator {
 	getModels():IModelType[]
 	getModel(clazz:any):IModelType
 	getModelByName(name:string)
-	start(...models):BBPromise<ICoordinator>
-	init(opts:ICoordinatorOptions, ...plugins:IPlugin[]):BBPromise<ICoordinator>
-	reset():BBPromise<ICoordinator>
+	start(...models):Promise<ICoordinator>
+	init(opts:ICoordinatorOptions, ...plugins:IPlugin[]):Promise<ICoordinator>
+	reset():Promise<ICoordinator>
 	getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T
 }
 

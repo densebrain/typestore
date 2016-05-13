@@ -1,7 +1,6 @@
 import {
 	Errors, 
-	Promise, 
-	IStorePlugin, 
+	IStorePlugin,
 	IKeyValue, 
 	ICoordinatorOptions, 
 	ICoordinator,
@@ -17,6 +16,8 @@ import {MockRepoPlugin} from "./MockRepoPlugin";
  */
 export class MockKeyValue implements IKeyValue {
 	
+	
+	
 	args
 
 	constructor(...args:any[]) {
@@ -29,15 +30,14 @@ export class MockKeyValue implements IKeyValue {
  */
 export class MockStore implements IStorePlugin {
 
+	
+	type = PluginType.Store
+	
 	coordinator:ICoordinator
 	repoPlugins:IRepoPlugin<any>[]  = []
 	
 	constructor() {
 
-	}
-
-	get type() {
-		return PluginType.Store
 	}
 
 	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {

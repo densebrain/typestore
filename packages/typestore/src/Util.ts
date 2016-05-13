@@ -31,6 +31,10 @@ export function isFinderPlugin(plugin:IPlugin):plugin is IFinderPlugin {
 	return isPluginOfType(plugin,PluginType.Finder)
 }
 
+export async function PromiseMap<T>(values:T[],mapper:(value:T) => any):Promise<any[]> {
+	const results = values.map(async value => await Promise.resolve(mapper(value)))
+	return await Promise.all(results)
+}
 
 export function PluginFilter<P extends IPlugin>(plugins:IPlugin[],type:PluginType):P[] {
 	return plugins.filter(

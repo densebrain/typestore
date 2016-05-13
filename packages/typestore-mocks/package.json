@@ -3,8 +3,8 @@
   "description": "TypesStore Mocks for Testing Purposes",
   "version": "1.0.0",
   "author": "Jonathan Glanz",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "src/index.js",
+  "typings": "src/index.d.ts",
   "scripts": {
     "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
   },

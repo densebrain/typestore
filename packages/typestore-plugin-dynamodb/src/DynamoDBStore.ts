@@ -1,7 +1,6 @@
 ///<reference path="../typings/typestore-plugin-dynamodb"/>
 
 import {
-	Promise,
 	Log,
 	Types,
 	Repo,
@@ -9,7 +8,9 @@ import {
 	ICoordinator,
 	IStorePlugin,
 	PluginType,
-	IModel
+	IModel,
+	IModelKey,
+	IKeyValue
 } from 'typestore'
 
 import * as AWS from 'aws-sdk'
@@ -27,6 +28,7 @@ import {
 	IDynamoDBAttributeOptions, TableStatus, KeyType, ResourceState, StatusPending
 } from "./DynamoDBTypes"
 import {DynamoDBRepoPlugin} from "./DynamoDBRepoPlugin"
+import {PromiseMap} from "../../typestore/src/Util";
 
 // Set the aws promise provide to bluebird
 //(AWS.config as any).setPromiseDependency(Promise)
@@ -102,7 +104,7 @@ export class DynamoDBModelKeyAttribute {
 
 
 
-export class DynamoDBModelKey implements Types.IModelKey {
+export class DynamoDBModelKey implements IModelKey {
 
 	constructor(
 		private hashKey:DynamoDBModelKeyAttribute,
@@ -110,7 +112,7 @@ export class DynamoDBModelKey implements Types.IModelKey {
 	}
 }
 
-export class DynamoDBKeyValue implements Types.IKeyValue {
+export class DynamoDBKeyValue implements IKeyValue {
 
 	constructor(
 		public keySchema:DynamoDB.KeySchema,
@@ -222,14 +224,14 @@ export class DynamoDBStore implements IStorePlugin {
 	 *
 	 * @returns {Promise<boolean>}
 	 */
-	start():Promise<ICoordinator> {
+	async start():Promise<ICoordinator> {
 
 
 		if (this.opts.awsOptions)
 			AWS.config.update(this.opts.awsOptions)
 
 
-		return this.syncModels()
+		return await this.syncModels()
 	}
 
 	/**
@@ -331,16 +333,16 @@ export class DynamoDBStore implements IStorePlugin {
 			// Keep a ref for indexes
 			allAttrs[attr.name] = awsAttr
 
-			if (attr.hashKey || attr.rangeKey) {
+			if (attr.primaryKey || attr.secondaryKey) {
 				log.debug(`Adding key ${attr.name}`)
 				// make sure its one or the other
-				if (attr.hashKey && attr.rangeKey)
+				if (attr.primaryKey && attr.secondaryKey)
 					assert(msg(Strings.ManagerOnlyOneKeyType, attr.name))
 
 				keySchema.push({
 					AttributeName: attr.name,
 					KeyType: KeyType[
-						(attr.hashKey) ? KeyType.HASH : KeyType.RANGE
+						(attr.primaryKey) ? KeyType.HASH : KeyType.RANGE
 					]
 				})
 
@@ -358,7 +360,7 @@ export class DynamoDBStore implements IStorePlugin {
 				if (!attr.index) return
 
 				const indexDef = attr.index
-				if (indexDef.isAlternateRangeKey) {
+				if (indexDef.isSecondaryKey) {
 
 				} else {
 					const keySchema:DynamoDB.KeySchema = []
@@ -369,9 +371,9 @@ export class DynamoDBStore implements IStorePlugin {
 
 					attrDefs.push(allAttrs[attr.name])
 
-					if (indexDef.rangeKey) {
+					if (indexDef.secondaryKey) {
 						keySchema.push({
-							AttributeName: indexDef.rangeKey,
+							AttributeName: indexDef.secondaryKey,
 							KeyType: KeyType[KeyType.RANGE]
 						})
 					}
@@ -431,16 +433,13 @@ export class DynamoDBStore implements IStorePlugin {
 	 *
 	 * @returns {Promise<boolean>}
 	 */
-	waitForTable(TableName:string, resourceState:ResourceState = ResourceState.tableExists):Promise<boolean> {
-		return Promise
-			.resolve(
-				this.dynamoClient.waitFor(
+	async waitForTable(TableName:string, resourceState:ResourceState = ResourceState.tableExists):Promise<boolean> {
+		await this.dynamoClient.waitFor(
 					ResourceState[resourceState],
 					tableNameParam(TableName)
-				)
-				.promise()
-			)
-			.then(this.setTableAvailable.bind(this,TableName)) as Promise<boolean>
+				).promise()
+
+		return this.setTableAvailable(TableName)
 
 	}
 
@@ -450,58 +449,46 @@ export class DynamoDBStore implements IStorePlugin {
 	 * @param TableName
 	 * @return {any}
 	 */
-	describeTable(TableName:string):Promise<DynamoDB.TableDescription> {
-		return Promise.resolve(
-			this.dynamoClient.describeTable({TableName})
-				.promise()
-				.then((newTableDesc:DynamoDB.DescribeTableOutput) => {
-					this.tableDescs[TableName] = newTableDesc.Table
-					return newTableDesc.Table
-				})
-		).catch((err) => {
+	async describeTable(TableName:string):Promise<DynamoDB.TableDescription> {
+
+		try {
+			let newTableDesc = await this.dynamoClient.describeTable({TableName}).promise()
+			this.tableDescs[TableName] = newTableDesc.Table
+			return newTableDesc.Table
+		} catch (err) {
 			if (err.code === 'ResourceNotFoundException') {
 				log.info(`Table does not exist ${TableName}`)
-				return Promise.resolve(null)
+				return null
 			}
 
-			return Promise.reject(err)
-		}) as Promise<DynamoDB.TableDescription>
+			throw err
+		}
 	}
 
 
-	createTable(tableDef:DynamoDB.CreateTableInput):Promise<boolean> {
+	async createTable(tableDef:DynamoDB.CreateTableInput):Promise<boolean> {
 		const TableName = tableDef.TableName
 		log.info(`In create ${TableName}`)
 
-		return Promise.resolve(
-			this.dynamoClient.createTable(tableDef).promise()
-			.then((createResult:DynamoDB.CreateTableOutput) => {
-				const status = createResult.TableDescription.TableStatus
+		let createResult = await this.dynamoClient.createTable(tableDef).promise()
+		const status = createResult.TableDescription.TableStatus
 
-				// ERROR STATE - table deleting
-				if (isTableStatusIn(status, TableStatus.DELETING))
-					return Promise.reject(new Error(msg(DynamoStrings.TableDeleting, tableDef.TableName)))
+		// ERROR STATE - table deleting
+		if (isTableStatusIn(status, TableStatus.DELETING))
+			throw new Error(msg(DynamoStrings.TableDeleting, tableDef.TableName))
 
-				const promised = Promise.resolve(createResult)
-				if (isTableStatusIn(status, ...StatusPending)) {
-					log.debug(`Waiting for table to create ${TableName}`)
-					promised.then(() => {
-						return this.waitForTable(TableName, ResourceState.tableExists)
-					})
-				} else {
-					promised.then(
-						this.setTableAvailable.bind(this,{
-							TableName:tableDef.TableName
-						}))
-				}
-				return promised.return(true)
-			})
-		)  as Promise<boolean>
+		if (isTableStatusIn(status, ...StatusPending)) {
+			log.debug(`Waiting for table to create ${TableName}`)
+			await this.waitForTable(TableName, ResourceState.tableExists)
+		}
+
+		this.setTableAvailable(tableDef.TableName)
+
+		return true
+
 	}
 
-	updateTable(
-		tableDef:DynamoDB.CreateTableInput
-	):Promise<any> {
+	async updateTable(tableDef:DynamoDB.CreateTableInput):Promise<any> {
 
 		const TableName = tableDef.TableName
 		const updateDef = _.clone(tableDef)
@@ -513,44 +500,28 @@ export class DynamoDBStore implements IStorePlugin {
 			return Promise.resolve(this.setTableAvailable(TableName))
 		}
 
-		return Promise.resolve(
-			this.dynamoClient.updateTable(updateDef as DynamoDB.UpdateTableInput)
-			.promise()
-			.then((updateResult:DynamoDB.UpdateTableOutput) => {
-				const status = updateResult.TableDescription.TableStatus
 
-				// ERROR STATE - table deleting
-				if (isTableStatusIn(status, TableStatus.DELETING))
-					return Promise.reject(new Error(msg(DynamoStrings.TableDeleting, tableDef.TableName)))
+		let updateResult = await this.dynamoClient.updateTable(updateDef as DynamoDB.UpdateTableInput).promise()
+		const status = updateResult.TableDescription.TableStatus
 
-				const promised = Promise.resolve(updateResult)
-				if (isTableStatusIn(status, ...StatusPending)) {
-					log.debug(`Waiting for table to update ${TableName}`)
-					promised
-						.then(this.waitForTable.bind(this,TableName,ResourceState.tableExists))
-						.return(updateResult)
-				}
+		// ERROR STATE - table deleting
+		if (isTableStatusIn(status, TableStatus.DELETING))
+			throw new Error(msg(DynamoStrings.TableDeleting, tableDef.TableName))
 
+		if (isTableStatusIn(status, ...StatusPending)) {
+			log.debug(`Waiting for table to update ${TableName}`)
+			await this.waitForTable(TableName, ResourceState.tableExists)
+		}
 
-				return promised
+		return updateResult
 
-			})
-		)
 	}
 
-	deleteTable(tableDef:DynamoDB.CreateTableInput):Promise<boolean> {
+	async deleteTable(tableDef:DynamoDB.CreateTableInput):Promise<boolean> {
 		const TableName = tableDef.TableName
-		return Promise.resolve(
-			this.dynamoClient.deleteTable({TableName})
-			.promise()
-		).then(
-			this.waitForTable.bind(
-				this,
-				TableName,
-				ResourceState.tableNotExists
-			)
-		) as Promise<boolean>
-
+		await this.dynamoClient.deleteTable({TableName}).promise()
+		await this.waitForTable(TableName,ResourceState.tableNotExists)
+		return true
 	}
 
 	/**
@@ -559,59 +530,58 @@ export class DynamoDBStore implements IStorePlugin {
 	 * @param tableDef
 	 * @returns {any}
 	 */
-	syncTable(tableDef:DynamoDB.CreateTableInput) {
+	async syncTable(tableDef:DynamoDB.CreateTableInput) {
 		const TableName = tableDef.TableName
 
+
 		log.info(`Creating table ${TableName}`)
-		return this.describeTable(TableName)
-			.then((tableInfo:DynamoDB.TableDescription) => {
+		// If the table exists and in OVERWRITE MODE
+		const tableInfo = await this.describeTable(TableName)
+		if (tableInfo && this.opts.syncStrategy === Types.SyncStrategy.Overwrite) {
+			await this.deleteTable(tableDef)
+			return await this.createTable(tableDef)
+		}
 
-				// If the table exists and in OVERWRITE MODE
-				if (tableInfo && this.opts.syncStrategy === Types.SyncStrategy.Overwrite) {
-					return this.deleteTable(tableDef)
-						.return(tableDef)
-						.then(this.createTable.bind(this))
-				}
+		// If the table does not exist
+		if (!tableInfo) {
+			return await this.createTable(tableDef)
+		}
 
-				// If the table does not exist
-				if (!tableInfo) {
-					return this.createTable(tableDef)
-				}
+		if (isTableStatusIn(TableStatus[tableInfo.TableStatus], ...StatusPending)) {
+			await this.waitForTable(TableName)
+		} else {
+			this.setTableAvailable(TableName)
+		}
 
-				if (isTableStatusIn(TableStatus[tableInfo.TableStatus], ...StatusPending))
-					return this.waitForTable(TableName)
-						.return(tableDef)
-						.then(this.updateTable.bind(this))
-				else
-					return this.updateTable(tableDef)
+		await this.updateTable(tableDef)
+		return true
 
-
-			})
 
 	}
 
-	syncModels():Promise<ICoordinator> {
+	async syncModels():Promise<ICoordinator> {
+
+		try {
+			log.info('Creating table definitions')
+
+			// Get all table definitions no matter what
+
+			const models = this.coordinator.getModels()
+
+			const tableDefs = models.map(modelType => this.tableDefinition(modelType.name))
+
+			// If create is not enabled then skip
+			if (this.opts.syncStrategy !== Types.SyncStrategy.None) {
+				await PromiseMap(tableDefs, async tableDef => await this.syncTable(tableDef))
+			}
 
 
-		log.info('Creating table definitions')
-
-		// Get all table definitions no matter what
-		const tableDefs:DynamoDB.CreateTableInput[] = []
-		const models = this.coordinator.getModels()
-
-		for (let modelType of models) {
-			tableDefs.push(this.tableDefinition(modelType.name))
+			return this.coordinator
+		} catch (err) {
+			log.error(`table sync failed`,err.stack,err)
+			throw err
 		}
 
-		// If create is not enabled then skip
-		if (this.opts.syncStrategy === Types.SyncStrategy.None) {
-			log.debug(msg(Strings.ManagerNoSyncModels))
-			return Promise.resolve(this.coordinator)
-		}
-
-		return Promise
-			.each(tableDefs, this.syncTable.bind(this))
-			.return(this.coordinator)
 
 	}
 
@@ -664,10 +634,9 @@ export class DynamoDBStore implements IStorePlugin {
 		) as Promise<DynamoDB.PutItemOutput>
 	}
 
-	delete(params:DynamoDB.DeleteItemInput):Promise<DynamoDB.DeleteItemOutput> {
-		return Promise.resolve(
-			this.documentClient.delete(params).promise()
-		) as Promise<DynamoDB.DeleteItemOutput>
+	async delete(params:DynamoDB.DeleteItemInput):Promise<DynamoDB.DeleteItemOutput> {
+		return await this.documentClient.delete(params).promise()
+		
 	}
 
 

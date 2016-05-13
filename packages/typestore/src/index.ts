@@ -2,13 +2,6 @@
 
 
 /**
- * Export fully configured promise for plugins specifically
- *
- * @type {"~bluebird/bluebird".Bluebird}
- */
-import Promise = require('./Promise')
-
-/**
  * Export types as a a namespace and export all
  * exports directly as well
  */
@@ -44,7 +37,7 @@ export * from './Coordinator'
 /**
  * Export all general types
  */
-export {Types, Promise, Decorations, Constants, Log, Errors,Messages}
+export {Types, Decorations, Constants, Log, Errors,Messages}
 
 
 /**

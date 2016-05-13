@@ -2,15 +2,14 @@ const AWS = require('aws-sdk')
 
 import 'reflect-metadata'
 import {
-	Promise,
 	Repo,
 	Log,
-	Types,
 	DefaultKeyMapper,
 	ModelDescriptor,
 	AttributeDescriptor,
 	RepoDescriptor,
-	FinderDescriptor
+	FinderDescriptor,
+	DefaultModel
 } from 'typestore'
 
 
@@ -32,9 +31,9 @@ export const cloudSearchProvider = new CloudSearchProvider({
 
 
 @ModelDescriptor({tableName:'testTable1'})
-export class CloudSearchTestModel extends Types.DefaultModel {
+export class CloudSearchTestModel extends DefaultModel {
 
-	@AttributeDescriptor({name:'id',hashKey:true})
+	@AttributeDescriptor({name:'id',primaryKey:true})
 	id:string
 
 	@AttributeDescriptor({})

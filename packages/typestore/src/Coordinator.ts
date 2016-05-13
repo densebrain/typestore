@@ -1,12 +1,10 @@
 import 'reflect-metadata'
 import './Globals'
-import BBPromise = require('./Promise')
-import assert = require('assert')
 
+import assert = require('assert')
 import * as Log from './log'
 import {TypeStoreModelKey} from './Constants'
 import {
-	IModelOptions,
 	IStorePlugin,
 	ICoordinatorOptions,
 	IModel,
@@ -17,7 +15,8 @@ import {
 } from './Types'
 import {msg, Strings} from "./Messages"
 import {Repo} from "./Repo";
-import {PluginFilter} from "./Util";
+import {PluginFilter, PromiseMap} from "./Util";
+import {IModelOptions} from "./decorations/ModelDecorations";
 
 // Create logger
 const log = Log.create(__filename)
@@ -85,7 +84,7 @@ export namespace Coordinator {
 	
 	let initialized = false
 
-	// NOTE: settled and settling BBPromise are overriden properties - check below namespace
+	// NOTE: settled and settling Promise are overriden properties - check below namespace
 	let started = false
 	let startPromise = null
 
@@ -113,7 +112,7 @@ export namespace Coordinator {
 	/**
 	 * Set the coordinator options
 	 */
-	export function init(newOptions:ICoordinatorOptions, ...newPlugins:IPlugin[]):BBPromise<ICoordinator> {
+	export async function init(newOptions:ICoordinatorOptions, ...newPlugins:IPlugin[]):Promise<ICoordinator> {
 		checkStarted(true)
 		checkInitialized(true)
 		initialized = true
@@ -129,9 +128,11 @@ export namespace Coordinator {
 
 		// Coordinator is ready, now initialize the store
 		log.debug(msg(Strings.ManagerInitComplete))
-		return BBPromise
-			.map(stores(),(store:IStorePlugin) => store.init(this,options))
-			.return(this) as BBPromise<ICoordinator>
+		await PromiseMap(plugins, async (plugin) =>  {
+			if (plugin)
+				await plugin.init(this,options)
+		})
+		return Coordinator
 	}
 
 
@@ -140,29 +141,33 @@ export namespace Coordinator {
 	 *
 	 * @returns {Bluebird<boolean>}
 	 */
-	export function start(...models):BBPromise<ICoordinator> {
+	export async function start(...models):Promise<ICoordinator> {
 		checkStarted(true)
 		models.forEach(registerModel)
 
-		return startPromise = BBPromise
-			.map(stores(), (store:IStorePlugin) => store.start())
-			.return(Coordinator)
-			.catch((err) => {
-				log.error(msg(Strings.ManagerFailedToStart),err)
-				startPromise = null
+		try {
+			startPromise = PromiseMap(plugins, async (plugin) => {
+				if (plugin)
+					await plugin.start()
 			})
+			await startPromise
+		} finally {
+			startPromise = null
+		}
+		return Coordinator
+
 	}
 
 
 	/**
 	 * Execute function either immediately if
-	 * ready or when the starting BBPromise
+	 * ready or when the starting Promise
 	 * completes
 	 *
 	 * @param fn
 	 */
-	function execute<T>(fn:Function):BBPromise<T> {
-		return new BBPromise<T>((resolve,reject) => {
+	function execute<T>(fn:Function):Promise<T> {
+		return new Promise<T>((resolve,reject) => {
 
 			function executeFn(...args) {
 				const result = fn(...args)
@@ -177,29 +182,41 @@ export namespace Coordinator {
 
 			return (startPromise) ?
 				startPromise.then(executeFn).catch(handleError) :
-				BBPromise.resolve(executeFn).catch(handleError)
+				Promise.resolve(executeFn).catch(handleError)
 
 		})
 
 	}
 
+	function stopPlugins() {
+		return PromiseMap(plugins, async (plugin) => {
+			if (plugin)
+				await plugin.stop()
+		})
+
+	} 
+	
 	/**
 	 * Reset the coordinator status
 	 *
 	 * @returns {Coordinator.reset}
 	 */
-	export function reset():BBPromise<ICoordinator> {
-		if (startPromise)
-			(startPromise as any).cancel()
+	export function reset():Promise<ICoordinator> {
+		const doReset = async () => {
 
-		return BBPromise
-			.map(stores(), (store:IStorePlugin) => store.stop())
-			.return(this)
-			.finally(() => {
+			try {
+				await stopPlugins()
+			} finally {
 				startPromise = null
 				plugins.length = 0
 				initialized = false
-			}) as BBPromise<ICoordinator>
+			}
+			
+			return Coordinator
+
+		}
+		
+		return (startPromise) ? startPromise.then(doReset) : doReset()
 
 	}
 

@@ -1,14 +1,12 @@
 import 'reflect-metadata'
 import {
-	Promise,
 	Log,
 	Repo,
-	Decorations,
-	Types,
 	ModelDescriptor,
 	AttributeDescriptor,
 	RepoDescriptor,
-	FinderDescriptor
+	FinderDescriptor,
+	DefaultModel
 } from 'typestore'
 
 import {DynamoDBFinderDescriptor} from "../../DynamoDBDecorations";
@@ -17,8 +15,8 @@ import {DynamoDBFinderDescriptor} from "../../DynamoDBDecorations";
 
 const log = Log.create(__filename)
 
-@ModelDescriptor({tableName:'testTable1'})
-export class Test1 extends Types.DefaultModel {
+@ModelDescriptor({tableName:'testDynamoTable1'})
+export class Test1 extends DefaultModel {
 
 	
 	constructor() {
@@ -26,10 +24,10 @@ export class Test1 extends Types.DefaultModel {
 		log.info(`constructor for ${(this.constructor as any).name}`)
 	}
 
-	@AttributeDescriptor({name:'id',hashKey:true})
+	@AttributeDescriptor({name:'id',primaryKey:true})
 	id:string
 
-	@AttributeDescriptor({name:'createdAt',rangeKey:true})
+	@AttributeDescriptor({name:'createdAt',secondaryKey:true})
 	createdAt:number
 
 

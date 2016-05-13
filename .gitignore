@@ -29,7 +29,9 @@ packages/*/src/**/*.js
 packages/*/src/**/*.map
 packages/*/src/**/*.d.ts
 packages/*/dist
-packages/*/tsconfig.json
+
+# Config is auto generated
+tsconfig.json
 
 # Any log file
 *.log

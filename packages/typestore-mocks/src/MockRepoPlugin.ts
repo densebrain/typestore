@@ -3,28 +3,44 @@ import {
 	DefaultModel,
 	IKeyValue,
 	Errors,
-	Promise,
 	IStorePlugin,
 	ICoordinatorOptions,
 	ICoordinator,
 	Repo,
 	IModel,
 	IRepoPlugin,
-	PluginType
+	PluginType,
+	ModelEvent
 } from 'typestore'
 import {MockKeyValue} from "./MockStore";
 
 
 export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
+	type = PluginType.Repo
+
+	private coordinator
 	private recordCount = 0
-	
+
 	constructor(private store:IStorePlugin,private repo:Repo<M>) {
 		repo.attach(this)
 	}
 	
-	get type() {
-		return PluginType.Repo
+
+
+
+	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
+		this.coordinator = coordinator
+		return Promise.resolve(coordinator);
+	}
+
+
+	start():Promise<ICoordinator> {
+		return Promise.resolve(this.coordinator)
+	}
+
+	stop():Promise<ICoordinator> {
+		return Promise.resolve(this.coordinator)
 	}
 
 	key(...args):MockKeyValue {

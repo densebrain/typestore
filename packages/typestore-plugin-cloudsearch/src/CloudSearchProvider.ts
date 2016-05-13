@@ -5,7 +5,6 @@
 import * as _ from 'lodash'
 
 import {
-	Promise,
 	IIndexerPlugin,
 	IndexAction,
 	IIndexerOptions,
@@ -15,7 +14,9 @@ import {
 	PluginType,
 	ISearchOptions,
 	Repo,
-	Log
+	Log,
+	ICoordinator,
+	ICoordinatorOptions
 } from 'typestore'
 
 import {CloudSearchDomain} from 'aws-sdk'
@@ -39,10 +40,13 @@ function getClient(endpoint:string,awsOptions:any = {}) {
 
 export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 
+	type = PluginType.Indexer
+
 	private client:CloudSearchDomain
 	private endpoint:string
 	private awsOptions:any
 	private typeField:string
+	private coordinator
 
 	constructor(private options:ICloudSearchOptions) {
 		_.defaultsDeep(options,CloudSearchDefaults)
@@ -51,12 +55,21 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 		
 		this.client = getClient(this.endpoint,this.awsOptions)
 	}
-	
-	get type() {
-		return PluginType.Indexer
+
+
+	async init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
+		return (this.coordinator = coordinator);
 	}
 
-	index<M extends IModel>(type:IndexAction,options:IIndexerOptions,modelType:IModelType,repo:Repo<M>,...models:IModel[]):Promise<boolean> {
+	async start():Promise<ICoordinator> {
+		return this.coordinator;
+	}
+
+	async stop():Promise<ICoordinator> {
+		return this.coordinator;
+	}
+
+	async index<M extends IModel>(type:IndexAction,options:IIndexerOptions,modelType:IModelType,repo:Repo<M>,...models:IModel[]):Promise<boolean> {
 
 		// Destructure all the import fields into 'docs'
 		const docs = models.map((model) => {
@@ -81,10 +94,9 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 
 		// Create request params
 		const params = {contentType: 'application/json',documents:JSON.stringify(data)}
-		return Promise.resolve(
-			this.client.uploadDocuments(params)
-				.promise()
-		).return(true)
+		await this.client.uploadDocuments(params).promise()
+		return true
+
 	}
 
 	/**

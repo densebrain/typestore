@@ -1,5 +1,5 @@
 
-import {Errors,Promise,IStorePlugin,ICoordinatorOptions,ICoordinator,Repo,PluginType,IModel} from '../../index'
+import {Errors, IStorePlugin,ICoordinatorOptions,ICoordinator,Repo,PluginType,IModel} from '../../index'
 
 export class NullStore implements IStorePlugin {
 

@@ -1,6 +1,6 @@
 
 const mocha = require('gulp-mocha')
-const gulp = require('gulp')
+
 /**
  * Create a test task
  *
@@ -9,7 +9,8 @@ const gulp = require('gulp')
  */
 function makeMochaTask(tests = null) {
 	return () => {
-		require('../packages-path')
+		require('../../packages-path')
+		require('../../mocha/mocha-setup')
 		if (!tests) {
 			tests = []
 			projects.forEach((project) => tests.push(...project.tests))
@@ -25,4 +26,14 @@ function makeMochaTask(tests = null) {
 	}
 }
 
+/**
+ * Create 'test-all'
+ */
+gulp.task('test-all',[],makeMochaTask())
+
+/**
+ * Export task creator for individual test tasks
+ *
+ * @type {makeMochaTask}
+ */
 module.exports = makeMochaTask

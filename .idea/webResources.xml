@@ -8,6 +8,8 @@
             <path value="file://$PROJECT_DIR$/packages/typestore-plugin-dynamodb/src" />
             <path value="file://$PROJECT_DIR$/packages/typestore-plugin-cloudsearch/src" />
             <path value="file://$PROJECT_DIR$/packages/typestore/src" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-mocks/src" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-plugin-indexeddb/src" />
           </resourceRoots>
         </entryData>
       </entry>

@@ -14,8 +14,8 @@
     "typestore-plugin-cloudsearch": {
         "type": "node"
     },
-    "typestore-plugin-localstorage": {
+    "typestore-plugin-indexeddb": {
         "type": "browser",
-        "description": "typestore-plugin-localstorage"
+        "description": "typestore-plugin-indexeddb"
     }
 }

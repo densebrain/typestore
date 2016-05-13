@@ -10,7 +10,7 @@
 // declare namespace bluebird {
 // 	var Promise:Bluebird<any>
 // }
-//declare var BBPromise:Function
+//declare var Promise:Function
 
 //
 //

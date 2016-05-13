@@ -11,6 +11,7 @@ const DynamoDBPort = 8787
 const DynamoDBLocal = require('dynamodb-local')
 const DynamoDBLocalEndpoint = `http://localhost:${DynamoDBPort}`
 
+
 let store:DynamoDBStore = null
 
 /**
@@ -56,8 +57,9 @@ describe('#plugin-dynamodb', function() {
 		DynamoDBLocal.stop(DynamoDBPort)
 	})
 
-	beforeEach(() => {
-		return reset(SyncStrategy.Overwrite,DynamoDBLocalEndpoint)
+	beforeEach(async () => {
+		await reset(SyncStrategy.Overwrite,DynamoDBLocalEndpoint)
+
 	})
 
 	/**
@@ -121,7 +123,9 @@ describe('#plugin-dynamodb', function() {
 		})
 
 		it('#delete', async () => {
-			await test1Repo.remove(test1Repo.key(t1.id,t1.createdAt))
+			const key = test1Repo.key(t1.id,t1.createdAt)
+			log.info('deleting key',key)
+			await test1Repo.remove(key)
 			let rowCount = await test1Repo.count()
 			expect(rowCount).toBe(0)
 		})

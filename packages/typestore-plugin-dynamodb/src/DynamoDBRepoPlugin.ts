@@ -3,7 +3,6 @@
 ///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-sdk"/>
 
 import {
-	Promise,
 	Log,
 	Types,
 	Repo,
@@ -15,20 +14,19 @@ import {
 	IPlugin,
 	PluginType,
 	IRepoPlugin,
-	IFinderPlugin
+	IFinderPlugin,
+	ICoordinator,
+	ICoordinatorOptions
 } from 'typestore'
-import * as assert from 'assert'
+
+import assert = require('assert')
 import * as _ from 'lodash'
 import * as AWS from 'aws-sdk'
 import {DynamoDB} from 'aws-sdk'
 import {DynamoDBStore, DynamoDBFinderKey, DynamoDBModelKey, DynamoDBKeyValue} from "./DynamoDBStore";
 import {IDynamoDBFinderOptions, DynamoDBFinderType} from "./DynamoDBTypes";
 
-
-
 const {IncorrectKeyTypeError} = Errors;
-
-
 const {TypeStoreFindersKey} = Constants
 
 const log = Log.create(__filename)
@@ -43,6 +41,7 @@ const MappedFinderParams = {
 
 export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
+	type = PluginType.Repo
 	
 	private tableDef:DynamoDB.CreateTableInput
 	private coordinator:Types.ICoordinator
@@ -64,11 +63,18 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	}
 
-	/**
-	 * PluginType.Repo
-	 */
-	get type() {
-		return PluginType.Repo
+
+	async init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
+		this.coordinator = coordinator
+		return coordinator;
+	}
+
+	async start():Promise<ICoordinator> {
+		return this.coordinator;
+	}
+
+	async stop():Promise<ICoordinator> {
+		return this.coordinator;
 	}
 
 	/**
@@ -195,16 +201,15 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 			})
 	}
 
-	remove(key:DynamoDBKeyValue):Promise<any> {
-		return this.store.delete(this.makeParams({
+	async remove(key:DynamoDBKeyValue):Promise<any> {
+		await this.store.delete(this.makeParams({
 			Key: key.toParam()
 		}))
 	}
 
-	count():Promise<number> {
-		return this.store.describeTable(this.tableName)
-			.then((tableDesc) => {
-				return tableDesc.ItemCount
-			})
+	async count():Promise<number> {
+		const tableDesc = await this.store.describeTable(this.tableName)
+		return tableDesc.ItemCount
+
 	}
 }

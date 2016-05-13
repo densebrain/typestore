@@ -1,26 +1,18 @@
-require('source-map-support').install()
-import 'expectations'
-import 'reflect-metadata'
 import * as Faker from 'faker'
 import * as Fixtures from './fixtures/index'
 import {
 	Types,
-	Promise,
 	Coordinator,
 	Constants,
 	Log,
 	IndexAction
 } from 'typestore'
 
-if (!process.env.DEBUG)
-	Log.setLogThreshold(Log.LogLevel.WARN)
-
 import * as sinon from 'sinon'
 import * as uuid from 'node-uuid'
 import {MockStore} from "typestore-mocks"
 
 const {TypeStoreModelKey,TypeStoreAttrKey} = Constants
-
 
 const log = Log.create(__filename)
 log.info('Starting test suite')
@@ -44,12 +36,10 @@ xdescribe('#plugin-cloudsearch',() => {
 	/**
 	 * Set it up
 	 */
-	before(() => {
-		Coordinator
-			.reset()
-			.then(() => Coordinator.init({},store))
-			.then(() => Coordinator.start(Fixtures.CloudSearchTestModel))
-			.return(true)
+	before(async () => {
+		await Coordinator.reset()
+		await Coordinator.init({},store)
+		await Coordinator.start(Fixtures.CloudSearchTestModel)
 	})
 
 

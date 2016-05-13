@@ -1,6 +1,7 @@
 
-import {IModelMapper, IModelAttributeOptions, IModel} from "./Types";
+import {IModelMapper, IModel} from "./Types";
 import {TypeStoreAttrKey} from "./Constants";
+import {IModelAttributeOptions} from "./decorations/ModelDecorations";
 
 const JSONFormattingSpace = (process.env.NODE_ENV !== 'production') ? 4 : 0
 

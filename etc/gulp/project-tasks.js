@@ -1,20 +1,16 @@
-require('shelljs/global')
 
-const {readJSONFileSync} = require('../tools/helpers')
-const {makeBabelConfig} = require('./babel-config')
 
-const tsBaseConfig = readJSONFileSync(`${process.cwd()}/tsconfig.base.json`)
+
 const path = require('path')
-const gulp = require('gulp')
 const babel = require('gulp-babel')
 const fs = require('fs')
-const log = console
 const merge = require('merge2')
-const ts = require('gulp-typescript')
-const tsc= require('typescript')
-const dts = require('dts-bundle')
 const sourceMaps = require('gulp-sourcemaps')
-const _ = require('lodash')
+const 
+	makeSrcGlobs = require('../tools/project-srcs'),
+	makeTypeScriptConfig = require('../tools/make-typescript-config'),
+	{makeBabelConfig} = require('./babel-config'),
+	makeMochaTask = require('./tasks/test-task')
 
 const SourceMapModes = {
 	SourceMap: 1,
@@ -39,12 +35,13 @@ module.exports = function(projectName) {
 	 * Build the tasks
 	 */
 	const
-		distPath = `${project.base}/dist`,
+		distPath = `${project.base}/src`,
+		//distPath = `${project.base}/dist`,
 		srcPath = `${project.base}/src`,
 		testsPath = distPath
 
 	const targetDir = `${process.cwd()}/target/${projectName}`
-	project.srcs = require('./project-srcs')(project,srcPath) 
+	project.srcs = makeSrcGlobs(project,srcPath) 
 		
 
 	const tests = project.tests = [
@@ -113,53 +110,10 @@ module.exports = function(projectName) {
 		log.info(`${projectName} is ready for release - publish-all will actually publish to npm`)
 	}
 
-	/**
-	 * Create a TS config for this project
-	 * using tsconfig.base.json, write it to disk
-	 * append the latest compiler
-	 * return
-	 *
-	 * @returns {{tsConfig,tsSettings,tsConfig}}
-	 */
-	function makeTypeScriptConfig() {
-		const tsConfig = _.cloneDeep(tsBaseConfig)
-		const tsCompilerOptions = tsConfig.compilerOptions
-
-		function makePackageDir(packageName,suffix) {
-			return `${processDir}/packages/${packageName}/src/${suffix}`
-		}
-
-		_.assign(tsCompilerOptions,{
-			baseUrl: project.base,
-			paths: projectNames.reduce((projectPaths,name) => {
-				return Object.assign(projectPaths, {
-					[name]: [makePackageDir(name,'index')],
-					[`${name}/*`]: [makePackageDir(name,'*')]
-				})
-
-			},{})
-		})
-
-
-		const tsConfigFile = project.base + "/tsconfig.json"
-		log.info('Going to write ts config',tsConfigFile)
-		fs.writeFileSync(tsConfigFile,JSON.stringify(tsConfig,null,4))
-
-		const tsSettings = Object.assign({},tsConfig.compileOptions,{
-			typescript: tsc
-		})
-
-		const tsProject = ts.createProject(tsConfigFile,tsSettings)
-
-		return {
-			tsConfig,
-			tsSettings,
-			tsProject
-		}
-	}
 
 	// Grab the project for the compilation task
-	const {tsProject} = makeTypeScriptConfig()
+	const {tsConfigFile,tsSettings} = makeTypeScriptConfig(project) 
+	const tsProject = ts.createProject(tsConfigFile,tsSettings)
 	const babelConfig = makeBabelConfig(project)
 
 	/**
@@ -177,6 +131,7 @@ module.exports = function(projectName) {
 		}
 
 
+		//const tsResult = gulp.src(project.srcs,{cwd:processDir})
 		const tsResult = gulp.src(project.srcs)
 			.pipe(sourceMaps.init())
 			//.pipe(ts(tsSettings))
@@ -205,7 +160,7 @@ module.exports = function(projectName) {
 	}
 
 	gulp.task(taskCompileName,[],compile)
-	gulp.task(taskTestName,[taskCompileName],require('./test-task')(tests))
+	gulp.task(taskTestName,[taskCompileName],makeMochaTask(tests))
 	gulp.task(project.tasks.release,[taskTestName],release)
 
 	compileTasks.push(taskCompileName)

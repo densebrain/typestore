@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Wallaby-IndexedDB" type="wallaby" factoryName="Wallaby.js" singleton="false" config="$PROJECT_DIR$/packages/typestore-plugin-indexeddb/wallaby.js">
+    <method />
+  </configuration>
+</component>

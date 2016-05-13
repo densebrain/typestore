@@ -7,13 +7,13 @@ import {RepoDescriptor, FinderDescriptor,ModelDescriptor, AttributeDescriptor} f
 
 const log = Log.create(__filename)
 
-@ModelDescriptor({tableName:'testTable1'})
+@ModelDescriptor({tableName:'testTable_manager1'})
 export class ModelTest1 {
 
-	@AttributeDescriptor({name:'id',hashKey:true})
+	@AttributeDescriptor({name:'id',primaryKey:true})
 	id:string
 
-	@AttributeDescriptor({name:'createdAt',rangeKey:true})
+	@AttributeDescriptor({name:'createdAt',secondaryKey:true})
 	createdAt:number
 
 
