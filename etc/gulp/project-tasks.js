@@ -6,7 +6,7 @@ const babel = require('gulp-babel')
 const fs = require('fs')
 const merge = require('merge2')
 const sourceMaps = require('gulp-sourcemaps')
-const 
+const
 	makeSrcGlobs = require('../tools/project-srcs'),
 	makeTypeScriptConfig = require('../tools/make-typescript-config'),
 	{makeBabelConfig} = require('./babel-config'),
@@ -41,8 +41,8 @@ module.exports = function(projectName) {
 		testsPath = distPath
 
 	const targetDir = `${process.cwd()}/target/${projectName}`
-	project.srcs = makeSrcGlobs(project,srcPath) 
-		
+	project.srcs = makeSrcGlobs(project,srcPath)
+
 
 	const tests = project.tests = [
 		`${testsPath}/**/*.spec.js`
@@ -112,7 +112,7 @@ module.exports = function(projectName) {
 
 
 	// Grab the project for the compilation task
-	const {tsConfigFile,tsSettings} = makeTypeScriptConfig(project) 
+	const {tsConfigFile,tsSettings} = makeTypeScriptConfig(project)
 	const tsProject = ts.createProject(tsConfigFile,tsSettings)
 	const babelConfig = makeBabelConfig(project)
 
@@ -123,7 +123,7 @@ module.exports = function(projectName) {
 	 * @returns {*}
 	 */
 	const compile = () => {
-		process.chdir(project.base)
+		//process.chdir(project.base)
 
 		const sourcemapOpts = {
 			sourceRoot: path.resolve(project.base, 'src'),

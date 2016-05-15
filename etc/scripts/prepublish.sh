@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+npm i -g typescript@next
+
+
 link_disabled=true
 
 function installPackage() {
