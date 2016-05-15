@@ -82,14 +82,34 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 		return (this.coordinator = coordinator);
 	}
 
+	/**
+	 * Called to start the plugin
+	 * 
+	 * @returns {any}
+	 */
 	async start():Promise<ICoordinator> {
 		return this.coordinator;
 	}
 
+	/**
+	 * Called to stop the plugin
+	 * 
+	 * @returns {any}
+	 */
 	async stop():Promise<ICoordinator> {
 		return this.coordinator;
 	}
 
+	/**
+	 * Indexing action pushing documents to CloudSearch
+	 * 
+	 * @param type
+	 * @param options
+	 * @param modelType
+	 * @param repo
+	 * @param models
+	 * @returns {boolean}
+	 */
 	async index<M extends IModel>(type:IndexAction,options:IIndexerOptions,modelType:IModelType,repo:Repo<M>,...models:IModel[]):Promise<boolean> {
 
 		// Destructure all the import fields into 'docs'

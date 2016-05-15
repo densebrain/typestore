@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
+# Make sure the latest typescript is installed
 npm i -g typescript@next
-
 
 link_disabled=true
 
@@ -33,9 +33,13 @@ echo "Cleaning existing links"
 rm -Rf node_modules/typestore*
 
 echo "Installing Packages"
-installPackage "typestore" true
-installPackage "typestore-mocks" true
-installPackage "typestore-plugin-dynamodb"
-installPackage "typestore-plugin-cloudsearch"
+for pkg in $(ls packages); do
+	echo "Going to install $pkg"
+	installPackage "${pkg}"
+done
+#installPackage "typestore" true
+#installPackage "typestore-mocks" true
+#installPackage "typestore-plugin-dynamodb"
+#installPackage "typestore-plugin-cloudsearch"
 
 echo "Ready to Code"

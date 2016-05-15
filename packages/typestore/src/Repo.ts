@@ -171,7 +171,7 @@ export class Repo<M extends IModel> {
 				)
 			})
 
-			return keys.map(async key => await this.get(key))
+			return keys.map(async (key) => await this.get(key))
 			
 		}
 	}
@@ -243,7 +243,8 @@ export class Repo<M extends IModel> {
 	 * @returns {null}
 	 */
 	async get(key:IKeyValue):Promise<M> {
-		let results = this.getRepoPlugins().map(async plugin => await plugin.get(key))
+
+		let results = this.getRepoPlugins().map(async (plugin) => await plugin.get(key))
 		for (let result of results) {
 			if (result)
 				return result
@@ -298,7 +299,7 @@ export class Repo<M extends IModel> {
 	 * @returns {null}
 	 */
 	async count():Promise<number> {
-		let results = await Promise.all(this.getRepoPlugins().map(async plugin => await plugin.count()))
+		let results = await Promise.all(this.getRepoPlugins().map(async (plugin) => await plugin.count()))
 		return results.reduce((prev,current) => prev + current)
 
 	}

@@ -32,7 +32,7 @@ export function isFinderPlugin(plugin:IPlugin):plugin is IFinderPlugin {
 }
 
 export async function PromiseMap<T>(values:T[],mapper:(value:T) => any):Promise<any[]> {
-	const results = values.map(async value => await Promise.resolve(mapper(value)))
+	const results = values.map(async (value) => await Promise.resolve(mapper(value)))
 	return await Promise.all(results)
 }
 
