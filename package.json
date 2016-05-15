@@ -5,7 +5,7 @@
   "version": "0.1.6",
   "scripts": {
     "prepublish": "etc/scripts/prepublish.sh",
-    "test": "gulp compile-all && gulp test-all"
+    "test": "gulp tsconfig && gulp compile-all && gulp test-all"
   },
   "repository": {
     "type": "git",

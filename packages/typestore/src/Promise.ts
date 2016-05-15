@@ -6,7 +6,7 @@ Bluebird.config({
 	monitoring: false
 })
 
-const Log = require('./Log')
+const Log = require('./log')
 const log = Log.create(__filename)
 const {msg,Strings} = require('./Messages')
 
