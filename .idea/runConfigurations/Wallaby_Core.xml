@@ -1,5 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Wallaby-Core" type="wallaby" factoryName="Wallaby.js" config="$PROJECT_DIR$/packages/typestore/wallaby.js">
-    <method />
-  </configuration>
-</component>

@@ -1,23 +1,31 @@
-import {Repo,Constants} from 'typestore'
-
+import {Repo,makeOptionsDecorator,getMetadataReturnType} from 'typestore'
 import {IDynamoDBFinderOptions} from "./DynamoDBTypes"
-import {DynamoDBFinderKey} from "./DynamoDBStore"
+import {DynamoDBFinderKey} from "./DynamoDBConstants";
 
-const {ReturnTypeKey} = Constants
 
-export function DynamoDBFinderDescriptor(opts:IDynamoDBFinderOptions) {
+export const DynamoDBFinderDescriptor =
+	makeOptionsDecorator<IDynamoDBFinderOptions>(DynamoDBFinderKey,true,(opts,target,targetKey) => {
+		const returnType = getMetadataReturnType(target,targetKey)
 
-	return function<R extends Repo<any>>(
-		target:R,
-		propertyKey:string,
-		descriptor:TypedPropertyDescriptor<any>
-	) {
-		const returnType = Reflect.getMetadata(ReturnTypeKey,target,propertyKey)
-
-		const finalOpts = Object.assign({},{
+		Object.assign(opts,{
 			array:returnType === Array
 		},opts)
+	})
 
-		Reflect.defineMetadata(DynamoDBFinderKey,finalOpts,target,propertyKey)
-	}
-}
+// export function DynamoDBFinderDescriptor(opts:IDynamoDBFinderOptions) {
+//
+// 	return function(
+// 		target:any,
+// 		propertyKey:string,
+// 		descriptor:TypedPropertyDescriptor<any>
+// 	) {
+//
+// 		const returnType = Reflect.getMetadata(ReturnTypeKey,target,propertyKey)
+//
+// 		const finalOpts = Object.assign({},{
+// 			array:returnType === Array
+// 		},opts)
+//
+// 		Reflect.defineMetadata(DynamoDBFinderKey,finalOpts,target,propertyKey)
+// 	}
+// }

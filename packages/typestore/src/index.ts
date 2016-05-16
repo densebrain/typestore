@@ -49,6 +49,9 @@ export * from './Types'
 export * from './Decorations'
 export * from './Constants'
 export * from './Util'
+export * from './Messages'
+export * from './Errors'
+export * from './MetadataManager'
 
 
 

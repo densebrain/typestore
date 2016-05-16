@@ -5,7 +5,7 @@ const log = getLogger(__filename)
 import * as uuid from 'node-uuid'
 import {Coordinator,SyncStrategy} from 'typestore'
 import {IDynamoDBStorePluginOptions} from "../DynamoDBTypes"
-import {DynamoDBStore} from '../DynamoDBStore'
+import {DynamoDBStorePlugin} from '../DynamoDBStorePlugin'
 import * as Fixtures from './fixtures/index'
 
 //Setup DynamoDBLocal
@@ -14,7 +14,7 @@ const DynamoDBLocal = require('dynamodb-local')
 const DynamoDBLocalEndpoint = `http://localhost:${DynamoDBPort}`
 
 
-let store:DynamoDBStore = null
+let store:DynamoDBStorePlugin = null
 let coordinator:Coordinator = null
 
 /**
@@ -30,11 +30,11 @@ async function reset(syncStrategy:SyncStrategy,endpoint:string) {
 	
 
 	const opts:IDynamoDBStorePluginOptions = {
-		dynamoEndpoint: endpoint,
+		endpoint: endpoint,
 		prefix: `test_${process.env.USER}_`
 	}
 	
-	store = new DynamoDBStore(opts,Fixtures.Test1)
+	store = new DynamoDBStorePlugin(opts,Fixtures.Test1)
 
 	if (!endpoint)
 		delete opts['endpoint']

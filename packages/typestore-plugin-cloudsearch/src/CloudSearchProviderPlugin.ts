@@ -1,13 +1,10 @@
-///<reference path="../typings/typestore-plugin-cloudsearch"/>
-///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-cloudsearchdomain"/>
-///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-config.d.ts"/>
-///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-sdk"/>
+///<reference path="../typings/typestore-plugin-cloudsearch.d.ts"/>
 import * as _ from 'lodash'
 
 import {
 	IIndexerPlugin,
 	IndexAction,
-	IIndexerOptions,
+	IIndexOptions,
 	ISearchProvider,
 	IModelType,
 	IModel,
@@ -17,17 +14,27 @@ import {
 	Log,
 	ICoordinator,
 	ICoordinatorOptions,
-	PluginEventType
+	PluginEventType,
+	repoAttachIfSupported
 } from 'typestore'
 
 import {CloudSearchDomain} from 'aws-sdk'
 import {ICloudSearchOptions} from "./CloudSearchTypes";
-import {CloudSearchDefaults} from "./CloudSearchConstants";
+import {CloudSearchDefaults, CloudSearchFinderKey} from "./CloudSearchConstants";
+import {IFinderPlugin} from "../../typestore/src/PluginTypes";
+import getMetadata = Reflect.getMetadata;
 
 
 const log = Log.create(__filename)
 const clients:{[endpoint:string]:CloudSearchDomain} = {}
 
+/**
+ * Retrieve an AWS CloudSearch client
+ * 
+ * @param endpoint
+ * @param awsOptions
+ * @returns {CloudSearchDomain}
+ */
 function getClient(endpoint:string,awsOptions:any = {}) {
 	let client = clients[endpoint]
 	if (!client) {
@@ -38,22 +45,26 @@ function getClient(endpoint:string,awsOptions:any = {}) {
 	return client
 }
 
+/**
+ * Create a cloud search provider plugin
+ */
+export class CloudSearchProviderPlugin implements IIndexerPlugin, IFinderPlugin, ISearchProvider {
 
-export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
+	type = PluginType.Indexer | PluginType.Finder
 
-	type = PluginType.Indexer
-
+	supportedModels:any[]
 	private client:CloudSearchDomain
 	private endpoint:string
 	private awsOptions:any
 	private typeField:string
 	private coordinator
-	private supportedModels:any[]
+	
 
 	/**
 	 * Create a new AWS CloudSearch Provider
 	 *
 	 * @param options
+	 * @param supportedModels
 	 */
 	constructor(private options:ICloudSearchOptions,...supportedModels:any[]) {
 		this.supportedModels = supportedModels
@@ -65,17 +76,16 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 	}
 
 
+	
+	
 	handle(eventType:PluginEventType, ...args):boolean|any {
 		switch(eventType) {
 			case PluginEventType.RepoInit:
-				const repo:Repo<any> = args[0]
-				if (this.supportedModels.length === 0 || this.supportedModels.includes(repo.modelClazz)) {
-					repo.attach(this)
-					return repo
-				}
+				repoAttachIfSupported(args[0] as Repo<any>, this)
+				break
 
 		}
-		return false;
+		return false
 	}
 
 	async init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
@@ -110,7 +120,7 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 	 * @param models
 	 * @returns {boolean}
 	 */
-	async index<M extends IModel>(type:IndexAction,options:IIndexerOptions,modelType:IModelType,repo:Repo<M>,...models:IModel[]):Promise<boolean> {
+	async index<M extends IModel>(type:IndexAction, options:IIndexOptions, modelType:IModelType, repo:Repo<M>, ...models:IModel[]):Promise<boolean> {
 
 		// Destructure all the import fields into 'docs'
 		const docs = models.map((model) => {
@@ -161,5 +171,26 @@ export class CloudSearchProvider implements IIndexerPlugin, ISearchProvider {
 
 		let results = await this.client.search(params).promise()
 		return results.hits.hit
+	}
+
+
+	/**
+	 * Create a cloud search finder if decorated
+	 * 
+	 * @param repo
+	 * @param finderKey
+	 * @returns {function(...[any]): Promise<Promise<any>[]>}
+	 */
+	decorateFinder(repo:Repo<any>, finderKey:string) {
+		const searchOpts = getMetadata(CloudSearchFinderKey,repo,finderKey)
+		
+		return (searchOpts) ? 
+			repo.makeGenericFinder(finderKey,this,searchOpts) :
+			null
+	}
+
+
+	initRepo<T extends Repo<M>, M extends IModel>(repo:T):T {
+		return repo.attach(this)
 	}
 }

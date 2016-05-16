@@ -1,5 +1,4 @@
 import {
-	Errors, 
 	IStorePlugin,
 	IKeyValue, 
 	ICoordinatorOptions, 
@@ -7,7 +6,8 @@ import {
 	Repo, 
 	IModel,
 	PluginType,
-	PluginEventType
+	PluginEventType,
+	repoAttachIfSupported
 } from 'typestore'
 import {IRepoPlugin} from "../../typestore/src/PluginTypes";
 import {MockRepoPlugin} from "./MockRepoPlugin";
@@ -32,20 +32,22 @@ export class MockKeyValue implements IKeyValue {
  */
 export class MockStore implements IStorePlugin {
 
+	supportedModels:any[]
 	
 	type = PluginType.Store
 	
 	coordinator:ICoordinator
 	repoPlugins:IRepoPlugin<any>[]  = []
 	
-	constructor() {
-
+	constructor(...supportedModels:any[]) {
+		this.supportedModels = supportedModels
 	}
 
 
 	handle(eventType:PluginEventType, ...args):boolean|any {
 		switch(eventType) {
 			case PluginEventType.RepoInit:
+				repoAttachIfSupported(args[0] as Repo<any>, this)
 				const repo:Repo<any> = args[0]
 				return this.initRepo(repo)
 

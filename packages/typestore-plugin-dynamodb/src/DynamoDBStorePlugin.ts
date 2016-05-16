@@ -1,49 +1,28 @@
 ///<reference path="../typings/typestore-plugin-dynamodb"/>
-import 'reflect-metadata'
-import {
-	Log,
-	Types,
-	Repo,
-	Messages,
-	ICoordinator,
-	IStorePlugin,
-	PluginType,
-	IModel,
-	IModelKey,
-	IKeyValue,
-	PluginEventType,
-	SyncStrategy,
-	ICoordinatorOptions,
-	PromiseMap
-} from 'typestore'
-
-import * as AWS from 'aws-sdk'
-import {DynamoDB} from 'aws-sdk'
-
-import * as _ from 'lodash'
-import * as assert from 'assert'
-
-const {msg, Strings} = Messages
-
-import {
-	IDynamoDBModelOptions,
-	IDynamoDBStorePluginOptions,
-	IDynamoDBProvisioning,
-	IDynamoDBAttributeOptions, TableStatus, KeyType, ResourceState, StatusPending
-} from "./DynamoDBTypes"
-import {DynamoDBRepoPlugin} from "./DynamoDBRepoPlugin"
 
 // Set the aws promise provide to bluebird
 //(AWS.config as any).setPromiseDependency(Promise)
+Promise = require('bluebird')
+
+import * as AWS from 'aws-sdk'
+import {DynamoDB} from 'aws-sdk'
+import * as _ from 'lodash'
+import * as assert from 'assert'
+
+import {Log,Repo,Coordinator,IStorePlugin,PluginType,
+	IModel,IKeyValue,PluginEventType,SyncStrategy,
+	ICoordinatorOptions,PromiseMap,repoAttachIfSupported} from 'typestore'
+
+import { IDynamoDBModelOptions, IDynamoDBStorePluginOptions,
+	IDynamoDBProvisioning, IDynamoDBAttributeOptions, TableStatus, KeyType,
+	ResourceState, StatusPending } from "./DynamoDBTypes"
+
+import {DynamoDBRepoPlugin} from "./DynamoDBRepoPlugin"
+import {msg,Strings,DynamoStrings} from "./DynamoDBMessages";
+import {typeToDynamoType, tableNameParam, isTableStatusIn} from "./DynamoDBUtil";
+
 
 const log = Log.create(__filename)
-const DynamoStrings = {
-	TableDeleting: 'Table is DELETING ?0'
-}
-
-
-
-export const DynamoDBFinderKey = 'dynamodb:finder'
 
 
 const DefaultDynamoDBProvisioning = {
@@ -57,90 +36,10 @@ const DefaultDynamoDBOptions = {
 	}
 }
 
-function tableNameParam(TableName:string) {
-	return {TableName}
-}
-
-
-
-
-function isTableStatusIn(status:string|TableStatus, ...statuses) {
-	if (_.isString(status)) {
-		status = TableStatus[status]
-	}
-	return _.includes(statuses, status)
-}
-
-function typeToDynamoType(type:any,typeName:string = null) {
-	log.debug('type = ',type,typeName)
-	return (type === String || typeName === 'String') ? 'S' : //string
-		(type === Number || typeName === 'Number') ? 'N' :  //number
-			(type === Array || typeName === 'Array') ? 'L' : // array
-				'M' //object
-}
-
-
-/**
- * Internal dynamo key map class
- */
-export class DynamoDBModelKeyAttribute {
-
-	constructor(
-		private name:string,
-		private attrType:any,
-		private type:KeyType) {
-	}
-
-	toKeySchema() {
-		return {
-			AttributeName:this.name,
-			KeyType:this.type
-		}
-	}
-
-	toAttributeDef() {
-		return {
-			AttributeName:this.name,
-			AttributeType: typeToDynamoType(this.attrType)
-		}
-	}
-}
-
-
-
-export class DynamoDBModelKey implements IModelKey {
-
-	constructor(
-		private hashKey:DynamoDBModelKeyAttribute,
-		private rangeKey:DynamoDBModelKeyAttribute) {
-	}
-}
-
-export class DynamoDBKeyValue implements IKeyValue {
-
-	constructor(
-		public keySchema:DynamoDB.KeySchema,
-		public hashValue:any,
-	    public rangeValue:any
-	) {}
-
-	toParam() {
-		const params:any = {}
-		this.keySchema.forEach((keyDef) => {
-			params[keyDef.AttributeName] =
-				(KeyType[keyDef.KeyType] === KeyType.HASH) ?
-					this.hashValue :
-					this.rangeValue
-		})
-
-		return params
-	}
-}
-
 /**
  * Store implementation for DynamoDB
  */
-export class DynamoDBStore implements IStorePlugin {
+export class DynamoDBStorePlugin implements IStorePlugin {
 
 	type = PluginType.Store
 
@@ -151,7 +50,7 @@ export class DynamoDBStore implements IStorePlugin {
 	private repos:{[clazzName:string]:DynamoDBRepoPlugin<any>} = {}
 
 	supportedModels:any[]
-	coordinator:ICoordinator
+	coordinator:Coordinator
 	coordinatorOpts:ICoordinatorOptions
 
 	/**
@@ -175,10 +74,8 @@ export class DynamoDBStore implements IStorePlugin {
 	handle(eventType:PluginEventType, ...args):boolean|any {
 		switch(eventType) {
 			case PluginEventType.RepoInit:
-				const repo:Repo<any> = args[0]
-				if (this.supportedModels.length === 0 || this.supportedModels.includes(repo.modelClazz)) {
-					return this.initRepo(repo)
-				}
+				return repoAttachIfSupported(args[0] as Repo<any>, this)
+
 				
 		}
 		return false;
@@ -200,8 +97,8 @@ export class DynamoDBStore implements IStorePlugin {
 	 */
 	get serviceOptions() {
 		const opts:any = {}
-		if (this.opts.dynamoEndpoint) {
-			opts.endpoint = this.opts.dynamoEndpoint
+		if (this.opts.endpoint) {
+			opts.endpoint = this.opts.endpoint
 		}
 
 		return opts
@@ -235,7 +132,7 @@ export class DynamoDBStore implements IStorePlugin {
 	 * @param opts
 	 * @returns {Promise<ICoordinator>}
 	 */
-	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
+	init(coordinator:Coordinator, opts:ICoordinatorOptions):Promise<Coordinator> {
 		this.coordinator = coordinator
 		this.coordinatorOpts = opts
 
@@ -247,7 +144,7 @@ export class DynamoDBStore implements IStorePlugin {
 	 *
 	 * @returns {Promise<boolean>}
 	 */
-	async start():Promise<ICoordinator> {
+	async start():Promise<Coordinator> {
 		if (this.opts.awsOptions)
 			AWS.config.update(this.opts.awsOptions)
 
@@ -259,7 +156,7 @@ export class DynamoDBStore implements IStorePlugin {
 	 *
 	 * @returns {Bluebird<boolean>}
 	 */
-	stop():Promise<ICoordinator> {
+	stop():Promise<Coordinator> {
 		this._docClient = null
 		this._dynamoClient = null
 		return Promise.resolve(this.coordinator)
@@ -560,7 +457,7 @@ export class DynamoDBStore implements IStorePlugin {
 		log.info(`Creating table ${TableName}`)
 		// If the table exists and in OVERWRITE MODE
 		const tableInfo = await this.describeTable(TableName)
-		if (tableInfo && this.coordinatorOpts.syncStrategy === Types.SyncStrategy.Overwrite) {
+		if (tableInfo && this.coordinatorOpts.syncStrategy === SyncStrategy.Overwrite) {
 			await this.deleteTable(tableDef)
 			return await this.createTable(tableDef)
 		}
@@ -582,7 +479,7 @@ export class DynamoDBStore implements IStorePlugin {
 
 	}
 
-	async syncModels():Promise<ICoordinator> {
+	async syncModels():Promise<Coordinator> {
 
 		try {
 			log.info('Creating table definitions')

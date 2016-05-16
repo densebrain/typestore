@@ -10,7 +10,9 @@ import {
 	IStorePlugin,
 	IModelType, 
 	Log,
-	PluginEventType
+	PluginEventType,
+	IFinderPlugin,
+	repoAttachIfSupported
 } from 'typestore'
 import {IndexedDBRepoPlugin} from "./IndexedDBRepoPlugin";
 
@@ -42,24 +44,17 @@ export const LocalStorageOptionDefaults = {
 export class IndexedDBPlugin implements IStorePlugin {
 
 	type = PluginType.Store
-
+	
+	supportedModels:any[]
+	
 	private coordinator:ICoordinator
 	private internalDb:Dexie
 	private repoPlugins:{[modelName:string]:IndexedDBRepoPlugin<any>} = {}
 	private tables:{[tableName:string]:Dexie.Table<any,any>}
 	
-	constructor(private opts:IIndexedDBOptions = {}) {
+	constructor(private opts:IIndexedDBOptions = {},...supportedModels:any[]) {
 		this.opts = Object.assign({},LocalStorageOptionDefaults,opts)
-	}
-
-
-	handle(eventType:PluginEventType, ...args):boolean|any {
-		switch(eventType) {
-			case PluginEventType.RepoInit:
-				const repo:Repo<any> = args[0]
-				return this.initRepo(repo)
-		}
-		return false
+		this.supportedModels = supportedModels
 	}
 
 	private open() {
@@ -69,6 +64,15 @@ export class IndexedDBPlugin implements IStorePlugin {
 
 	get db() {
 		return this.internalDb
+	}
+
+
+	handle(eventType:PluginEventType, ...args):boolean|any {
+		switch(eventType) {
+			case PluginEventType.RepoInit:
+				return repoAttachIfSupported(args[0] as Repo<any>, this)
+		}
+		return false
 	}
 
 

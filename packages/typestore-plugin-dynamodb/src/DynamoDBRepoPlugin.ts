@@ -1,33 +1,19 @@
 ///<reference path="../typings/typestore-plugin-dynamodb"/>
-///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-dynamodb"/>
-///<reference path="../node_modules/aws-sdk-typescript/output/typings/aws-sdk"/>
-
-import {
-	Log,
-	Types,
-	Repo,
-	PluginEventType,
-	Messages,
-	Errors,
-	Constants,
-	IModel,
-	IPlugin,
-	PluginType,
-	IRepoPlugin,
-	IFinderPlugin,
-	ICoordinator,
-	ICoordinatorOptions
-} from 'typestore'
 
 import assert = require('assert')
 import * as _ from 'lodash'
-import * as AWS from 'aws-sdk'
 import {DynamoDB} from 'aws-sdk'
-import {DynamoDBStore, DynamoDBFinderKey, DynamoDBModelKey, DynamoDBKeyValue} from "./DynamoDBStore";
-import {IDynamoDBFinderOptions, DynamoDBFinderType} from "./DynamoDBTypes";
 
-const {IncorrectKeyTypeError} = Errors;
-const {TypeStoreFindersKey} = Constants
+import {
+	Log,Repo,PluginEventType,
+	IModel,PluginType,IRepoPlugin,Coordinator,
+	ICoordinatorOptions,getMetadata
+} from 'typestore'
+
+import {DynamoDBStorePlugin} from "./DynamoDBStorePlugin";
+import {IDynamoDBFinderOptions, DynamoDBFinderType} from "./DynamoDBTypes";
+import {DynamoDBFinderKey} from "./DynamoDBConstants";
+import {DynamoDBKeyValue} from "./DynamoDBKeyValue";
 
 const log = Log.create(__filename)
 const MappedFinderParams = {
@@ -41,15 +27,14 @@ const MappedFinderParams = {
 
 export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
-	type = PluginType.Repo
+	type = PluginType.Repo | PluginType.Finder
+	supportedModels:any[]
 	
 	private tableDef:DynamoDB.CreateTableInput
-	private coordinator:Types.ICoordinator
-	private mapper
+	private coordinator:Coordinator
 
-	constructor(private store:DynamoDBStore,public repo:Repo<M>) {
+	constructor(private store:DynamoDBStorePlugin, public repo:Repo<M>) {
 		assert(repo,'Repo is required and must have a valid prototype')
-
 		
 		repo.attach(this)
 		
@@ -57,6 +42,7 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 		// Grab the table definition
 		this.tableDef = this.store.tableDefinition(repo.modelOpts.clazzName)
+		this.supportedModels = [repo.modelClazz]
 
 	}
 
@@ -65,16 +51,16 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		return false;
 	}
 
-	async init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
+	async init(coordinator:Coordinator, opts:ICoordinatorOptions):Promise<Coordinator> {
 		this.coordinator = coordinator
 		return coordinator;
 	}
 
-	async start():Promise<ICoordinator> {
+	async start():Promise<Coordinator> {
 		return this.coordinator;
 	}
 
-	async stop():Promise<ICoordinator> {
+	async stop():Promise<Coordinator> {
 		return this.coordinator;
 	}
 
@@ -100,24 +86,16 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 	}
 
 
-	
-
-
-
-	decorateFinder(repo:Repo<M>,finderKey:string) {
-		const finderOpts:IDynamoDBFinderOptions = Reflect.getMetadata(DynamoDBFinderKey,this.repo,finderKey)
-		if (!finderOpts) {
-			log.debug(`${finderKey} is not a dynamo finder, no dynamo finder options`)
-			return null
-		}
-
-		log.debug(`Making finder ${finderKey}:`,finderOpts)
-
-		const type = finderOpts.type || DynamoDBFinderType.Query
-		const defaultParams = this.makeParams()
-
-		const valuesOpt = finderOpts.values
-		const valueMapper = (args) => {
+	/**
+	 * Creates a value mapper, which maps
+	 * arguments for a finder to values
+	 * that can be used by dynamo
+	 *
+	 * @param valuesOpt
+	 * @returns (any[]):{[key:string]:any}
+	 */
+	makeValueMapper(valuesOpt:Function | any[]) {
+		return (args) => {
 			if (valuesOpt) {
 				return (_.isFunction(valuesOpt)) ?
 					// If its a function then execute it
@@ -132,12 +110,67 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 						})
 					}) :
 
-					// if its an object - good luck
-					valuesOpt
+						// if its an object - good luck
+						valuesOpt
 			}
 
 			return  {}
 		}
+	}
+
+
+	/**
+	 * Create the actual finder function
+	 * that is used by the repo
+	 * 
+	 * @param repo
+	 * @param finderKey
+	 * @param finderOpts
+	 * @param defaultParams
+	 * @param valueMapper
+	 * @returns {function(...[any]): Promise<any>}
+	 */
+	makeFinderFn(repo,finderKey,finderOpts,defaultParams,valueMapper) {
+		const type = finderOpts.type || DynamoDBFinderType.Query
+		log.info(`Making finder fn ${finderKey}`)
+
+		return async (...args) => {
+			log.debug(`Executing finder ${finderKey}`)
+
+			const params = _.assign(_.clone(defaultParams), {
+				ExpressionAttributeValues: valueMapper(args)
+			})
+
+			// Find or scan
+			let results = await (((type === DynamoDBFinderType.Query) ?
+					this.store.query(params as DynamoDB.QueryInput) :
+					this.store.scan(params as DynamoDB.ScanInput)
+			) as Promise<any>)
+
+			return results.Items.map((item) => repo.mapper.fromObject(item))
+		}
+	}
+
+	/**
+	 * Called by a repo to decorate a finder function
+	 *
+	 * @param repo
+	 * @param finderKey
+	 * @returns {any}
+	 */
+	decorateFinder(repo:Repo<M>,finderKey:string) {
+		const finderOpts:IDynamoDBFinderOptions = getMetadata(DynamoDBFinderKey,this.repo,finderKey)
+		if (!finderOpts) {
+			log.debug(`${finderKey} is not a dynamo finder, no dynamo finder options`)
+			return null
+		}
+
+		log.debug(`Making finder ${finderKey}:`,finderOpts)
+
+		const defaultParams = this.makeParams()
+
+		const valuesOpt = finderOpts.values
+		const valueMapper = this.makeValueMapper(valuesOpt)
 
 		Object.keys(finderOpts).forEach((key) => {
 			let val = finderOpts[key]
@@ -149,21 +182,9 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		})
 
 		// Create the finder function
-		return (...args) => {
+		return this.makeFinderFn(repo,finderKey,finderOpts,defaultParams,valueMapper)
 
-			//params.ExpressionsAttributeValues
-			const params = _.assign(_.clone(defaultParams),{
-				ExpressionAttributeValues: valueMapper(args)
-			})
 
-			// Find or scan
-			return (((type === DynamoDBFinderType.Query) ?
-				this.store.query(params as DynamoDB.QueryInput) :
-				this.store.scan(params as DynamoDB.ScanInput)
-			) as Promise<any>).then((results) => {
-				return results.Items.map((item) => repo.mapper.fromObject(item))
-			})
-		}
 	}
 
 

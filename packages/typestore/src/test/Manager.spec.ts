@@ -31,31 +31,27 @@ async function reset(syncStrategy:SyncStrategy) {
 /**
  * Global test suite
  */
-describe('#typestore',() => {
+describe('#typestore-model-decorations',() => {
 
-	/**
-	 * Test for valid decorations
-	 */
-	describe('#decorators',() => {
-		beforeEach(() => {
-			return reset(SyncStrategy.None)
-		})
-
-		it('#model', async () => {
-			await coordinator.start(Fixtures.ModelTest1)
-
-			//new Fixtures.ModelTest1()
-
-			const constructorFn = Fixtures.ModelTest1
-			expect(constructorFn).toBe(Fixtures.ModelTest1)
-
-			const attrData = Reflect.getOwnMetadata(TypeStoreAttrKey,constructorFn),
-				modelData = Reflect.getOwnMetadata(TypeStoreModelKey,constructorFn)
-
-
-			expect(attrData.length).toEqual(3)
-			expect(modelData.attrs.length).toEqual(3)
-		})
+	beforeEach(() => {
+		return reset(SyncStrategy.None)
 	})
+
+	it('#model', async () => {
+		await coordinator.start(Fixtures.ModelTest1)
+
+		//new Fixtures.ModelTest1()
+
+		const constructorFn = Fixtures.ModelTest1
+		expect(constructorFn).toBe(Fixtures.ModelTest1)
+
+		const attrData = Reflect.getOwnMetadata(TypeStoreAttrKey,constructorFn),
+			modelData = Reflect.getOwnMetadata(TypeStoreModelKey,constructorFn)
+
+
+		expect(attrData.length).toEqual(3)
+		expect(modelData.attrs.length).toEqual(3)
+	})
+
 })
 

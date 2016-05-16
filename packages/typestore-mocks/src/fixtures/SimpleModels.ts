@@ -51,15 +51,5 @@ export class SimpleModel1Repo extends Repo<SimpleModel1> {
 		super(SimpleModel1Repo,SimpleModel1)
 	}
 
-	/**
-	 * Create a simple external finder
-	 *
-	 * @param text
-	 * @returns {null}
-	 */
-	// @FinderDescriptor()
-	// @IndexedDBFinder()
-	// findByText(text:string):Promise<SimpleModel1[]> {
-	// 	return null
-	// }
+	
 }
