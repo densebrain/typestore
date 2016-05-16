@@ -1,0 +1,13 @@
+{
+  "name": "typestore-plugin-dynamodb",
+  "version": false,
+  "dependencies": {
+
+  },
+  "ambientDependencies": {
+
+  },
+  "ambientDevDependencies": {
+
+  }
+}

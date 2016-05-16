@@ -1,0 +1,13 @@
+{
+  "name": "typestore-cloudsearch-dynamodb",
+  "version": false,
+  "dependencies": {
+
+  },
+  "ambientDependencies": {
+
+  },
+  "ambientDevDependencies": {
+
+  }
+}
