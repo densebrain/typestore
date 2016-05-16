@@ -12,11 +12,10 @@ function docs() {
 			module: 'commonjs',
 			target: 'es5',
 			includeDeclarations: false,
-
+			excludeExternals: true,
 			out: `${process.cwd()}/target/docs`,
-			name: 'TypeStore',
+			name: 'TypeStore'
 
-			version:true
 		}))
 
 }
