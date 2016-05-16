@@ -38,3 +38,4 @@ tsconfig.json
 
 # Any log file
 *.log
+target
