@@ -1,13 +1,14 @@
 {
-    "name": "typestore-example-node",
-    "description": "A quick example on nodejs",
-    "version": "0.1.6",
-    "main": "dist/index.js",
-    "typings": "dist/index.d.ts",
-    "scripts": {
-        "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
-    },
-    "dependencies": {
-        "aws-sdk": "^2.3.7"
-    }
+  "name": "typestore-example-node",
+  "description": "A quick example on nodejs",
+  "version": "0.1.6",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.3.7",
+    "dynamodb-local": "0.0.11"
+  }
 }

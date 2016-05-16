@@ -29,11 +29,12 @@ packages/*/src/**/*.js
 packages/*/src/**/*.map
 packages/*/src/**/*.d.ts
 packages/*/dist
+
+# Webpack Example - ignore loader cache
 .awcache
 
 # Config is auto generated
 tsconfig.json
-.awcache
 
 # Any log file
 *.log
