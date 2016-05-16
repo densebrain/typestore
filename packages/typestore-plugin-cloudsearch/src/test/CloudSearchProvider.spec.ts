@@ -42,7 +42,7 @@ let store:MockStore = new MockStore(CloudSearchTestModel)
  * 
  * TODO: Somehow integrated mocked service
  */
-describe('#plugin-cloudsearch',() => {
+xdescribe('#plugin-cloudsearch',() => {
 	let t1 = null
 	function getTestModel() {
 		t1 = new CloudSearchTestModel()

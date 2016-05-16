@@ -39,9 +39,6 @@ import {DynamoDBStorePlugin,DynamoDBFinderDescriptor,DynamoDBLocalEndpoint}
 
 
 
-
-
-
 // There is a whole logging framework you are welcome to use
 // as well - but it could do with docs - pull request?? ;)
 const log = Log.create(__filename)
@@ -156,7 +153,18 @@ class CarRepo extends Repo<Car> {
 
 export async function runCars() {
 
-	
+
+	let dynamoEndpoint = DynamoDBLocalEndpoint
+	let dynamoLocal = null, dynamoPort = 8787
+
+	if (process.env.CIRCLE) {
+		dynamoLocal = require('dynamodb-local')
+		await dynamoLocal.launch(dynamoPort, null, ['-sharedDb'])
+		dynamoEndpoint = `http://localhost:${dynamoPort}`
+	}
+
+
+
 	// Pass in options and the indexer/search
 	// will service as a rest array
 	const cloudSearchProvider = new CloudSearchProviderPlugin({
@@ -170,7 +178,7 @@ export async function runCars() {
 	// Pass in options and the models that the store
 	// will service as a rest array
 	const dynamoStore = new DynamoDBStorePlugin({
-		endpoint: DynamoDBLocalEndpoint,
+		endpoint: dynamoEndpoint,
 		prefix: `examples_cars_${process.env.USER}_`
 	},Car)
 
@@ -211,7 +219,10 @@ export async function runCars() {
 	await repo1.remove(car1Key)
 	carCount = await repo1.count()
 	assert(carCount === 0, 'only 1 car in there today!')
-	
+
+	if (dynamoLocal)
+		await dynamoLocal.stop(dynamoPort)
+
 	return true
 }
 
