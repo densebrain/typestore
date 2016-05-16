@@ -1,0 +1,1 @@
+{"version":3,"sources":["DynamoDBModelKey.js","DynamoDBModelKey.ts"],"names":[],"mappings":"AAAA;;;;ICIA,gB,GAEC,0BACS,OADT,EAES,QAFT,EAE2C;AAAA;;AADlC,SAAA,OAAA,GAAA,OAAA;AACA,SAAA,QAAA,GAAA,QAAA;AACR,C;;AALW,QAAA,gBAAA,GAAgB,gBAAhB","file":"DynamoDBModelKey.js","sourceRoot":"/Users/jglanz/Development/typestore-workspace/packages/typestore-plugin-dynamodb/src"}

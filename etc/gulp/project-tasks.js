@@ -77,7 +77,8 @@ module.exports = function(projectName) {
 			version: nextMinorVersion,
 			dependencies: _.assign({},deps,basePackageJson.dependencies),
 			devDependencies: _.assign({},devDeps,basePackageJson.devDependencies),
-			keywords: _.uniq(basePackageJson.keywords.concat(packageJson.keywords)),
+			keywords: _.uniq((basePackageJson.keywords || [])
+				.concat(packageJson.keywords)),
 			license: basePackageJson.license,
 			author: basePackageJson.author,
 			bugs: basePackageJson.bugs,
@@ -102,7 +103,7 @@ module.exports = function(projectName) {
 		}
 
 		// Any inter-project dependencies are added
-		packageConfigs[projectName].internalDependencies
+		(projectConfigs[projectName].internalDependencies || [])
 			.forEach(name => packageJson.dependencies[name] = nextMinorVersion)
 
 

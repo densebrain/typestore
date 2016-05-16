@@ -1,0 +1,13 @@
+{
+	"name": "typestore-plugin-localstorage",
+	"version": false,
+	"dependencies": {
+
+	},
+	"ambientDependencies": {
+
+	},
+	"ambientDevDependencies": {
+
+	}
+}

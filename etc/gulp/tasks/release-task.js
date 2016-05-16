@@ -1,4 +1,4 @@
-
+const fs = require('fs')
 
 /**
  * Push compiled release files to github
