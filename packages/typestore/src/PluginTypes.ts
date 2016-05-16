@@ -18,8 +18,7 @@ export enum PluginEventType {
 /**
  * Indexer options
  */
-export interface IIndexerOptions {
-	indexer:IIndexerPlugin,
+export interface IIndexOptions {
 	fields:string[]
 }
 
@@ -39,7 +38,7 @@ export enum IndexAction {
 /**
  * Responsible for indexing given models
  */
-export interface IIndexerPlugin extends IPlugin {
+export interface IIndexerPlugin extends IRepoSupportPlugin {
 
 	/**
 	 * Called in persistence chain after put/save
@@ -56,7 +55,7 @@ export interface IIndexerPlugin extends IPlugin {
 	 * @param modelType
 	 * @param repo
 	 */
-	index<M extends IModel>(type:IndexAction, options:IIndexerOptions, modelType:IModelType, repo:Repo<M>, ...models:IModel[]):Promise<boolean>
+	index<M extends IModel>(type:IndexAction, options:IIndexOptions, modelType:IModelType, repo:Repo<M>, ...models:IModel[]):Promise<boolean>
 }
 
 
@@ -86,31 +85,36 @@ export function DefaultKeyMapper<R extends any>(...fields):ISearchResultToKeyMap
 export interface ISearchOptions<R extends any> {
 	resultType:{new():R}
 	resultKeyMapper: ISearchResultToKeyMapper<R>
-	provider: ISearchProvider
 }
 
 /**
  * Custom external search provider
  */
-export interface ISearchProvider extends IPlugin {
+export interface ISearchProvider extends IRepoSupportPlugin {
 	search<R extends any>(modelType:IModelType,opts:ISearchOptions<R>,...args):Promise<R[]>
 }
 
+export interface IModelSupportPlugin extends IPlugin {
+	supportedModels:any[]
+}
+
+export interface IRepoSupportPlugin extends IModelSupportPlugin {
+	initRepo<T extends Repo<M>,M extends IModel>(repo:T):T
+}
 
 /**
  * Store interface that must be fulfilled for
  * a valid store to work
  */
-export interface IStorePlugin extends IPlugin {
+export interface IStorePlugin extends IRepoSupportPlugin {
 	syncModels():Promise<ICoordinator>
-	initRepo<T extends Repo<M>,M extends IModel>(repo:T):T
 }
 
-export interface IFinderPlugin extends IPlugin {
+export interface IFinderPlugin extends IModelSupportPlugin {
 	decorateFinder(repo:Repo<any>,finderKey:string)
 }
 
-export interface IRepoPlugin<M extends IModel> extends IPlugin {
+export interface IRepoPlugin<M extends IModel> extends IModelSupportPlugin {
 	key?(...args):IKeyValue
 	get(key:IKeyValue):Promise<M>
 	save(o:M):Promise<M>
@@ -121,10 +125,10 @@ export interface IRepoPlugin<M extends IModel> extends IPlugin {
 
 
 export enum PluginType {
-	Indexer,
-	Store,
-	Repo,
-	Finder
+	Indexer = 1 << 0,
+	Store = 1 << 1,
+	Repo = 1 << 2,
+	Finder = 1 << 3
 }
 
 export interface IPlugin {

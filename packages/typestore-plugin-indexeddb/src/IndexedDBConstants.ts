@@ -1,0 +1,1 @@
+export const IndexedDBFinderKey = 'indexeddb:finder'

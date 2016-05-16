@@ -29,6 +29,7 @@ packages/*/src/**/*.js
 packages/*/src/**/*.map
 packages/*/src/**/*.d.ts
 packages/*/dist
+.awcache
 
 # Config is auto generated
 tsconfig.json

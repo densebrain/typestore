@@ -8,11 +8,15 @@ import {
 	Repo,
 	ICoordinator,
 	ICoordinatorOptions,
-	PluginEventType
+	PluginEventType,
+	IFinderPlugin,
+	getMetadata
 } from 'typestore'
 
 import {IndexedDBPlugin} from "./IndexedDBPlugin";
 import Dexie from "dexie";
+import {IndexedDBFinderKey} from "./IndexedDBConstants";
+
 
 
 
@@ -31,14 +35,16 @@ export class IndexedDBKeyValue implements IKeyValue {
 	}
 }
 
-export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
+export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> , IFinderPlugin {
 
-	type = PluginType.Repo
-
+	type = PluginType.Repo | PluginType.Finder
+	supportedModels:any[]
+	
 	private coordinator
 	private keys:string[]
 
 	constructor(private store:IndexedDBPlugin, public repo:Repo<M>) {
+		this.supportedModels = [repo.modelClazz]
 		this.keys = repo.modelType.options.attrs
 			.filter(attr => attr.primaryKey || attr.secondaryKey)
 			.map(attr => attr.name)
@@ -47,6 +53,26 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		
 	}
 
+	
+	decorateFinder(repo:Repo<any>, finderKey:string) {
+		const finderOpts = getMetadata(
+			IndexedDBFinderKey,
+			this.repo,
+			finderKey
+		)
+		if (!finderOpts)
+			return null
+		
+		return async (...args) => {
+			let results = await this.table
+				.filter(record => finderOpts.filter(record,...args))
+				.toArray()
+
+			let mapper = this.repo.getMapper(this.repo.modelClazz)
+			
+			return results.map(record => mapper.fromObject(record))
+		}
+	}
 
 	handle(eventType:PluginEventType, ...args):boolean|any {
 		return false;
@@ -62,11 +88,11 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 	}
 
 	async start():Promise<ICoordinator> {
-		return null;
+		return this.coordinator
 	}
 
 	async stop():Promise<ICoordinator> {
-		return null;
+		return this.coordinator
 	}
 
 	key(...args):IndexedDBKeyValue {

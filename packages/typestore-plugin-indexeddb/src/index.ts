@@ -1,5 +1,4 @@
 /// <reference path="../typings/typestore-plugin-localstorage.d.ts"/>
 
-export {
-
-}
+export * from './IndexedDBDecorations'
+export * from './IndexedDBPlugin'

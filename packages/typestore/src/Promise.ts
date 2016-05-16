@@ -20,28 +20,3 @@ process.on("rejectionHandled", function (promise) {
 
 Promise = Bluebird
 
-
-
-
-//import Bluebird = require('bluebird')
-//import * as Log from './log'
-//import {msg, Strings} from "./Messages";
-
-
-
-// Bluebird.config({
-// 	cancellation: true,
-// 	longStackTraces: true,
-// 	warnings: true,
-// 	monitoring: false
-// })
-//
-// declare global {
-// 	var Promise:Bluebird<any>
-// }
-//
-// global.Promise = Bluebird
-
-// NOTE: event name is camelCase as per node convention
-
-

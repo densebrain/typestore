@@ -17,5 +17,20 @@
     "typestore-plugin-indexeddb": {
         "type": "browser",
         "description": "typestore-plugin-indexeddb"
+    },
+    "typestore-example-node": {
+        "type": "node",
+        "description": "A quick example on nodejs",
+        "internalDependencies": [
+            "typestore-plugin-dynamodb",
+            "typestore-plugin-cloudsearch"
+        ]
+    },
+    "typestore-example-webpack": {
+        "type": "browser",
+        "description": "oh - you can use it in chrome or any other browser too :/",
+        "internalDependencies": [
+            "typestore-plugin-indexeddb"
+        ]
     }
 }

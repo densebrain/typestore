@@ -1,7 +1,8 @@
 import 'reflect-metadata'
 import {Repo} from "./Repo"
+import {NoReflectionMetataError} from './Errors'
 import {IModel, IModelType} from "./ModelTypes"
-import {ISearchOptions, IIndexerOptions, IStorePlugin, IPlugin} from "./PluginTypes";
+import {IIndexOptions,IPlugin} from "./PluginTypes";
 
 
 export * from './ModelTypes'
@@ -12,16 +13,30 @@ export * from './PluginTypes'
  * Options for repo decorations
  */
 export interface IRepoOptions {
-	indexers?:IIndexerOptions[]
+	indexes?:IIndexOptions[]
 }
 
 /**
  * Options for finder decorations
  */
 export interface IFinderOptions {
-	searchOptions?:ISearchOptions<any>
+	optional?:boolean
 }
 
+
+/**
+ * Simple base model implementation
+ * uses reflection to determine type
+ */
+export class DefaultModel implements IModel {
+	get clazzType() {
+		const type = Reflect.getOwnMetadata('design:type',this)
+		if (!type)
+			throw new NoReflectionMetataError('Unable to reflect type information')
+
+		return type.name
+	}
+}
 
 /**
  * Sync strategy for updating models in the store

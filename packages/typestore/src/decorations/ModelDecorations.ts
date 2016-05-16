@@ -1,45 +1,32 @@
 import * as Log from '../log'
-import {Coordinator} from '../Coordinator'
-import {IRepoOptions, IModel, IFinderOptions} from '../Types'
 import {
-	TypeStoreFinderKey, 
-	TypeStoreFindersKey, 
 	TypeStoreAttrKey, 
-	TypeStoreModelKey,
-	TypeStoreRepoKey
+	TypeStoreModelKey
 } from "../Constants";
-import {Repo} from "../Repo";
-import {NoReflectionMetataError} from "../Errors";
+import {getMetadataReturnType,getMetadataType,getMetadata,setMetadata} from '../MetadataManager'
+
 
 const log = Log.create(__filename)
 
 /**
- * Simple base model implementation
- * uses reflection to determine type
+ * Attribute index configuration
  */
-export class DefaultModel implements IModel {
-	get clazzType() {
-		const type = Reflect.getOwnMetadata('design:type',this)
-		if (!type)
-			throw new NoReflectionMetataError('Unable to reflect type information')
-
-		return type.name
-	}
-}
-
-export interface IModelIndex {
+export interface IModelAttributeIndex {
 	name:string
 	isSecondaryKey?:boolean
 	secondaryKey?:string
 }
 
+/**
+ * Model attribute options
+ */
 export interface IModelAttributeOptions {
 	name?:string
 	type?:any
 	typeName?:string
 	primaryKey?:boolean
 	secondaryKey?:boolean
-	index?: IModelIndex
+	index?: IModelAttributeIndex
 }
 
 /**
@@ -49,7 +36,7 @@ export interface IModelAttributeOptions {
 export interface IModelOptions {
 	clazzName?:string
 	clazz?:any
-	tableName:string
+	tableName?:string
 	attrs?:IModelAttributeOptions[]
 }
 
@@ -70,9 +57,9 @@ export interface IKeyValue {
  * decorations - useful in dual purpose classes,
  * in webpack use DefinePlugin
  *
- * @param {opts:IModelOptions} Options for this model generation
+ * @param opts
  */
-export function ModelDescriptor(opts:IModelOptions) {
+export function ModelDescriptor(opts:IModelOptions = {}) {
 	return function(constructor:Function) {
 		// Make sure everything is valid
 		//const type = Reflect.getOwnMetadata('design:type',constructor)
@@ -80,12 +67,14 @@ export function ModelDescriptor(opts:IModelOptions) {
 		const attrs = Reflect.getOwnMetadata(TypeStoreAttrKey, constructor) as IModelAttributeOptions[]
 
 		const finalOpts = Object.assign({},{
+			clazz: constructor,
 			clazzName: type.name,
+			tableName: type.name,
 			attrs
 		},opts)
 
 
-		log.debug('Decorating: ', finalOpts.clazzName)
+		log.debug(`Decorating: ${finalOpts.clazzName}`)
 		Reflect.defineMetadata(TypeStoreModelKey,finalOpts,constructor)
 
 	}
@@ -99,10 +88,9 @@ export function ModelDescriptor(opts:IModelOptions) {
  * @constructor
  */
 
-export function AttributeDescriptor(opts: IModelAttributeOptions) {
+export function AttributeDescriptor(opts:IModelAttributeOptions = {}) {
 	return function (target:any,propertyKey:string) {
-		const attrType = Reflect.getMetadata('design:type',target,propertyKey)
-		log.debug('attr type = ',propertyKey,attrType)
+		const attrType = getMetadataType(target,propertyKey)
 		opts = Object.assign({},{
 			type:attrType,
 			name: propertyKey,
@@ -111,10 +99,10 @@ export function AttributeDescriptor(opts: IModelAttributeOptions) {
 		},opts)
 
 		// Update the attribute array
-		log.debug(`Decorating ${propertyKey}`,opts)
-		const modelAttrs = Reflect.getMetadata(TypeStoreAttrKey,target.constructor) || []
+		const modelAttrs = getMetadata(TypeStoreAttrKey,target.constructor) || []
 		modelAttrs.push(opts)
 
-		Reflect.defineMetadata(TypeStoreAttrKey,modelAttrs,target.constructor)
+		setMetadata(TypeStoreAttrKey,opts,target.constructor,propertyKey)
+		setMetadata(TypeStoreAttrKey,modelAttrs,target.constructor)
 	}
 }

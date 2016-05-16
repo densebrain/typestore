@@ -1,3 +1,4 @@
+
 const AWS = require('aws-sdk')
 
 import 'reflect-metadata'
@@ -12,22 +13,14 @@ import {
 	DefaultModel
 } from 'typestore'
 
-
-import {CloudSearchProvider} from "../../CloudSearchProvider";
+import {CloudSearchFinderDescriptor} from "../../CloudSearchDecorations"
+import {CloudSearchProviderPlugin} from "../../CloudSearchProviderPlugin";
 import {CloudSearchLocalEndpoint} from "../../CloudSearchConstants";
 
 
 const log = Log.create(__filename)
 
-const sharedIniCreds =  new AWS.SharedIniFileCredentials({profile: 'default'})
 
-export const cloudSearchProvider = new CloudSearchProvider({
-	endpoint: CloudSearchLocalEndpoint,
-	awsOptions: {
-		region: 'us-east-1',
-		credentials:sharedIniCreds
-	}
-})
 
 
 @ModelDescriptor({tableName:'testTable1'})
@@ -53,8 +46,7 @@ export class CloudSearchTestModel extends DefaultModel {
 
 
 @RepoDescriptor({
-	indexers: [{
-		indexer: cloudSearchProvider,
+	indexes: [{
 		fields: ['id', 'text', 'date']
 	}]
 })
@@ -71,13 +63,11 @@ export class CloudSearchTest1Repo extends Repo<CloudSearchTestModel> {
 	 * @param text
 	 * @returns {null}
 	 */
-	@FinderDescriptor({
-		searchOptions: {
-			resultType: Object,
-			resultKeyMapper: DefaultKeyMapper<Object>('id'),
-			provider: cloudSearchProvider
-		}
+	@CloudSearchFinderDescriptor({
+		resultType: Object,
+		resultKeyMapper: DefaultKeyMapper<Object>('id')
 	})
+	@FinderDescriptor()
 	findByText(text:string):Promise<CloudSearchTestModel[]> {
 		return null
 	}

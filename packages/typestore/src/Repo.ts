@@ -1,5 +1,4 @@
 import {
-	TypeStoreModelKey,
 	TypeStoreFinderKey,
 	TypeStoreRepoKey,
 	TypeStoreFindersKey
@@ -7,22 +6,28 @@ import {
 import {
 	IModel,
 	IFinderOptions,
-	IStorePlugin,
 	IndexAction,
 	IRepoOptions,
-	IIndexerOptions,
+	IIndexOptions,
+	ISearchProvider,
 	IPlugin,
 	IModelMapper,
-	ICoordinator
+	ISearchOptions,
+	IRepoPlugin, 
+	IFinderPlugin,
+	IIndexerPlugin,
+	PluginType
 } from "./Types"
 import {Coordinator} from './Coordinator'
 import {NotImplemented} from "./Errors"
 import * as Log from './log'
-import {IRepoPlugin, IFinderPlugin, PluginType, ISearchProvider} from "./PluginTypes"
-import {isFunction, isRepoPlugin, isFinderPlugin, PluginFilter, PromiseMap} from "./Util"
+
+import {isFunction, isRepoPlugin, isFinderPlugin, PluginFilter, PromiseMap, isIndexerPlugin} from "./Util"
 import {ModelMapper} from "./ModelMapper"
 import {IModelType} from "./ModelTypes"
 import {IModelOptions, IModelKey, IKeyValue} from "./decorations/ModelDecorations";
+import {getMetadata} from "./MetadataManager";
+
 
 const log = Log.create(__filename)
 
@@ -102,6 +107,14 @@ export class Repo<M extends IModel> {
 		return this
 	}
 	
+	getFinderOptions(finderKey:string):IFinderOptions {
+		return getMetadata(
+			TypeStoreFinderKey,
+			this,
+			finderKey
+		) as IFinderOptions
+	}
+	
 	decorateFinders() {
 		const finderKeys = Reflect.getMetadata(TypeStoreFindersKey,this)
 		if (finderKeys) {
@@ -109,7 +122,7 @@ export class Repo<M extends IModel> {
 			finderKeys.forEach((finderKey) => {
 				let finder
 
-				for (let plugin of this.plugins) {
+				for (let plugin of this.plugins.filter(isFinderPlugin)) {
 					if (!isFunction((plugin as any).decorateFinder))
 						continue
 
@@ -118,10 +131,7 @@ export class Repo<M extends IModel> {
 						break
 				}
 
-				if (!finder)
-					finder = this.genericFinder(finderKey)
-
-				if (!finder)
+				if (!finder && this.getFinderOptions(finderKey).optional !== true)
 					NotImplemented(`No plugin supports this finder ${finderKey}`)
 
 				this.setFinder(finderKey,finder)
@@ -135,25 +145,23 @@ export class Repo<M extends IModel> {
 	 * annotated on the model
 	 *
 	 * @param finderKey
+	 * @param searchProvider
+	 * @param searchOpts
 	 * @returns {any}
 	 */
-	protected genericFinder(finderKey:string) {
-		const opts:IFinderOptions = Reflect.getMetadata(
-			TypeStoreFinderKey,
-			this,
-			finderKey
-		)
+	makeGenericFinder(
+		finderKey:string,
+		searchProvider:ISearchProvider,
+		searchOpts:ISearchOptions<any>
+	) {
 
-		const searchOpts = opts.searchOptions
-		
-		if (!searchOpts) {
-			log.debug('Generic finders are only created with a specified SearchProvider')
-			return null
-		}
-
+		/**
+		 * Get the finder options
+		 * @type {any}
+		 */
+		const opts:IFinderOptions = this.getFinderOptions(finderKey)
 
 		return async (...args) => {
-			const searchProvider = searchOpts.provider as ISearchProvider
 			let results = await searchProvider.search(
 					this.modelType,
 					searchOpts,
@@ -193,20 +201,24 @@ export class Repo<M extends IModel> {
 	 * @param models
 	 * @returns {Bluebird<boolean>}
 	 */
-	index(type:IndexAction,...models:IModel[]):Promise<boolean> {
+	async index(type:IndexAction,...models:IModel[]):Promise<boolean> {
+		const indexPlugins = PluginFilter<IIndexerPlugin>(this.plugins,PluginType.Indexer)
 
-		let indexers = this.repoOpts.indexers
-		if (indexers)
-			indexers.forEach(async(indexerConfig:IIndexerOptions) => {
-				await indexerConfig.indexer
-					.index(
-						type,
-						indexerConfig,
-						this.modelType,
-						this,
-						...models
-					)
-			})
+		const doIndex = (indexConfig:IIndexOptions):Promise<any>[] => {
+			return indexPlugins.map(plugin => plugin.index(
+				type,
+				indexConfig,
+				this.modelType,
+				this,
+				...models
+			))
+		}
+
+		// Create all pending index promises
+		if (this.repoOpts.indexes)
+			await Promise.all(this.repoOpts.indexes.reduce((promises,indexConfig) => {
+				return promises.concat(doIndex(indexConfig))
+			},[]))
 
 		return Promise.resolve(true)
 	}
@@ -304,3 +316,4 @@ export class Repo<M extends IModel> {
 
 	}
 }
+

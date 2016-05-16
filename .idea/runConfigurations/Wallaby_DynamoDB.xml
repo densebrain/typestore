@@ -1,5 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Wallaby-DynamoDB" type="wallaby" factoryName="Wallaby.js" singleton="false" config="$PROJECT_DIR$/packages/typestore-plugin-dynamodb/wallaby.js">
-    <method />
-  </configuration>
-</component>

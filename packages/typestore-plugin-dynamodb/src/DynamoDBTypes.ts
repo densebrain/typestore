@@ -1,6 +1,9 @@
 import * as AWS from 'aws-sdk'
 import {IModelAttributeOptions,IModelOptions,ICoordinatorOptions} from 'typestore'
 
+
+
+
 /**
  * Types of keys for dynamo
  */
@@ -80,7 +83,7 @@ export interface IDynamoDBModelOptions extends IModelOptions {
 }
 
 export interface IDynamoDBStorePluginOptions {
-	dynamoEndpoint?:string
+	endpoint?:string
 	region?:string
 	awsOptions?:AWS.ClientConfigPartial
 	prefix?:string

@@ -91,6 +91,8 @@ module.exports = function(projectName) {
 
 		})
 
+		
+		
 		// Add core package dependencies
 		if (!projectConfig.excludeCore) {
 			packageJson.dependencies['typestore'] = nextMinorVersion
@@ -98,6 +100,11 @@ module.exports = function(projectName) {
 				packageJson.dependencies['typestore-mocks'] = nextMinorVersion
 			}
 		}
+
+		// Any inter-project dependencies are added
+		packageConfigs[projectName].internalDependencies
+			.forEach(name => packageJson.dependencies[name] = nextMinorVersion)
+
 
 		log.info(`Writing package.json to ${targetPackageJsonFile}`)
 		fs.writeFileSync(targetPackageJsonFile,JSON.stringify(packageJson,null,4))

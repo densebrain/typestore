@@ -1,4 +1,6 @@
-import {IPlugin, IRepoPlugin, PluginType, IStorePlugin, IIndexerPlugin, IFinderPlugin} from "./PluginTypes";
+import {IPlugin, IRepoPlugin, PluginType, IStorePlugin, 
+	IIndexerPlugin, IFinderPlugin,IRepoSupportPlugin} from "./Types"
+import {Repo} from "./Repo"
 
 export function isFunction(o:any):o is Function {
 	return typeof o === 'function'
@@ -12,7 +14,7 @@ export function isFunction(o:any):o is Function {
  * @returns {boolean}
  */
 export function isPluginOfType(plugin:IPlugin,type:PluginType):boolean {
-	return plugin.type && plugin.type === type
+	return plugin.type && (plugin.type & type) > 0
 }
 
 export function isRepoPlugin(plugin:IPlugin):plugin is IRepoPlugin<any> {
@@ -46,3 +48,16 @@ export function PluginFilter<P extends IPlugin>(plugins:IPlugin[],type:PluginTyp
 	) as P[]
 }
 
+
+export function isInstanceType<T>(val:any,type:{new():T}):val is T {
+	return val instanceof type
+}
+
+export function includesUnlessEmpty(arr:any[],val:any):boolean {
+	return arr.length === 0 || arr.includes(val)
+}
+
+export function repoAttachIfSupported(repo:Repo<any>,plugin:IRepoSupportPlugin) {
+	return (includesUnlessEmpty(plugin.supportedModels,repo.modelClazz)) ?
+		plugin.initRepo(repo) : null
+}

@@ -5,11 +5,11 @@ import {PluginEventType} from "../../PluginTypes";
 export class NullStore implements IStorePlugin {
 
 	type = PluginType.Store
-
+	supportedModels:any[]
 	private coordinator:ICoordinator
 
-	constructor() {
-
+	constructor(...supportedModels:any[]) {
+		this.supportedModels = supportedModels
 	}
 
 

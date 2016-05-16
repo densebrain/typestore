@@ -10,7 +10,7 @@
     <ui>bdd</ui>
     <extra-mocha-options>--require etc/mocha/mocha-setup.js</extra-mocha-options>
     <test-kind>PATTERN</test-kind>
-    <test-pattern>packages/*/**/*.spec.js</test-pattern>
+    <test-pattern>packages/*/dist/**/*.spec.js</test-pattern>
     <method />
   </configuration>
 </component>

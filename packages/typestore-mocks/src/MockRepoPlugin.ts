@@ -18,13 +18,16 @@ import {MockKeyValue} from "./MockStore";
 export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	type = PluginType.Repo
+	supportedModels:any[]
 
 	private coordinator
 	private recordCount = 0
 
-	constructor(private store:IStorePlugin,private repo:Repo<M>) {
+	constructor(private store:IStorePlugin,private repo:Repo<M>,...supportedModels) {
+		this.supportedModels = supportedModels
 		repo.attach(this)
 	}
+
 
 
 	handle(eventType:PluginEventType, ...args):boolean|any {

@@ -1,34 +1,51 @@
+
 Promise = require('bluebird')
+const AWS = require('aws-sdk')
 const log = getLogger(__filename)
 
-import * as Faker from 'faker'
-import * as Fixtures from './fixtures/index'
-import {
-	Types,
-	Coordinator,
-	Constants,
-	Log,
-	IndexAction
-} from 'typestore'
+const sharedIniCreds =  new AWS.SharedIniFileCredentials({profile: 'default'})
 
+import * as Faker from 'faker'
+import {CloudSearchTestModel,CloudSearchTest1Repo} from './fixtures/index'
 import * as sinon from 'sinon'
 import * as uuid from 'node-uuid'
+
+
+import {Coordinator,IndexAction} from 'typestore'
 import {MockStore} from "typestore-mocks"
+import {CloudSearchProviderPlugin} from "../CloudSearchProviderPlugin"
+import {CloudSearchLocalEndpoint} from "../CloudSearchConstants"
 
-const {TypeStoreModelKey,TypeStoreAttrKey} = Constants
-
-log.info('Starting test suite')
-
-let cloudSearchProvider = Fixtures.cloudSearchProvider
-let store:MockStore = new MockStore()
 let coordinator:Coordinator = null
+
+/**
+ * Make the cloud search plugin
+ */
+const cloudSearchProvider = new CloudSearchProviderPlugin({
+	endpoint: CloudSearchLocalEndpoint,
+	awsOptions: {
+		region: 'us-east-1',
+		credentials:sharedIniCreds
+	}
+},CloudSearchTestModel)
+
+/**
+ * Create a mock store for managing the model instances
+ * 
+ * @type {MockStore}
+ */
+let store:MockStore = new MockStore(CloudSearchTestModel)
+
+
 /**
  * Global test suite
+ * 
+ * TODO: Somehow integrated mocked service
  */
-xdescribe('#plugin-cloudsearch',() => {
+describe('#plugin-cloudsearch',() => {
 	let t1 = null
 	function getTestModel() {
-		t1 = new Fixtures.CloudSearchTestModel()
+		t1 = new CloudSearchTestModel()
 		t1.id = uuid.v4()
 		t1.date = new Date()
 		t1.text = Faker.lorem.words(15)
@@ -44,7 +61,7 @@ xdescribe('#plugin-cloudsearch',() => {
 
 		coordinator = new Coordinator()
 		await coordinator.init({},store,cloudSearchProvider)
-		await coordinator.start(Fixtures.CloudSearchTestModel)
+		await coordinator.start(CloudSearchTestModel)
 	})
 
 
@@ -57,7 +74,7 @@ xdescribe('#plugin-cloudsearch',() => {
 		it('#add', () => {
 			getTestModel()
 
-			let repo = coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
+			let repo = coordinator.getRepo(CloudSearchTest1Repo)
 
 			//const mock = sinon.mock(repo)
 			const stub = sinon.stub(repo,'save', function (o) {
@@ -72,7 +89,7 @@ xdescribe('#plugin-cloudsearch',() => {
 		})
 
 		it('#remove', () => {
-			let repo = coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
+			let repo = coordinator.getRepo(CloudSearchTest1Repo)
 			const stub = sinon.stub(repo, 'remove', function (o) {
 				log.info('Fake remove object', o)
 				expect(o.id).toBe(t1.id)
@@ -85,13 +102,14 @@ xdescribe('#plugin-cloudsearch',() => {
 		})
 	})
 
-
+	
+	
 	describe('#search',() => {
 
 		it('#add+search+remove', async () => {
 			getTestModel()
 
-			let repo = coordinator.getRepo(Fixtures.CloudSearchTest1Repo)
+			let repo = coordinator.getRepo(CloudSearchTest1Repo)
 
 			//const mock = sinon.mock(repo)
 			const stub = sinon.stub(repo, 'save', function (o) {
@@ -109,7 +127,7 @@ xdescribe('#plugin-cloudsearch',() => {
 		})
 	})
 
-			//TODO: Add search test
+			
 
 
 })
