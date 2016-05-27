@@ -1,1 +1,0 @@
-{"version":3,"sources":["DynamoDBMessages.js","DynamoDBMessages.ts"],"names":[],"mappings":"AAAA;;ACCA,IAAA,cAAA,QAA0B,WAA1B,CAAA;AAAQ,QAAA,GAAA,GAAA,YAAA,GAAA;AAAI,QAAA,OAAA,GAAA,YAAA,OAAA;AAEC,QAAA,aAAA,GAAgB;AAC5B,mBAAe;AADa,CAAhB","file":"DynamoDBMessages.js","sourceRoot":"/Users/jglanz/Development/typestore-workspace/packages/typestore-plugin-dynamodb/src"}
