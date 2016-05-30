@@ -193,7 +193,7 @@ Misc:
 - [ ] Made _(...) an iterator & iterable
 - [ ] Made _.drop, _.take, & right forms coerce n of undefined to 0
 
-Methods:
+HttpMethod:
 - [ ] _.concat
 - [ ] _.differenceBy
 - [ ] _.differenceWith
