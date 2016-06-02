@@ -74,7 +74,7 @@ describe('#plugin-indexeddb',() => {
 
 	})
 
-	it('#finder',async () => {
+	it('#finder-filter',async () => {
 		const model = new Fixtures.IDBModel1()
 		const repo = coordinator.getRepo(Fixtures.IDBRepo1)
 
@@ -92,6 +92,64 @@ describe('#plugin-indexeddb',() => {
 		expect(results.length).toBe(1)
 
 		await repo.remove(key)
+		expect(await repo.count()).toBe(0)
+
+	})
+
+
+	it('#finder-fn',async () => {
+
+		const repo = coordinator.getRepo(Fixtures.IDBRepo1)
+		const models = []
+		const name = 'hello',
+			name2 = `${name} ${name}`
+
+		for (let x = 0; x < 10;x++) {
+
+			const model = new Fixtures.IDBModel1()
+
+			Object.assign(model,{
+				id: uuid.v4(),
+				name,
+				createdAt: Faker.date.past(),
+				randomText: Faker.lorem.words(10)
+			})
+
+			models.push(model)
+		}
+
+		await repo.bulkSave(...models)
+
+		let results = await repo.findByName(name)
+		expect(results.length).toBe(models.length)
+
+		// Testing second batch to make sure not all
+		const models2 = []
+		for (let x = 0; x < 20;x++) {
+
+			const model = new Fixtures.IDBModel1()
+
+			Object.assign(model,{
+				id: uuid.v4(),
+			    name: name2,
+				createdAt: Faker.date.past(),
+				randomText: Faker.lorem.words(10)
+			})
+
+			models2.push(model)
+		}
+
+		await repo.bulkSave(...models2)
+
+		const results2 = await repo.findByName(name2)
+		expect(results2.length).toBe(models2.length)
+
+		// Test name 1 again to confirm
+		results = await repo.findByName(name)
+		expect(results.length).toBe(models.length)
+
+		const keys = models.concat(models2).map(result => repo.key(result.id))
+		await repo.bulkRemove(...keys)
 		expect(await repo.count()).toBe(0)
 
 	})

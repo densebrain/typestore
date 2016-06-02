@@ -36,6 +36,7 @@ export interface IModelAttributeOptions {
 export interface IModelOptions {
 	clazzName?:string
 	clazz?:any
+	onlyMapDefinedAttributes?:boolean
 	tableName?:string
 	attrs?:IModelAttributeOptions[]
 }
