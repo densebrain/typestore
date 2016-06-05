@@ -26,8 +26,19 @@ export class ModelMapper<M extends IModel> implements IModelMapper<M> {
 		return null
 	}
 
+	private attrTransient(key:string) {
+		const attr = this.attr(key)
+		return (
+			this.modelOpts &&
+			this.modelOpts.transientAttrs &&
+			this.modelOpts.transientAttrs.includes(key)
+		) || (
+			attr && attr.transient === true
+		)
+	}
+
 	private attrPersists(key:string) {
-		return this.modelOpts.onlyMapDefinedAttributes !== true || this.attr(key)
+		return !this.attrTransient(key) && (this.modelOpts.onlyMapDefinedAttributes !== true || this.attr(key))
 	}
 
 	toJson(o:M):string {
@@ -38,7 +49,18 @@ export class ModelMapper<M extends IModel> implements IModelMapper<M> {
 
 	toObject(o:M):Object {
 		const obj = {}
-		for (let key of Object.keys(o)) {
+		const keys = Object.keys(o)
+
+		// Make sure key list is complete in case
+		// of definited props
+		for (let modelAttr of this.modelAttrs) {
+			const included = keys.includes(modelAttr.name)
+			if (modelAttr.transient && included)
+				keys.splice(keys.indexOf(modelAttr.name),1)
+			else if (!included)
+				keys.push(modelAttr.name)
+		}
+		for (let key of keys) {
 			if (this.attrPersists(key))
 				obj[key] = o[key]
 		}

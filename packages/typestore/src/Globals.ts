@@ -2,7 +2,6 @@
 export { }
 
 
-
 declare global {
 	interface ObjectConstructor {
 		assign(target: any, ...sources: any[]): any;
@@ -17,7 +16,7 @@ declare global {
 		arraysEqual(arr1:any[],arr2:any[]):boolean
 	}
 
-
+	
 }
 
 

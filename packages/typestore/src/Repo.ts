@@ -59,11 +59,21 @@ export class Repo<M extends IModel> {
 	constructor(public repoClazz:any,public modelClazz:{new ():M;}) {
 	}
 
+	protected getRepoPlugins() {
+		return PluginFilter<IRepoPlugin<M>>(this.plugins,PluginType.Repo)
+		// return this.plugins
+		// 	.filter((plugin) => isRepoPlugin(plugin)) as IRepoPlugin<M>[]
+	}
+
+	protected getFinderPlugins():IFinderPlugin[] {
+		return PluginFilter<IFinderPlugin>(this.plugins,PluginType.Finder)
+	}
+
 	init(coordinator) {
 		this.coordinator = coordinator
 		this.modelType = coordinator.getModel(this.modelClazz)
 		this.modelOpts = this.modelType.options
-		this.repoOpts = Reflect.getMetadata(TypeStoreRepoKey,this.repoClazz)
+		this.repoOpts = Reflect.getMetadata(TypeStoreRepoKey,this.repoClazz) || {}
 
 	}
 
@@ -80,15 +90,7 @@ export class Repo<M extends IModel> {
 		return new ModelMapper(clazz)
 	}
 
-	protected getRepoPlugins() {
-		return PluginFilter<IRepoPlugin<M>>(this.plugins,PluginType.Repo)
-		// return this.plugins
-		// 	.filter((plugin) => isRepoPlugin(plugin)) as IRepoPlugin<M>[]
-	}
 
-	protected getFinderPlugins():IFinderPlugin[] {
-		return PluginFilter<IFinderPlugin>(this.plugins,PluginType.Finder)
-	}
 
 	/**
 	 * Attach a plugin to the repo - could be a store,
@@ -215,7 +217,7 @@ export class Repo<M extends IModel> {
 		}
 
 		// Create all pending index promises
-		if (this.repoOpts.indexes)
+		if (this.repoOpts && this.repoOpts.indexes)
 			await Promise.all(this.repoOpts.indexes.reduce((promises,indexConfig) => {
 				return promises.concat(doIndex(indexConfig))
 			},[]))

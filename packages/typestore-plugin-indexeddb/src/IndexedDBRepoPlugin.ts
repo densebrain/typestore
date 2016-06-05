@@ -18,6 +18,7 @@ import {IndexedDBFinderKey} from "./IndexedDBConstants";
 import {IIndexedDBFinderOptions} from './IndexedDBDecorations'
 
 
+
 /**
  * Super simple plain jain key for now
  * what you send to the constructor comes out the
@@ -138,8 +139,9 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 	}
 
 	async save(o:M):Promise<M> {
-		const json = this.repo.getMapper(this.repo.modelClazz).toObject(o)
-		await this.table.add(json)
+		const mapper = this.mapper
+		const json = mapper.toObject(o)
+		await this.table.put(json)
 		return o
 	}
 
@@ -162,7 +164,7 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 		const jsons = models.map(model => mapper.toObject(model))
 
 		//await this.db.transaction('rw',this.table,async () => {
-		await this.table.bulkAdd(jsons)
+		await this.table.bulkPut(jsons)
 		//})
 		return models
 	}
