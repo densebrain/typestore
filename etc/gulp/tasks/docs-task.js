@@ -3,16 +3,19 @@
  * Run all compile tasks sequentially
  */
 function docs() {
+
 	return gulp
 		.src([
-			'packages/*/src/**/*.ts',
+			'packages/typestore/src/**/*.ts',
+			'packages/typestore/typings/browser.d.ts',
+			'typings/browser.d.ts',
+			// 'packages/*/src/**/*.ts',
 			'!packages/*/src/test/**/*.*'
 		])
 		.pipe(tsdoc({
 			module: 'commonjs',
-			target: 'es5',
+			target: 'es6',
 			includeDeclarations: false,
-			excludeExternals: true,
 			out: `${process.cwd()}/target/docs`,
 			name: 'TypeStore'
 

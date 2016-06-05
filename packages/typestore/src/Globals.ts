@@ -1,7 +1,5 @@
-///<reference path="../../../typings/browser/definitions/bluebird/index.d.ts"/>
 
 export { }
-
 
 
 declare global {
@@ -17,7 +15,7 @@ declare global {
 	interface ArrayConstructor {
 		arraysEqual(arr1:any[],arr2:any[]):boolean
 	}
-	
+
 	
 }
 
