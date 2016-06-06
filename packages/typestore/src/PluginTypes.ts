@@ -94,10 +94,17 @@ export interface ISearchProvider extends IRepoSupportPlugin {
 	search<R extends any>(modelType:IModelType,opts:ISearchOptions<R>,...args):Promise<R[]>
 }
 
+
+/**
+ * A plugin that supports specific models
+ */
 export interface IModelSupportPlugin extends IPlugin {
 	supportedModels:any[]
 }
 
+/**
+ * A plugin that provides repo capabilities
+ */
 export interface IRepoSupportPlugin extends IModelSupportPlugin {
 	initRepo<T extends Repo<M>,M extends IModel>(repo:T):T
 }
@@ -110,15 +117,22 @@ export interface IStorePlugin extends IRepoSupportPlugin {
 	syncModels():Promise<ICoordinator>
 }
 
+/**
+ * Plugin that provides finders
+ */
 export interface IFinderPlugin extends IModelSupportPlugin {
 	decorateFinder(repo:Repo<any>,finderKey:string)
 }
 
+
 export interface IRepoPlugin<M extends IModel> extends IModelSupportPlugin {
 	key?(...args):IKeyValue
 	get(key:IKeyValue):Promise<M>
+	bulkGet(...keys:IKeyValue[]):Promise<M[]>
 	save(o:M):Promise<M>
+	bulkSave(...o:M[]):Promise<M[]>
 	remove(key:IKeyValue):Promise<any>
+	bulkRemove(...key:IKeyValue[]):Promise<any[]>
 	count():Promise<number>
 }
 

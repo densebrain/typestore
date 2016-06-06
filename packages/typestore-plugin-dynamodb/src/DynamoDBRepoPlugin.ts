@@ -195,6 +195,8 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		return new DynamoDBKeyValue(this.tableDef.KeySchema,args[0],args[1])
 	}
 
+	
+
 	get(key:DynamoDBKeyValue):Promise<M> {
 		return this.store.get(this.makeParams({
 			Key: key.toParam()
@@ -205,12 +207,16 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	}
 
+	
+
 	save(o:M):Promise<M> {
 		return this.store.put(this.makeParams({Item:o as any}))
 			.then((result:DynamoDB.PutItemOutput) => {
 				return o
 			})
 	}
+	
+	
 
 	async remove(key:DynamoDBKeyValue):Promise<any> {
 		await this.store.delete(this.makeParams({
@@ -222,5 +228,21 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		const tableDesc = await this.store.describeTable(this.tableName)
 		return tableDesc.ItemCount
 
+	}
+
+
+	async bulkGet(...keys:DynamoDBKeyValue[]):Promise<M[]> {
+		const promises = keys.map(key => this.get(key))
+		return await Promise.all(promises)
+	}
+
+	async bulkSave(...models:M[]):Promise<M[]> {
+		const promises = models.map(model => this.save(model))
+		return await Promise.all(promises)
+	}
+
+	async bulkRemove(...keys:DynamoDBKeyValue[]):Promise<any[]> {
+		const promises = keys.map(key => this.remove(key))
+		return await Promise.all(promises)
 	}
 }

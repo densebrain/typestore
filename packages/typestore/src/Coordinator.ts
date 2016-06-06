@@ -33,7 +33,7 @@ export class Coordinator implements ICoordinator {
 	notify(eventType:PluginEventType,...args:any[]) {
 		this.plugins.forEach(plugin => plugin.handle(eventType,...args))
 	}
-	
+
 	/**
 	 * Model registration map type
 	 */
@@ -48,11 +48,11 @@ export class Coordinator implements ICoordinator {
 	 *
 	 * @type {{}}
 	 */
-	
+
 	private modelMap:TModelTypeMap = {}
 	private models:IModelType[] = []
-	
-	
+
+
 	/**
 	 * Retrieve model registrations
 	 *
@@ -69,14 +69,14 @@ export class Coordinator implements ICoordinator {
 			}
 		}
 
-		log.info('unable to find registered model for clazz in',Object.keys(this.modelMap))
+		log.debug('unable to find registered model for clazz in',Object.keys(this.modelMap))
 		return null
 	}
-	
+
 	getModel(clazz:any):IModelType {
 		return this.findModel((model) => model.clazz === clazz)
 	}
-	
+
 	getModelByName(name:string):IModelType {
 		return this.findModel((model) => model.name === name)
 	}
@@ -89,8 +89,8 @@ export class Coordinator implements ICoordinator {
 	getOptions() {
 		return this.options
 	}
-	
-	
+
+
 	private initialized = false
 
 	// NOTE: settled and settling Promise are overriden properties - check below namespace
@@ -102,12 +102,12 @@ export class Coordinator implements ICoordinator {
 	get started() {
 		return this.startPromise !== null && this.internal.started
 	}
-	
+
 	set started(newVal:boolean) {
 		this.internal.started = newVal
 	}
-	
-	
+
+
 
 	private checkInitialized(not:boolean = false) {
 		this.checkStarted(true)
@@ -126,8 +126,8 @@ export class Coordinator implements ICoordinator {
 	stores() {
 		return PluginFilter<IStorePlugin>(this.plugins,PluginType.Store)
 	}
-	
-	
+
+
 
 	/**
 	 * Set the coordinator options
@@ -176,13 +176,13 @@ export class Coordinator implements ICoordinator {
 		return this
 
 	}
-	
+
 	async stop():Promise<ICoordinator> {
 		if (!this.started)
 			return this
-		
+
 		try {
-			await (this.startPromise) ? 
+			await (this.startPromise) ?
 				this.startPromise.then(this.stopPlugins.bind(this)) :
 				this.stopPlugins()
 		} catch (err) {
@@ -230,8 +230,8 @@ export class Coordinator implements ICoordinator {
 
 	async stopPlugins() {
 		await PromiseMap(this.plugins, plugin => (plugin) && plugin.stop())
-	} 
-	
+	}
+
 	/**
 	 * Reset the coordinator status
 	 *
@@ -239,7 +239,7 @@ export class Coordinator implements ICoordinator {
 	 */
 	async reset():Promise<ICoordinator> {
 		await this.stop()
-		
+
 
 		return this
 
@@ -257,7 +257,7 @@ export class Coordinator implements ICoordinator {
 
 		let model = this.getModel(constructor)
 		if (model) {
-			log.info(`Trying to register ${model.name} a second time? is autoregister enabled?`)
+			log.debug(`Trying to register ${model.name} a second time? is autoregister enabled?`)
 			return
 		}
 
@@ -284,9 +284,9 @@ export class Coordinator implements ICoordinator {
 	getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T {
 		const repo = new clazz()
 		repo.init(this)
-		
+
 		this.notify(PluginEventType.RepoInit,repo)
-		
+
 		repo.start()
 		return repo
 	}

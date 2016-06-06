@@ -1,6 +1,6 @@
 import * as Log from '../log'
 import {
-	TypeStoreAttrKey, 
+	TypeStoreAttrKey,
 	TypeStoreModelKey
 } from "../Constants";
 import {getMetadataReturnType,getMetadataType,getMetadata,setMetadata} from '../MetadataManager'
@@ -9,10 +9,34 @@ import {getMetadataReturnType,getMetadataType,getMetadata,setMetadata} from '../
 const log = Log.create(__filename)
 
 /**
+ * Internal map for property values
+ *
+ * @type {WeakMap<any, any>}
+ */
+const propertyValues = new WeakMap<any,any>()
+
+/**
+ * Simply function to get retype object properties
+ *
+ * @param target
+ * @returns {any}
+ */
+function getProps(target) {
+	let props = propertyValues.get(target)
+	if (!props) {
+		props = {}
+		propertyValues.set(target,props)
+	}
+
+	return props
+}
+
+/**
  * Attribute index configuration
  */
 export interface IModelAttributeIndex {
 	name:string
+	unique?:boolean
 	isSecondaryKey?:boolean
 	secondaryKey?:string
 }
@@ -27,6 +51,7 @@ export interface IModelAttributeOptions {
 	primaryKey?:boolean
 	secondaryKey?:boolean
 	index?: IModelAttributeIndex
+	transient?:boolean
 }
 
 /**
@@ -36,8 +61,10 @@ export interface IModelAttributeOptions {
 export interface IModelOptions {
 	clazzName?:string
 	clazz?:any
+	onlyMapDefinedAttributes?:boolean
 	tableName?:string
 	attrs?:IModelAttributeOptions[]
+	transientAttrs?:string[]
 }
 
 export interface IModelKey {
@@ -77,6 +104,34 @@ export function ModelDescriptor(opts:IModelOptions = {}) {
 		log.debug(`Decorating: ${finalOpts.clazzName}`)
 		Reflect.defineMetadata(TypeStoreModelKey,finalOpts,constructor)
 
+	}
+}
+
+export type DefaultValueFn = (o:any) => any
+
+export function DefaultValue(defaultValueFn:DefaultValueFn) {
+	return function (target:any,propertyKey:string) {
+
+
+		Object.defineProperty(target,propertyKey, {
+			set: function(newVal) {
+				const props = getProps(this)
+				if (props[propertyKey] === newVal)
+					return
+
+				props[propertyKey] = newVal
+			},
+			get: function() {
+				const props = getProps(this)
+
+				let val = props[propertyKey]
+				if (typeof val === 'undefined' || val == null) {
+					val = props[propertyKey] = defaultValueFn(this)
+				}
+
+				return val
+			}
+		})
 	}
 }
 

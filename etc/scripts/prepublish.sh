@@ -42,4 +42,4 @@ done
 #installPackage "typestore-plugin-dynamodb"
 #installPackage "typestore-plugin-cloudsearch"
 
-echo "Ready to Code"
+echo "Home to Code"

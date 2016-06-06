@@ -16,9 +16,10 @@
     "json-loader": "^0.5.4",
     "source-map-loader": "^0.1.5",
     "webpack": "^2.1.0-beta.7",
-    "webpack-dev-server": "^2.1.0-beta.0"
+    "webpack-dev-server": "^2.1.0-beta.0",
+    "awesome-typescript-loader": "^0.17.0"
   },
   "devDependencies": {
-    "awesome-typescript-loader": "^0.17.0"
+
   }
 }

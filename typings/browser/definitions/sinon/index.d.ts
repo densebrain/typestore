@@ -14,7 +14,7 @@ module Sinon {
         exception: any;
         returnValue: any;
 
-        // Methods
+        // HttpMethod
         calledOn(obj: any): boolean;
         calledWith(...args: any[]): boolean;
         calledWithExactly(...args: any[]): boolean;
@@ -58,7 +58,7 @@ module Sinon {
         exceptions: any[];
         returnValues: any[];
 
-        // Methods
+        // HttpMethod
         (...args: any[]): any;
         calledBefore(anotherSpy: SinonSpy): boolean;
         calledAfter(anotherSpy: SinonSpy): boolean;
@@ -243,7 +243,7 @@ module Sinon {
         getResponseHeader(header: string): string;
         getAllResponseHeaders(): any;
 
-        // Methods
+        // HttpMethod
         restore(): void;
         useFilters: boolean;
         addFilter(filter: (method: string, url: string, async: boolean, username: string, password: string) => boolean): void;
@@ -271,7 +271,7 @@ module Sinon {
         requests: SinonFakeXMLHttpRequest[];
         respondImmediately: boolean;
 
-        // Methods
+        // HttpMethod
         respondWith(body: string): void;
         respondWith(response: any[]): void;
         respondWith(fn: (xhr: SinonFakeXMLHttpRequest) => void): void;
@@ -311,7 +311,7 @@ module Sinon {
         fail: (message?: string) => void; // Overridable
         pass: (assertion: any) => void; // Overridable
 
-        // Methods
+        // HttpMethod
         notCalled(spy: SinonSpy): void;
         called(spy: SinonSpy): void;
         calledOnce(spy: SinonSpy): void;

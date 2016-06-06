@@ -13,7 +13,7 @@ export * from './PluginTypes'
  * Options for repo decorations
  */
 export interface IRepoOptions {
-	indexes?:IIndexOptions[]
+	indexes?:Array<IIndexOptions>
 }
 
 /**

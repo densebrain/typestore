@@ -52,12 +52,12 @@ export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		return new MockKeyValue(args)
 	}
 
-	
+
 	get(key:IKeyValue):Promise<M> {
 		if (!(key instanceof MockKeyValue)) {
 			return null
 		}
-		
+
 		return Promise.resolve(new this.repo.modelClazz()) as Promise<M>
 	}
 
@@ -73,5 +73,22 @@ export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	count():Promise<number> {
 		return Promise.resolve(this.recordCount)
+	}
+
+
+
+	async bulkGet(...keys:IKeyValue[]):Promise<M[]> {
+		const promises = keys.map(key => this.get(key))
+		return await Promise.all(promises)
+	}
+
+	async bulkSave(...models:M[]):Promise<M[]> {
+		const promises = models.map(model => this.save(model))
+		return await Promise.all(promises)
+	}
+
+	async bulkRemove(...keys:IKeyValue[]):Promise<any[]> {
+		const promises = keys.map(key => this.remove(key))
+		return await Promise.all(promises)
 	}
 }

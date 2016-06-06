@@ -13,7 +13,7 @@ import {
 	IPlugin,
 	IModelMapper,
 	ISearchOptions,
-	IRepoPlugin, 
+	IRepoPlugin,
 	IFinderPlugin,
 	IIndexerPlugin,
 	PluginType
@@ -33,12 +33,12 @@ const log = Log.create(__filename)
 
 /**
  * The core Repo implementation
- * 
+ *
  * When requested from the coordinator,
- * it offers itself to all configured plugins for 
+ * it offers itself to all configured plugins for
  * them to attach to the model pipeline
- * 
- * 
+ *
+ *
  */
 export class Repo<M extends IModel> {
 
@@ -59,11 +59,21 @@ export class Repo<M extends IModel> {
 	constructor(public repoClazz:any,public modelClazz:{new ():M;}) {
 	}
 
+	protected getRepoPlugins() {
+		return PluginFilter<IRepoPlugin<M>>(this.plugins,PluginType.Repo)
+		// return this.plugins
+		// 	.filter((plugin) => isRepoPlugin(plugin)) as IRepoPlugin<M>[]
+	}
+
+	protected getFinderPlugins():IFinderPlugin[] {
+		return PluginFilter<IFinderPlugin>(this.plugins,PluginType.Finder)
+	}
+
 	init(coordinator) {
 		this.coordinator = coordinator
 		this.modelType = coordinator.getModel(this.modelClazz)
 		this.modelOpts = this.modelType.options
-		this.repoOpts = Reflect.getMetadata(TypeStoreRepoKey,this.repoClazz)
+		this.repoOpts = Reflect.getMetadata(TypeStoreRepoKey,this.repoClazz) || {}
 
 	}
 
@@ -80,20 +90,12 @@ export class Repo<M extends IModel> {
 		return new ModelMapper(clazz)
 	}
 
-	protected getRepoPlugins() {
-		return PluginFilter<IRepoPlugin<M>>(this.plugins,PluginType.Repo)
-		// return this.plugins
-		// 	.filter((plugin) => isRepoPlugin(plugin)) as IRepoPlugin<M>[]
-	}
 
-	protected getFinderPlugins():IFinderPlugin[] {
-		return PluginFilter<IFinderPlugin>(this.plugins,PluginType.Finder)
-	}
 
 	/**
 	 * Attach a plugin to the repo - could be a store,
 	 * indexer, etc, etc
-	 * 
+	 *
 	 * @param plugin
 	 * @returns {Repo}
 	 */
@@ -103,10 +105,10 @@ export class Repo<M extends IModel> {
 		} else {
 			this.plugins.push(plugin)
 		}
-		
+
 		return this
 	}
-	
+
 	getFinderOptions(finderKey:string):IFinderOptions {
 		return getMetadata(
 			TypeStoreFinderKey,
@@ -114,7 +116,7 @@ export class Repo<M extends IModel> {
 			finderKey
 		) as IFinderOptions
 	}
-	
+
 	decorateFinders() {
 		const finderKeys = Reflect.getMetadata(TypeStoreFindersKey,this)
 		if (finderKeys) {
@@ -167,7 +169,7 @@ export class Repo<M extends IModel> {
 					searchOpts,
 					args
 				)
-		
+
 
 			// Once the provider returns the resulting data,
 			// pass it to the mapper to get keys
@@ -180,13 +182,13 @@ export class Repo<M extends IModel> {
 			})
 
 			return keys.map(async (key) => await this.get(key))
-			
+
 		}
 	}
 
 	/**
 	 * Set a finder function on the repo
-	 * 
+	 *
 	 * @param finderKey
 	 * @param finderFn
 	 */
@@ -215,7 +217,7 @@ export class Repo<M extends IModel> {
 		}
 
 		// Create all pending index promises
-		if (this.repoOpts.indexes)
+		if (this.repoOpts && this.repoOpts.indexes)
 			await Promise.all(this.repoOpts.indexes.reduce((promises,indexConfig) => {
 				return promises.concat(doIndex(indexConfig))
 			},[]))
@@ -304,7 +306,7 @@ export class Repo<M extends IModel> {
 
 	}
 
-	
+
 	/**
 	 * Count models
 	 *
@@ -313,6 +315,54 @@ export class Repo<M extends IModel> {
 	async count():Promise<number> {
 		let results = await Promise.all(this.getRepoPlugins().map(async (plugin) => await plugin.count()))
 		return results.reduce((prev,current) => prev + current)
+
+	}
+
+	async bulkGet(...keys:IKeyValue[]):Promise<M[]> {
+		let results =  await PromiseMap(
+			this.getRepoPlugins(), plugin => plugin.bulkGet(...keys)
+		)
+
+		return results.reduce((allResults,result) => {
+			return allResults.concat(result)
+		},[])
+
+	}
+
+	async bulkSave(...models:M[]):Promise<M[]> {
+		let results =  await PromiseMap(
+			this.getRepoPlugins(), plugin => plugin.bulkSave(...models)
+		)
+
+		results = results.reduce((allResults,result) => {
+			return allResults.concat(result)
+		},[])
+
+		await this.indexPromise(IndexAction.Add)(results)
+		for (let result of results) {
+			if (result)
+				return result
+		}
+
+		const promises = models.map(model => this.save(model))
+		return await Promise.all(promises)
+	}
+
+	async bulkRemove(...keys:IKeyValue[]):Promise<any[]> {
+		const models = await this.bulkGet(...keys)
+		if (models.length != keys.length)
+			throw new Error('Not all keys exist')
+
+		await PromiseMap(
+			this.getRepoPlugins(), plugin => plugin.bulkRemove(...keys)
+		)
+
+		// results = results.reduce((allResults,result) => {
+		// 	return allResults.concat(result)
+		// },[])
+
+		return this.indexPromise(IndexAction.Remove)(models)
+
 
 	}
 }

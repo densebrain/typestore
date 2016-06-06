@@ -13,7 +13,7 @@ module.exports = {
 		path: __dirname + '/dist',
 		filename: 'bundle.js'
 	},
-	
+
 	// Currently we need to add '.ts' to the resolve.extensions array.
 	resolve: {
 		alias: {

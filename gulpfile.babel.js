@@ -4,8 +4,6 @@ require('./etc/global-env')
 
 
 const 
-	fs = require('fs'),
-	path = require('path'),
 	gulp = require('gulp'),
 	del = require('del'),
 	tsdoc = require('gulp-typedoc'),
