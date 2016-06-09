@@ -1,4 +1,4 @@
-import 'reflect-metadata'
+//import 'reflect-metadata'
 import {Repo} from "./Repo"
 import {NoReflectionMetataError} from './Errors'
 import {IModel, IModelType} from "./ModelTypes"
@@ -7,6 +7,14 @@ import {IIndexOptions,IPlugin} from "./PluginTypes";
 
 export * from './ModelTypes'
 export * from './PluginTypes'
+
+
+export enum ModelPersistenceEventType {
+	Save,
+	Remove
+}
+
+export type ModelPersistenceEventCallback<M> = (type:ModelPersistenceEventType,...models:M[]) => void
 
 
 /**
@@ -70,7 +78,7 @@ export class CoordinatorOptions implements ICoordinatorOptions {
 
 	/**
 	 * Default manager options
-	 * 
+	 *
 	 * @type {{autoRegisterModules: boolean, syncStrategy: SyncStrategy, immutable: boolean}}
 	 */
 	static Defaults = {
@@ -78,7 +86,7 @@ export class CoordinatorOptions implements ICoordinatorOptions {
 		syncStrategy: SyncStrategy.None,
 		immutable: false
 	}
-	
+
 	constructor(opts = {}) {
 		Object.assign(this,opts,CoordinatorOptions.Defaults)
 	}

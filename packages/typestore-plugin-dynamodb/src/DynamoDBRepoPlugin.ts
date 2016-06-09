@@ -1,4 +1,3 @@
-///<reference path="../typings/typestore-plugin-dynamodb"/>
 
 import assert = require('assert')
 import * as _ from 'lodash'
@@ -7,13 +6,15 @@ import {DynamoDB} from 'aws-sdk'
 import {
 	Log,Repo,PluginEventType,
 	IModel,PluginType,IRepoPlugin,Coordinator,
-	ICoordinatorOptions,getMetadata
+	ICoordinatorOptions,getMetadata,
+	ModelPersistenceEventType
 } from 'typestore'
 
 import {DynamoDBStorePlugin} from "./DynamoDBStorePlugin";
 import {IDynamoDBFinderOptions, DynamoDBFinderType} from "./DynamoDBTypes";
 import {DynamoDBFinderKey} from "./DynamoDBConstants";
 import {DynamoDBKeyValue} from "./DynamoDBKeyValue";
+
 
 const log = Log.create(__filename)
 const MappedFinderParams = {
@@ -29,15 +30,15 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	type = PluginType.Repo | PluginType.Finder
 	supportedModels:any[]
-	
+
 	private tableDef:DynamoDB.CreateTableInput
 	private coordinator:Coordinator
 
 	constructor(private store:DynamoDBStorePlugin, public repo:Repo<M>) {
 		assert(repo,'Repo is required and must have a valid prototype')
-		
+
 		repo.attach(this)
-		
+
 		this.coordinator = this.store.coordinator
 
 		// Grab the table definition
@@ -66,7 +67,7 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	/**
 	 * Table name for this repo
-	 * 
+	 *
 	 * @returns {TableName}
 	 */
 	get tableName() {
@@ -75,7 +76,7 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	/**
 	 * DynamoDB API parameter helper
-	 * 
+	 *
 	 * @param params
 	 * @returns {({TableName: TableName}&{})|any}
 	 */
@@ -122,7 +123,7 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 	/**
 	 * Create the actual finder function
 	 * that is used by the repo
-	 * 
+	 *
 	 * @param repo
 	 * @param finderKey
 	 * @param finderOpts
@@ -195,7 +196,7 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		return new DynamoDBKeyValue(this.tableDef.KeySchema,args[0],args[1])
 	}
 
-	
+
 
 	get(key:DynamoDBKeyValue):Promise<M> {
 		return this.store.get(this.makeParams({
@@ -207,21 +208,30 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	}
 
-	
 
-	save(o:M):Promise<M> {
-		return this.store.put(this.makeParams({Item:o as any}))
-			.then((result:DynamoDB.PutItemOutput) => {
-				return o
-			})
+
+	async save(model:M):Promise<M> {
+		await this.store.put(this.makeParams({Item:model as any}))
+
+		this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save,model)
+
+		return model
 	}
-	
-	
+
+
 
 	async remove(key:DynamoDBKeyValue):Promise<any> {
-		await this.store.delete(this.makeParams({
+		const model = (this.repo.supportPersistenceEvents()) ?
+			await this.get(key) : null
+
+		const result = await this.store.delete(this.makeParams({
 			Key: key.toParam()
 		}))
+
+		if (model)
+			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove,model)
+
+		return result
 	}
 
 	async count():Promise<number> {
@@ -238,11 +248,19 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 	async bulkSave(...models:M[]):Promise<M[]> {
 		const promises = models.map(model => this.save(model))
+		this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save,...models)
 		return await Promise.all(promises)
 	}
 
 	async bulkRemove(...keys:DynamoDBKeyValue[]):Promise<any[]> {
-		const promises = keys.map(key => this.remove(key))
+		const models = (this.repo.supportPersistenceEvents()) ?
+			await this.bulkGet(...keys) : null
+
+		const promises = keys.map(async (key) => await this.remove(key))
+
+		if (models)
+			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove,...models)
+
 		return await Promise.all(promises)
 	}
 }

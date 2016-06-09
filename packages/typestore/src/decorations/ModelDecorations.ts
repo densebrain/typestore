@@ -3,8 +3,8 @@ import {
 	TypeStoreAttrKey,
 	TypeStoreModelKey
 } from "../Constants";
+import {ModelPersistenceEventCallback,ModelPersistenceEventType} from '../Types'
 import {getMetadataReturnType,getMetadataType,getMetadata,setMetadata} from '../MetadataManager'
-
 
 const log = Log.create(__filename)
 
@@ -30,6 +30,7 @@ function getProps(target) {
 
 	return props
 }
+
 
 /**
  * Attribute index configuration
@@ -65,6 +66,7 @@ export interface IModelOptions {
 	tableName?:string
 	attrs?:IModelAttributeOptions[]
 	transientAttrs?:string[]
+	onPersistenceEvent?:ModelPersistenceEventCallback<any>
 }
 
 export interface IModelKey {

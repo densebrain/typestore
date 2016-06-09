@@ -1,9 +1,8 @@
 import 'reflect-metadata'
-import * as Log from '../../log'
+import {getLogger} from 'typelogger'
 import {ModelDescriptor, AttributeDescriptor} from "../../Decorations";
 
-
-const log = Log.create(__filename)
+const log = getLogger(__filename)
 
 @ModelDescriptor({tableName:'testTable_manager1'})
 export class ModelTest1 {
