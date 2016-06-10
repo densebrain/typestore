@@ -68,7 +68,7 @@ module.exports = function(projectName) {
 			cp('./README.md',targetDir)
 
 		const targetPackageJsonFile = `${targetDir}/package.json`
-		const packageJson = readJSONFileSync(targetPackageJsonFile)
+		const packageJson = readJSONFile(targetPackageJsonFile)
 		const deps = packageJson.dependencies || {}
 		const devDeps = packageJson.devDependencies || {}
 
@@ -92,8 +92,8 @@ module.exports = function(projectName) {
 
 		})
 
-		
-		
+
+
 		// Add core package dependencies
 		if (!projectConfig.excludeCore) {
 			packageJson.dependencies['typestore'] = nextMinorVersion

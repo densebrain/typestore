@@ -10,7 +10,7 @@ export * from './PluginTypes'
 
 
 export enum ModelPersistenceEventType {
-	Save,
+	Save = 1,
 	Remove
 }
 
