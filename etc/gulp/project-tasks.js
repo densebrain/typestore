@@ -68,7 +68,7 @@ module.exports = function(projectName) {
 			cp('./README.md',targetDir)
 
 		const targetPackageJsonFile = `${targetDir}/package.json`
-		const packageJson = readJSONFile(targetPackageJsonFile)
+		const packageJson = readJSONFileSync(targetPackageJsonFile)
 		const deps = packageJson.dependencies || {}
 		const devDeps = packageJson.devDependencies || {}
 

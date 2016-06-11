@@ -205,6 +205,9 @@ export class Repo<M extends IModel> {
 	 * @param models
 	 */
 	triggerPersistenceEvent(type:ModelPersistenceEventType,...models:any[]) {
+		if (models.length < 1)
+			return
+
 		const {onPersistenceEvent} = this.modelType.options
 		onPersistenceEvent && onPersistenceEvent(type,...models)
 	}
