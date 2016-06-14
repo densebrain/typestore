@@ -1,6 +1,8 @@
 const fs = require('fs')
 const makeSrcGlobs = require('./project-srcs')
 const tsBaseConfig = readJSONFileSync(`${processDir}/etc/tsconfig.base.json`)
+const path = require('path')
+
 /**
  * Create a TS config for this project
  * using tsconfig.base.json, write it to disk
@@ -24,7 +26,7 @@ function makeTypeScriptConfig(project,isGlobalConfig = false) {
 
 
 	_.assign(tsCompilerOptions,{
-		baseUrl: configBaseDir,
+		baseUrl: path.resolve(configBaseDir,'src'),
 		paths: projectNames.reduce((projectPaths,name) => {
 			return Object.assign(projectPaths, {
 				[name]: [makePackageDir(name,'index')],
@@ -51,7 +53,7 @@ function makeTypeScriptConfig(project,isGlobalConfig = false) {
 		typescript: tsc
 	})
 
-	
+
 
 	return {
 		tsConfig,

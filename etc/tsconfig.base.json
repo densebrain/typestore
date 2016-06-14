@@ -8,8 +8,7 @@
 		"experimentalDecorators": true,
 		"preserveConstEnums": true,
 		"allowSyntheticDefaultImports": true,
-		"sourceMap": true,
-		"outDir": "dist"
+		"sourceMap": true
 	},
 
 

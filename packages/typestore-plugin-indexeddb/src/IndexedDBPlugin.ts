@@ -30,13 +30,15 @@ export interface IIndexedDBOptions {
 	 */
 	databaseName?:string
     provider?: {indexedDB:any,IDBKeyRange:any}
+    version?:number
 }
 
 /**
  * Default options
  */
 export const LocalStorageOptionDefaults = {
-	databaseName: 'typestore-db'
+	databaseName: 'typestore-db',
+	version: 1
 }
 
 /**
@@ -126,7 +128,7 @@ export class IndexedDBPlugin implements IStorePlugin {
 		},{})
 
 		// Check for an existing database, version, schema
-		let version = 1
+		let {version} = this.opts
 		await new Promise((resolve,reject) => {
 			const db = this.newDexie()
 			db.open()
@@ -187,7 +189,10 @@ export class IndexedDBPlugin implements IStorePlugin {
 
 
 		log.debug(`Creating schema`,schema)
-		this.open().version(1).stores(schema)
+		this.open()
+			.version(version)
+			.stores(schema)
+
 		await new Promise((resolve,reject) => {
 			this.internalDb.open().then(resolve).catch(reject)
 		})

@@ -92,8 +92,8 @@ module.exports = function(projectName) {
 
 		})
 
-		
-		
+
+
 		// Add core package dependencies
 		if (!projectConfig.excludeCore) {
 			packageJson.dependencies['typestore'] = nextMinorVersion

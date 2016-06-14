@@ -1,4 +1,4 @@
-import 'reflect-metadata'
+//import 'reflect-metadata'
 import './Globals'
 import {IModel, IModelType} from "./ModelTypes";
 import {Repo} from "./Repo";

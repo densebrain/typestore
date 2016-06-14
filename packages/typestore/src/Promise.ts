@@ -7,9 +7,9 @@ Bluebird.config({
 })
 
 
-const Log = require('./log')
-const log = Log.create(__filename)
-const {msg,Strings} = require('./Messages')
+// const Log = require('./log')
+// const log = Log.create(__filename)
+
 
 // process.on("unhandledRejection", function (reason, promise) {
 // 	log.error(msg(Strings.PromiseUnhandledRejection, reason), reason.stack, reason,promise)

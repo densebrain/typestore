@@ -1,4 +1,4 @@
-import 'reflect-metadata'
+//import 'reflect-metadata'
 import './Globals'
 
 Promise = require('bluebird')
@@ -164,7 +164,7 @@ export class Coordinator implements ICoordinator {
 	 */
 	async start(...models):Promise<ICoordinator> {
 		this.checkStarted(true)
-		models.forEach(this.registerModel.bind(this))
+		models.forEach(model => this.registerModel(model))
 
 		try {
 			this.startPromise = PromiseMap(this.plugins, plugin => (plugin) && plugin.start())

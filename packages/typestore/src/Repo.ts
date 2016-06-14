@@ -16,6 +16,7 @@ import {
 	IRepoPlugin,
 	IFinderPlugin,
 	IIndexerPlugin,
+	ModelPersistenceEventType,
 	PluginType
 } from "./Types"
 import {Coordinator} from './Coordinator'
@@ -194,6 +195,26 @@ export class Repo<M extends IModel> {
 	 */
 	protected setFinder(finderKey:string,finderFn:(...args) => any) {
 		this[finderKey] = finderFn
+	}
+
+	/**
+	 * Triggers manually attached persistence callbacks
+	 * - works for internal indexing solutions, etc
+	 *
+	 * @param type
+	 * @param models
+	 */
+	triggerPersistenceEvent(type:ModelPersistenceEventType,...models:any[]) {
+		if (models.length < 1)
+			return
+
+		const {onPersistenceEvent} = this.modelType.options
+		onPersistenceEvent && onPersistenceEvent(type,...models)
+	}
+
+	supportPersistenceEvents() {
+		const {onPersistenceEvent} = this.modelType.options
+		return typeof onPersistenceEvent !== 'undefined' && onPersistenceEvent !== null
 	}
 
 	/**

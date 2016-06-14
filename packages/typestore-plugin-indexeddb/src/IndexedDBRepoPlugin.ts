@@ -9,7 +9,8 @@ import {
 	PluginEventType,
 	IFinderPlugin,
 	getMetadata,
-	IModelMapper
+	IModelMapper,
+	ModelPersistenceEventType
 } from 'typestore'
 
 import {IndexedDBPlugin} from "./IndexedDBPlugin";
@@ -51,6 +52,14 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 		repo.attach(this)
 	}
 
+	/**
+	 * Create a finder method with descriptor
+	 * and signature
+	 *
+	 * @param repo
+	 * @param finderKey
+	 * @returns {any}
+	 */
 	decorateFinder(repo:Repo<any>, finderKey:string) {
 		const finderOpts = getMetadata(
 			IndexedDBFinderKey,
@@ -78,18 +87,40 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 		}
 	}
 
+	/**
+	 * Handle a plugin event
+	 *
+	 * @param eventType
+	 * @param args
+	 * @returns {boolean}
+	 */
 	handle(eventType:PluginEventType, ...args):boolean|any {
 		return false;
 	}
 
+	/**
+	 * Model mapper
+	 *
+	 * @returns {IModelMapper<M>}
+	 */
 	get mapper():IModelMapper<M> {
 		return this.repo.getMapper(this.repo.modelClazz)
 	}
 
+	/**
+	 * Get dexie table
+	 *
+	 * @returns {Dexie.Table<any, any>}
+	 */
 	get table():Dexie.Table<any,any> {
 		return this.store.table(this.repo.modelType)
 	}
 
+	/**
+	 * Get db ref
+	 *
+	 * @returns {Dexie}
+	 */
 	get db() {
 		return this.store.db
 	}
@@ -138,16 +169,25 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 
 	}
 
-	async save(o:M):Promise<M> {
+	async save(model:M):Promise<M> {
 		const mapper = this.mapper
-		const json = mapper.toObject(o)
+		const json = mapper.toObject(model)
 		await this.table.put(json)
-		return o
+		this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save,model)
+
+		return model
 	}
 
-	// FIXME: Need to implement key support - tests are more important
-	remove(key:IndexedDBKeyValue):Promise<any> {
-		return Promise.resolve(this.table.delete(key.args[0]));
+	async remove(key:IndexedDBKeyValue):Promise<any> {
+		const model = (this.repo.supportPersistenceEvents()) ?
+			await this.get(key) : null
+
+		const result = await this.table.delete(key.args[0])
+
+		if (model)
+			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove,model)
+
+		return Promise.resolve(result);
 	}
 
 	count():Promise<number> {
@@ -163,18 +203,23 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 		const mapper = this.repo.getMapper(this.repo.modelClazz)
 		const jsons = models.map(model => mapper.toObject(model))
 
-		//await this.db.transaction('rw',this.table,async () => {
 		await this.table.bulkPut(jsons)
-		//})
+		this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save,...models)
+
 		return models
 	}
 
 	async bulkRemove(...keys:IndexedDBKeyValue[]):Promise<any[]> {
+		const models = (this.repo.supportPersistenceEvents()) ?
+			await this.bulkGet(...keys) : null
+
 		const dbKeys = keys.map(key => this.dbKeyFromKey(key))
-		//await this.db.transaction('rw',this.table,async () => {
+
 		await this.table.bulkDelete(dbKeys)
-		//})
-		//const promises = keys.map(key => this.remove(key))
+
+		if (models)
+			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove,...models)
+
 		return keys
 	}
 }
