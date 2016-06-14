@@ -15,6 +15,7 @@ import {
 	repoAttachIfSupported,
 	IModelAttributeOptions
 } from 'typestore'
+
 import {IndexedDBRepoPlugin} from "./IndexedDBRepoPlugin";
 
 
