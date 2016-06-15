@@ -10,9 +10,10 @@ import {
 	IModel,
 	IRepoPlugin,
 	PluginType,
-	PluginEventType
+	PluginEventType,
+	TKeyValue
 } from 'typestore'
-import {MockKeyValue} from "./MockStore";
+import {MockKeyValue} from "./MockStore"
 
 
 export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
@@ -53,7 +54,7 @@ export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 	}
 
 
-	get(key:IKeyValue):Promise<M> {
+	get(key:TKeyValue):Promise<M> {
 		if (!(key instanceof MockKeyValue)) {
 			return null
 		}
@@ -66,7 +67,7 @@ export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		return Promise.resolve(o)
 	}
 
-	remove(key:IKeyValue):Promise<any> {
+	remove(key:TKeyValue):Promise<any> {
 		this.recordCount--
 		return Promise.resolve({})
 	}
@@ -77,7 +78,7 @@ export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 
 
-	async bulkGet(...keys:IKeyValue[]):Promise<M[]> {
+	async bulkGet(...keys:TKeyValue[]):Promise<M[]> {
 		const promises = keys.map(key => this.get(key))
 		return await Promise.all(promises)
 	}
@@ -87,7 +88,7 @@ export class MockRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 		return await Promise.all(promises)
 	}
 
-	async bulkRemove(...keys:IKeyValue[]):Promise<any[]> {
+	async bulkRemove(...keys:TKeyValue[]):Promise<any[]> {
 		const promises = keys.map(key => this.remove(key))
 		return await Promise.all(promises)
 	}

@@ -3,7 +3,7 @@ import './Globals'
 import {IModel, IModelType} from "./ModelTypes";
 import {Repo} from "./Repo";
 import {ICoordinator, ICoordinatorOptions} from "./Types";
-import {IModelKey, IKeyValue} from "./decorations/ModelDecorations";
+import {IModelKey, IKeyValue, TKeyValue} from "./decorations/ModelDecorations";
 
 
 /**
@@ -127,12 +127,12 @@ export interface IFinderPlugin extends IModelSupportPlugin {
 
 export interface IRepoPlugin<M extends IModel> extends IModelSupportPlugin {
 	key?(...args):IKeyValue
-	get(key:IKeyValue):Promise<M>
-	bulkGet(...keys:IKeyValue[]):Promise<M[]>
+	get(key:TKeyValue):Promise<M>
+	bulkGet(...keys:TKeyValue[]):Promise<M[]>
 	save(o:M):Promise<M>
 	bulkSave(...o:M[]):Promise<M[]>
-	remove(key:IKeyValue):Promise<any>
-	bulkRemove(...key:IKeyValue[]):Promise<any[]>
+	remove(key:TKeyValue):Promise<any>
+	bulkRemove(...key:TKeyValue[]):Promise<any[]>
 	count():Promise<number>
 }
 

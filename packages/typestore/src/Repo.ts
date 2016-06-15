@@ -23,10 +23,18 @@ import {Coordinator} from './Coordinator'
 import {NotImplemented} from "./Errors"
 import * as Log from './log'
 
-import {isFunction, isRepoPlugin, isFinderPlugin, PluginFilter, PromiseMap, isIndexerPlugin} from "./Util"
+import {
+	isFunction,
+	isRepoPlugin,
+	isFinderPlugin,
+	PluginFilter,
+	PromiseMap,
+	isIndexerPlugin,
+	isNumberOrString
+} from "./Util"
 import {ModelMapper} from "./ModelMapper"
 import {IModelType} from "./ModelTypes"
-import {IModelOptions, IModelKey, IKeyValue} from "./decorations/ModelDecorations";
+import {IModelOptions, IModelKey, IKeyValue, TKeyValue} from "./decorations/ModelDecorations";
 import {getMetadata} from "./MetadataManager";
 
 
@@ -277,8 +285,8 @@ export class Repo<M extends IModel> {
 	 * @param key
 	 * @returns {null}
 	 */
-	async get(key:IKeyValue):Promise<M> {
-
+	async get(key:TKeyValue):Promise<M> {
+		//const useKey = isNumberOrString(key) ? key |
 		let results = this.getRepoPlugins().map(async (plugin) => await plugin.get(key))
 		for (let result of results) {
 			if (result)
@@ -315,7 +323,7 @@ export class Repo<M extends IModel> {
 	 * @param key
 	 * @returns {null}
 	 */
-	async remove(key:IKeyValue):Promise<any> {
+	async remove(key:TKeyValue):Promise<any> {
 		let model = await this.get(key)
 		if (!model) {
 			log.warn(`No model found to remove with key`,key)
@@ -339,7 +347,7 @@ export class Repo<M extends IModel> {
 
 	}
 
-	async bulkGet(...keys:IKeyValue[]):Promise<M[]> {
+	async bulkGet(...keys:TKeyValue[]):Promise<M[]> {
 		let results =  await PromiseMap(
 			this.getRepoPlugins(), plugin => plugin.bulkGet(...keys)
 		)
@@ -369,7 +377,7 @@ export class Repo<M extends IModel> {
 		return await Promise.all(promises)
 	}
 
-	async bulkRemove(...keys:IKeyValue[]):Promise<any[]> {
+	async bulkRemove(...keys:TKeyValue[]):Promise<any[]> {
 		const models = await this.bulkGet(...keys)
 		if (models.length != keys.length)
 			throw new Error('Not all keys exist')

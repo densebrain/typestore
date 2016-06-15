@@ -13,7 +13,7 @@ export class DynamoDBKeyValue implements IKeyValue {
 		const params:any = {}
 		this.keySchema.forEach((keyDef) => {
 			params[keyDef.AttributeName] =
-				(KeyType[keyDef.KeyType] === KeyType.HASH) ?
+				((KeyType as any)[keyDef.KeyType]  === KeyType.HASH) ?
 					this.hashValue :
 					this.rangeValue
 		})

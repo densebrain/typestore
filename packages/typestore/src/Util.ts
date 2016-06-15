@@ -1,14 +1,37 @@
-import {IPlugin, IRepoPlugin, PluginType, IStorePlugin, 
+import {IPlugin, IRepoPlugin, PluginType, IStorePlugin,
 	IIndexerPlugin, IFinderPlugin,IRepoSupportPlugin} from "./Types"
 import {Repo} from "./Repo"
 
+function isTypeOf(o,typeStr) {
+	return typeof o === typeStr
+}
+
 export function isFunction(o:any):o is Function {
-	return typeof o === 'function'
+	return isTypeOf(o,'function')
+}
+
+export function isNumber(o:any):o is number {
+	return isTypeOf(o,'number')
+}
+
+export function isString(o:any):o is string {
+	return isTypeOf(o,'string')
+}
+
+export function isNumberOrString(o:any):o is string|number {
+	return isString(o) || isNumber(o)
+}
+
+export function isArrayType(type:any):boolean {
+	return type === Array ||
+		type instanceof Array ||
+		typeof type === 'array' ||
+		Array.isArray(type)
 }
 
 /**
  * Check the type of a plugin
- * 
+ *
  * @param plugin
  * @param type
  * @returns {boolean}
@@ -44,7 +67,7 @@ export function PluginFilter<P extends IPlugin>(plugins:IPlugin[],type:PluginTyp
 			(type == PluginType.Store) ? isStorePlugin :
 				(type == PluginType.Indexer) ? isIndexerPlugin :
 					isFinderPlugin
-				
+
 	) as P[]
 }
 

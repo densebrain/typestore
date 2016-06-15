@@ -5,6 +5,7 @@ import {
 } from "../Constants";
 import {ModelPersistenceEventCallback,ModelPersistenceEventType} from '../Types'
 import {getMetadataReturnType,getMetadataType,getMetadata,setMetadata} from '../MetadataManager'
+import {isArrayType} from '../Util'
 
 const log = Log.create(__filename)
 
@@ -49,6 +50,7 @@ export interface IModelAttributeOptions {
 	name?:string
 	type?:any
 	typeName?:string
+	isArray?:boolean
 	primaryKey?:boolean
 	secondaryKey?:boolean
 	index?: IModelAttributeIndex
@@ -73,9 +75,13 @@ export interface IModelKey {
 
 }
 
+
+
 export interface IKeyValue {
 
 }
+
+export type TKeyValue = IKeyValue|string|number
 
 
 /**
@@ -109,8 +115,15 @@ export function ModelDescriptor(opts:IModelOptions = {}) {
 	}
 }
 
+
+/**
+ * Default value resolver
+ */
 export type DefaultValueFn = (o:any) => any
 
+/**
+ * Default value decoration
+ */
 export function DefaultValue(defaultValueFn:DefaultValueFn) {
 	return function (target:any,propertyKey:string) {
 
@@ -151,6 +164,7 @@ export function AttributeDescriptor(opts:IModelAttributeOptions = {}) {
 		opts = Object.assign({},{
 			type:attrType,
 			name: propertyKey,
+			isArray: isArrayType(attrType),
 			typeName: (attrType && attrType.name) ? attrType.name : 'unknown type',
 			key:propertyKey
 		},opts)

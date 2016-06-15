@@ -6,6 +6,7 @@ export type IndexedDBFinderFn = <M extends IModel>(repo:IndexedDBRepoPlugin<M>, 
 
 export interface IIndexedDBFinderOptions {
 	fn?:IndexedDBFinderFn
+	singleResult?:boolean
 	filter?: (o:any,...args:any[]) => boolean
 }
 

@@ -116,9 +116,9 @@ export class IndexedDBPlugin implements IStorePlugin {
 			schemaAttrNameMap[modelType.name] = attrs.map(attr => attr.name)
 			const attrDescs = attrs.map((attr:IModelAttributeOptions) => {
 				const
-					{index,name,primaryKey} = attr,
+					{index,name,primaryKey,isArray} = attr,
 					unique = primaryKey || (index && index.unique),
-					prefix = (unique) ? '&' : ''
+					prefix = ((unique) ? '&' : (isArray) ? '*' : '')
 
 				return `${prefix}${name}`
 			})

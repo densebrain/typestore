@@ -7,7 +7,8 @@ import {
 	Log,Repo,PluginEventType,
 	IModel,PluginType,IRepoPlugin,Coordinator,
 	ICoordinatorOptions,getMetadata,
-	ModelPersistenceEventType
+	ModelPersistenceEventType,
+	TKeyValue
 } from 'typestore'
 
 import {DynamoDBStorePlugin} from "./DynamoDBStorePlugin";
@@ -199,6 +200,9 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 
 	get(key:DynamoDBKeyValue):Promise<M> {
+		if (!key.toParam)
+			key = this.key(key as any)
+
 		return this.store.get(this.makeParams({
 			Key: key.toParam()
 		})).then((result) => {
@@ -221,6 +225,9 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 
 	async remove(key:DynamoDBKeyValue):Promise<any> {
+		if (!key.toParam)
+			key = this.key(key as any)
+
 		const model = (this.repo.supportPersistenceEvents()) ?
 			await this.get(key) : null
 
@@ -242,6 +249,8 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 
 
 	async bulkGet(...keys:DynamoDBKeyValue[]):Promise<M[]> {
+		keys = keys.map(key => (key.toParam) ? key : this.key(key as any))
+
 		const promises = keys.map(key => this.get(key))
 		return await Promise.all(promises)
 	}
@@ -253,6 +262,8 @@ export class DynamoDBRepoPlugin<M extends IModel> implements IRepoPlugin<M> {
 	}
 
 	async bulkRemove(...keys:DynamoDBKeyValue[]):Promise<any[]> {
+		keys = keys.map(key => (key.toParam) ? key : this.key(key as any))
+
 		const models = (this.repo.supportPersistenceEvents()) ?
 			await this.bulkGet(...keys) : null
 

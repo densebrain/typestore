@@ -10,7 +10,8 @@ import {
 	IFinderPlugin,
 	getMetadata,
 	IModelMapper,
-	ModelPersistenceEventType
+	ModelPersistenceEventType,
+	TKeyValue
 } from 'typestore'
 
 import {IndexedDBPlugin} from "./IndexedDBPlugin";
@@ -31,6 +32,8 @@ export class IndexedDBKeyValue implements IKeyValue {
 
 	public args:any[]
 
+	indexedDBKey = true
+
 	constructor(...args:any[]) {
 		this.args = args
 	}
@@ -44,11 +47,20 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 	private coordinator
 	private keys:string[]
 
+	/**
+	 * Construct a new repo/store
+	 * manager for a given repo/model
+	 *
+	 * @param store
+	 * @param repo
+	 */
 	constructor(private store:IndexedDBPlugin, public repo:Repo<M>) {
 		this.supportedModels = [repo.modelClazz]
 		this.keys = repo.modelType.options.attrs
 			.filter(attr => attr.primaryKey || attr.secondaryKey)
 			.map(attr => attr.name)
+
+
 		repo.attach(this)
 	}
 
@@ -83,7 +95,8 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 
 			const mapper = this.mapper
 
-			return results.map(record => mapper.fromObject(record))
+			const mappedResults = results.map(record => mapper.fromObject(record))
+			return finderOpts.singleResult ? mappedResults[0] : mappedResults
 		}
 	}
 
@@ -151,6 +164,9 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 	}
 
 	async get(key:IndexedDBKeyValue):Promise<M> {
+		key = key.indexedDBKey ? key : this.key(key as any)
+
+
 		const dbObjects = await this.table
 			.filter(record => {
 
@@ -178,7 +194,15 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 		return model
 	}
 
+	/**
+	 * Remove implementation
+	 *
+	 * @param key
+	 * @returns {Promise<void>}
+	 */
 	async remove(key:IndexedDBKeyValue):Promise<any> {
+		key = key.indexedDBKey ? key : this.key(key as any)
+
 		const model = (this.repo.supportPersistenceEvents()) ?
 			await this.get(key) : null
 
@@ -194,11 +218,25 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 		return Promise.resolve(this.table.count());
 	}
 
+	/**
+	 * Bulk get
+	 *
+	 * @param keys
+	 * @returns {any}
+	 */
 	async bulkGet(...keys:IndexedDBKeyValue[]):Promise<M[]> {
+		keys = keys.map(key => (key.indexedDBKey) ? key : this.key(key as any))
+
 		const promises = keys.map(key => this.get(key))
 		return await Promise.all(promises)
 	}
 
+	/**
+	 * Bulk save/put
+	 *
+	 * @param models
+	 * @returns {M[]}
+	 */
 	async bulkSave(...models:M[]):Promise<M[]> {
 		const mapper = this.repo.getMapper(this.repo.modelClazz)
 		const jsons = models.map(model => mapper.toObject(model))
@@ -209,7 +247,15 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 		return models
 	}
 
+	/**
+	 * Bulk remove
+	 *
+	 * @param keys
+	 * @returns {IndexedDBKeyValue[]}
+	 */
 	async bulkRemove(...keys:IndexedDBKeyValue[]):Promise<any[]> {
+		keys = keys.map(key => (key.indexedDBKey) ? key : this.key(key as any))
+
 		const models = (this.repo.supportPersistenceEvents()) ?
 			await this.bulkGet(...keys) : null
 
