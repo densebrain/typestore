@@ -19,7 +19,7 @@ import Dexie from "dexie";
 import {IndexedDBFinderKey} from "./IndexedDBConstants";
 import {IIndexedDBFinderOptions} from './IndexedDBDecorations'
 
-
+const log = getLogger(__filename)
 
 /**
  * Super simple plain jain key for now
@@ -188,9 +188,16 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 	async save(model:M):Promise<M> {
 		const mapper = this.mapper
 		const json = mapper.toObject(model)
-		await this.table.put(json)
-		this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save,model)
 
+		try {
+			await this.table.put(json)
+			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save, model)
+		} catch (err) {
+			log.error('Failed to persist model',err)
+			log.error('Failed persisted json',json,model)
+
+			throw err
+		}
 		return model
 	}
 
