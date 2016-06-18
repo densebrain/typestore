@@ -1,11 +1,13 @@
 machine:
   node:
-    version: 5.1.0
+    version: 6.1.0
   environment:
     AWS_ACCESS_KEY_ID: 1111111111111
     AWS_SECRET_ACCESS_KEY: sgsfgdsgsdgfsdgfsgsgfd
     AWS_DEFAULT_REGION: us-east-1
     CIRCLE: true
+dependencies:
+  pre: npm i -g typescript@next gulp
 test:
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/mocha/
