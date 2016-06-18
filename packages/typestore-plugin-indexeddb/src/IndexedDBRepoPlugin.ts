@@ -11,7 +11,8 @@ import {
 	getMetadata,
 	IModelMapper,
 	ModelPersistenceEventType,
-	TKeyValue
+	TKeyValue,
+	Log
 } from 'typestore'
 
 import {IndexedDBPlugin} from "./IndexedDBPlugin";
@@ -19,7 +20,7 @@ import Dexie from "dexie";
 import {IndexedDBFinderKey} from "./IndexedDBConstants";
 import {IIndexedDBFinderOptions} from './IndexedDBDecorations'
 
-const log = getLogger(__filename)
+const log = Log.create(__filename)
 
 /**
  * Super simple plain jain key for now
@@ -171,7 +172,7 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 			.filter(record => {
 
 				const recordKey = this.keyFromObject(record)
-				return Array.arraysEqual(key.args, recordKey.args)
+				return Array.isEqual(key.args, recordKey.args)
 			})
 			.toArray()
 

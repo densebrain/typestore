@@ -1,10 +1,9 @@
 
-export { }
-
 
 declare global {
 	interface ObjectConstructor {
-		assign(target: any, ...sources: any[]): any;
+		assign<T>(target:T, ...sources: any[]):T & any;
+		isEqual(o1:any,o2:any):boolean
 	}
 
 	interface Array<T> {
@@ -13,25 +12,45 @@ declare global {
 	}
 
 	interface ArrayConstructor {
-		arraysEqual(arr1:any[],arr2:any[]):boolean
+		isEqual(arr1:any[],arr2:any[],ignoreOrder?:boolean):boolean
 	}
 
-	
+
 }
 
+/**
+ * Add Object.isEqual to static type
+ */
+if (!Object.isEqual) {
+	Object.isEqual = (o1:any,o2:any):boolean => {
+		return o1 === o2 ||
+			(o1.isEqual && o2.isEqual && o1.isEqual(o2))
+	}
+}
 
-if (!Array.arraysEqual) {
-	Array.arraysEqual = function(arr1,arr2) {
+/**
+ * Add Array.isEqual
+ */
+if (!Array.isEqual) {
+
+	Array.isEqual = function(arr1,arr2,ignoreOrder = false) {
 
 		if (arr1 === arr2) return true;
 		if (!Array.isArray(arr1) || !Array.isArray(arr2)) return false;
 		if (arr1.length != arr2.length) return false;
 
+
 		// If you don't care about the order of the elements inside
 		// the array, you should sort both arrays here.
-
-		for (var i = 0; i < arr1.length; ++i) {
-			if (arr1[i] !== arr2[i]) return false;
+		if (!ignoreOrder) {
+			for (var i = 0; i < arr1.length; ++i) {
+				if (arr1[i] !== arr2[i]) return false;
+			}
+		} else {
+			for (let item1 of arr1) {
+				if (!arr2.find(item2 => Object.isEqual(item1,item2)))
+					return false
+			}
 		}
 		return true;
 
@@ -68,4 +87,9 @@ if (!Array.prototype.includes) {
 		}
 		return false;
 	};
+}
+
+
+export {
+
 }

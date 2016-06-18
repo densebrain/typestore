@@ -27,7 +27,6 @@ import * as Constants from './Constants'
  */
 import * as Log from './log'
 
-
 import * as Errors from './Errors'
 
 /**
