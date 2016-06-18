@@ -1,0 +1,15 @@
+{
+  "name": "typestore-plugin-pouchdb",
+  "description": "Pocket sized",
+  "version": "0.1.12",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
+  },
+  "dependencies": {
+    "pouchdb": "^5.4.4",
+    "pouchdb-find": "^0.10.2",
+    "riakdown": "^1.3.0"
+  }
+}

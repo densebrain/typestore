@@ -13,6 +13,8 @@
       <excludeFolder url="file://$MODULE_DIR$/packages/typestore-plugin-dynamodb/dist" />
       <excludeFolder url="file://$MODULE_DIR$/packages/typestore-plugin-dynamodb/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/packages/typestore-plugin-indexeddb/node_modules" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/typestore-plugin-pouchdb/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/typestore-plugin-pouchdb/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/packages/typestore/dist" />
       <excludeFolder url="file://$MODULE_DIR$/packages/typestore/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

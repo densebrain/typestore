@@ -367,14 +367,15 @@ export class Repo<M extends IModel> {
 			return allResults.concat(result)
 		},[])
 
-		await this.indexPromise(IndexAction.Add)(results)
-		for (let result of results) {
-			if (result)
-				return result
-		}
+		return this.indexPromise(IndexAction.Add)(results)
 
-		const promises = models.map(model => this.save(model))
-		return await Promise.all(promises)
+		// for (let result of results) {
+		// 	if (result)
+		// 		return result
+		// }
+		//
+		// const promises = models.map(model => this.save(model))
+		// return await Promise.all(promises)
 	}
 
 	async bulkRemove(...keys:TKeyValue[]):Promise<any[]> {

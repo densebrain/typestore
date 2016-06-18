@@ -3,7 +3,7 @@ import './Globals'
 
 Promise = require('bluebird')
 
-import assert = require('assert')
+
 import * as Log from './log'
 import {TypeStoreModelKey} from './Constants'
 import {
@@ -17,7 +17,7 @@ import {
 } from './Types'
 import {msg, Strings} from "./Messages"
 import {Repo} from "./Repo";
-import {PluginFilter, PromiseMap} from "./Util";
+import {PluginFilter, assert,PromiseMap} from "./Util";
 import {IModelOptions} from "./decorations/ModelDecorations";
 import {PluginEventType} from "./PluginTypes";
 

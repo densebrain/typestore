@@ -65,27 +65,33 @@ export class ModelMapper<M extends IModel> implements IModelMapper<M> {
 				obj[key] = o[key]
 		}
 
+
 		return obj
 	}
 
 
-	fromJson(json:string):M {
+	fromJson(json:string,decorator = null):M {
 		const jsonObj = JSON.parse(json,(key,value) => {
 			return (!this.attrPersists(key)) ? undefined : value
 		})
 
 		const o = new this.modelClazz()
 		Object.assign(o,jsonObj)
+		if (decorator)
+			return decorator(jsonObj,o)
 
 		return o
 	}
 
-	fromObject(obj:Object):M {
+	fromObject(obj:Object,decorator = null):M {
 		const o = new this.modelClazz()
 		for (let key of Object.keys(obj)) {
 			if (this.attrPersists(key))
 				o[key] = obj[key]
 		}
+
+		if (decorator)
+			return decorator(obj,o)
 
 		return o
 	}

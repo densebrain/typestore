@@ -93,6 +93,9 @@ export class CoordinatorOptions implements ICoordinatorOptions {
 }
 
 
+export interface IModelMapperDecorator<M> {
+	(json:any,model:M):M
+}
 /**
  * Mapper interface for transforming objects back and forth between json
  * and their respective models
@@ -100,8 +103,8 @@ export class CoordinatorOptions implements ICoordinatorOptions {
 export interface IModelMapper<M extends IModel> {
 	toObject(o:M):Object
 	toJson(o:M):string
-	fromObject(json:Object):M
-	fromJson(json:string):M
+	fromObject(json:Object,decorator?:IModelMapperDecorator<M>):M
+	fromJson(json:string,decorator?:IModelMapperDecorator<M>):M
 }
 
 

@@ -32,5 +32,9 @@
         "internalDependencies": [
             "typestore-plugin-indexeddb"
         ]
+    },
+    "typestore-plugin-pouchdb": {
+        "type": "browser",
+        "description": "Pocket sized"
     }
 }

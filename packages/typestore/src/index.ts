@@ -35,9 +35,14 @@ import * as Errors from './Errors'
 export * from './Coordinator'
 
 /**
+ * Re-export assert solely for plugins
+ */
+import {assert} from './Util'
+
+/**
  * Export all general types
  */
-export {Types, Decorations, Constants, Log, Errors,Messages}
+export {Types, Decorations, Constants, Log, Errors,Messages,assert}
 
 
 /**

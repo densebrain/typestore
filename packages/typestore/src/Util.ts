@@ -2,6 +2,12 @@ import {IPlugin, IRepoPlugin, PluginType, IStorePlugin,
 	IIndexerPlugin, IFinderPlugin,IRepoSupportPlugin} from "./Types"
 import {Repo} from "./Repo"
 
+
+export function assert(test,msg:string = null) {
+	if (!test)
+		throw new Error(msg)
+}
+
 function isTypeOf(o,typeStr) {
 	return typeof o === typeStr
 }
@@ -25,7 +31,6 @@ export function isNumberOrString(o:any):o is string|number {
 export function isArrayType(type:any):boolean {
 	return type === Array ||
 		type instanceof Array ||
-		typeof type === 'array' ||
 		Array.isArray(type)
 }
 
