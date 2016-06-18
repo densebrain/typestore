@@ -2,9 +2,10 @@
 
 # Make sure the latest typescript is installed
 npm i -g typescript@next
+npm i typescript@next
 
 # Now link the global TS
-npm link typescript
+#npm link typescript
 
 # Create TS Config
 gulp tsconfig
