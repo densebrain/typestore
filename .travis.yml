@@ -3,7 +3,7 @@ node_js:
   - '6.1'
 before_script:
   - npm install -g gulp babel-register source-map-support
-script: gulp
+script: gulp clean compile-all test-all
 dd:
   secure: K7PikcxxeKBQUm1FDGdZI40cEZIF5aqqLGOoCxt3mcouf3vcRG6dkwxpZ6sl76/DVE03l7lEpI0pccnE2ixec1nURgeV9uNPNhsoPyu1o00b6yGBx2kQs9YbjE4h7UYAfDwbvOSMZ0kp4P+D67axbYqVuKEuXppggI9k+EmDr5XyuuIW53ETCuToXUA/ElIK9QZ7eIn7+lAffH4RtAk7vgmpanyLUQCauGrKOaHGvXe6RNvcFFQXZtbKQ/h7pE16GMVuXHkOFVKPPfI+VEDA5F8qAnUMbMMT8tsMfFQVj3nVULQyQRrQAMDPfnqSXcNWs8rKJ1nHub9TSB04Yxg/nstJRX++qirijLNZvPyAaz91C12W+evaogKmetReXv7BQiHYZS4ROiyLOtftn98vWi/rDgVor5wzX9pzXNyDeixhNjtwYJndG8RDgqEqDTotO6+d/TE79Z5WQvObttnYrfTy6fsvHVw7mXtpPbpNkAlL6ZKBagWlwX243j9qIevX+UBfDTHz+nqcignXoTcFCwpLEZ9R9//oD69N9Uw4pxR02LtU7x/I89ntG8Hr/FLwhbwkX9mbCfztmtYvzGDq1ocQcwEOY41XvFk6LR78WMb0uKFrOC7ywJGuXkeIUEmTlPhJRVunft8QBz3w6xVrdThhIucKZlgYDoWaLrdwNK8=
 deploy:
@@ -13,5 +13,5 @@ deploy:
     secure: FF41u2CIzC1SsFAncy0ZFJwqSl4Ag5lKBaqhEah+i3ZFOvU4XvDHPlkY17CXyroRL98Mbc3k44j0IiiW5jWifZt1vmzLGvajHLHrVr6ByKwbU2oE7Fsxml9C3USooohQvNSTqh7U2QKoRf6eGZtntEYXFJx9+gYJzBejpGvfaZTsKNsi8oTIPP+9woWT1cuK2GtMlxOy/k9lp3zINHRSYi+XdS1fTghtLc9uSixtehLSBKns05MNdJMCi8/H9U8awnHF51avCEqovsIOQmlFv+sNjhB4AQ9fC/8YK++KiizAQReKw2QvcQ+WJeNl3Scis0tPbltkmMs87CQlp+uHA6e45KexWd+MoBLqt38wUIv8dilDhpcMmhyFyaPQTTMpMQULqhnwHGKhKv9a6pBRnDgSaBpFPc7c8ZPDHziYd78qEfeJkOSCPseHEjZUYK3HUDJ1oAgXHotmH8CzSRj1rakcI/EAjGq+lB/twySXmcSn+F3bVRhv1wFqfAnMw6toiuUW3tuqP6vHk8D2T+AJQFG2jOW3T3gMba6DbjwnE0YYsPH/dOR487Kgh834JrXj5UMbTcv7cKjn/+xRXdtVKP9K7/INkvh51HcigYoNLPU7oJPlJM8zUjdHUzP4kBkLfaE2dEdtymn4thxXgEeKoaLTS8GoFK58IKd65wtMp10=
   on:
     branch: master
-    tags: true
     repo: densebrain/typestore
+#    tags: true
