@@ -14,4 +14,4 @@ deploy:
   on:
     branch: master
     tags: true
-    repo: densebrain/typemutant
+    repo: densebrain/typestore
