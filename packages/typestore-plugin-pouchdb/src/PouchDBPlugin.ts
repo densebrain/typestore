@@ -1,26 +1,7 @@
 
-
 import * as PouchDB from 'pouchdb'
-//require('pouchdb/extras/websql')
 
-//const PouchDB = require('pouchdb')
-//PouchDB.debug.enable('pouchdb:find')
-PouchDB.plugin(require('pouchdb-find'))
-
-declare global {
-	interface PouchApi {
-		createIndex: (obj:any,callback?:any) => Promise<any>
-		deleteIndex: (obj:any,callback?:any) => Promise<any>
-		getIndexes: (callback?:any) => Promise<any>
-		find: (request:any,callback?:any) => Promise<any>
-	}
-
-	interface PouchDB {
-		plugin: (plugin:any) => void
-		debug:any
-	}
-}
-
+import {mapAttrsToField} from './PouchDBUtil'
 import {
 	ICoordinator,
 	ICoordinatorOptions,
@@ -36,8 +17,10 @@ import {
 	assert
 } from 'typestore'
 
-import {PouchDBPKIndex,PouchDBTypeIndex,PouchDBAttributePrefix} from './PouchDBConstants'
+
+import {PouchDBPKIndex,PouchDBTypeIndex} from './PouchDBConstants'
 import {PouchDBRepoPlugin} from "./PouchDBRepoPlugin";
+import {getIndexMap,makeMangoIndex} from './PouchDBIndexes'
 
 
 const log = Log.create(__filename)
@@ -92,6 +75,8 @@ export class PouchDBPlugin implements IStorePlugin {
 	private open() {
 		this.internalDb = this.newPouch()
 
+		// Grab and cache index map
+		getIndexMap(this.internalDb, true)
 
 		return this.internalDb
 	}
@@ -110,35 +95,6 @@ export class PouchDBPlugin implements IStorePlugin {
 	}
 
 
-	async makeIndex(db,modelName:string, indexName:string,fields:string[]) {
-		indexName = `${modelName ? modelName + '_' : ''}${indexName}`
-
-		if (fields.indexOf('type') === -1)
-			fields = ['type',...fields]
-
-		const
-			indexesResult = await db.getIndexes(),
-			indexes = indexesResult.indexes,
-			existingIdxIndex = indexes.findIndex(item => item.name === indexName),
-			existingIndex = existingIdxIndex > -1 ? indexes[existingIdxIndex] : null,
-			existingFields = (!existingIndex) ? [] :
-				existingIndex.def.fields.reduce((fieldList,nextFieldDef) => {
-					fieldList.push(...Object.keys(nextFieldDef))
-					return fieldList
-				},[])
-
-		if (existingIndex && Array.isEqual(existingFields,fields)) {
-			log.info(`Index def has not changed: ${indexName}`)
-		} else {
-			if (existingIdxIndex > -1) {
-				log.info(`Index changed, deleting old version: ${indexName}`)
-				await db.deleteIndex(existingIndex)
-			}
-
-			log.info(`Index being created: ${indexName}`)
-			await db.createIndex({index: {name:indexName,fields}})
-		}
-	}
 
 	async init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
 		this.coordinator = coordinator
@@ -154,7 +110,7 @@ export class PouchDBPlugin implements IStorePlugin {
 
 		const db = this.open()
 		const makeIndexPromises = [
-			this.makeIndex(db,null,PouchDBTypeIndex,['type'])
+			makeMangoIndex(db,null,PouchDBTypeIndex,['type'])
 		]
 
 
@@ -176,11 +132,11 @@ export class PouchDBPlugin implements IStorePlugin {
 
 				if (index) {
 					assert(!primaryKey,'You can not specify a second index on the primary key')
-					makeIndexPromises.push(this.makeIndex(db,modelType.name,index.name || name,[PouchDBAttributePrefix + name]))
+					makeIndexPromises.push(makeMangoIndex(db,modelType.name,index.name || name,[name]))
 				}
 
 				if (primaryKey) {
-					makeIndexPromises.push(this.makeIndex(db,modelType.name,PouchDBPKIndex,[PouchDBAttributePrefix + name,'type']))
+					makeIndexPromises.push(makeMangoIndex(db,modelType.name,PouchDBPKIndex,[name,'type']))
 				}
 
 				newDetails[name] = attr

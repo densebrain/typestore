@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "pouchdb": "^5.4.4",
-    "pouchdb-find": "^0.10.2"
+    "pouchdb-find": "^0.10.2",
+    "pouchdb-quick-search": "^1.1.2"
   }
 }

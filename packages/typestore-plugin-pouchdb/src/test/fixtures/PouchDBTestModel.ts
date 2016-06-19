@@ -10,7 +10,8 @@ import {
 	DefaultModel
 } from "typestore"
 
-import {PouchDBFinderDescriptor} from 'typestore-plugin-pouchdb'
+import {PouchDBFilterFinder,PouchDBMangoFinder,PouchDBFullTextFinder} from 'typestore-plugin-pouchdb'
+
 
 const log = Log.create(__filename)
 
@@ -56,9 +57,23 @@ export class PDBRepo1 extends Repo<PDBModel1> {
 		super(PDBRepo1,PDBModel1)
 	}
 
-	@PouchDBFinderDescriptor({
-		filter: (doc,text) => new RegExp(text,'i')
-			.test(doc.randomText)
+	// @PouchDBFilterFinder({
+	// 	filter: (doc,text) => new RegExp(text,'i')
+	// 		.test(doc.randomText)
+	// })
+	@PouchDBFullTextFinder({
+		textFields: ['randomText']
+	})
+	findByRandomText(text:string):Promise<PDBModel1[]> {
+		return null
+	}
+
+	@PouchDBMangoFinder({
+		single: true,
+		selector: (...args) => ({
+			name: args[0]
+		}),
+		indexFields: ['name']
 
 		// selector: (...args:any[]) => ({
 		// 	// `(?i)${args[0]}`
@@ -71,8 +86,7 @@ export class PDBRepo1 extends Repo<PDBModel1> {
 		// 	})
 		// }
 	})
-	@FinderDescriptor()
-	findByRandomText(text:string):Promise<PDBModel1[]> {
+	findByName(name:string):Promise<PDBModel1> {
 		return null
 	}
 

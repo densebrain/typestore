@@ -11,6 +11,8 @@
             <path value="file://$PROJECT_DIR$/packages/typestore-mocks/src" />
             <path value="file://$PROJECT_DIR$/packages/typestore-plugin-indexeddb/src" />
             <path value="file://$PROJECT_DIR$/packages/typestore-plugin-pouchdb/src" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-example-webpack/src" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-example-node/src" />
           </resourceRoots>
         </entryData>
       </entry>

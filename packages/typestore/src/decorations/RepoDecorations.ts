@@ -10,6 +10,7 @@ import {
 } from "../Constants";
 import {Repo} from "../Repo";
 import {NoReflectionMetataError} from "../Errors";
+import {getMetadata} from '../MetadataManager'
 
 const log = Log.create(__filename)
 
@@ -25,6 +26,22 @@ export function RepoDescriptor(opts:IRepoOptions = {}) {
 	return function (constructor:Function) {
 		Reflect.defineMetadata(TypeStoreRepoKey,opts,constructor)
 	}
+}
+
+/**
+ * Get finder options for a specific
+ * repo and finder
+ *
+ * @param repo
+ * @param key
+ * @returns {IFinderOptions}
+ */
+export function getFinderOpts(repo:Repo<any>,key:string):IFinderOptions {
+	return getMetadata(
+		TypeStoreFinderKey,
+		repo,
+		key
+	)
 }
 
 /**

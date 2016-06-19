@@ -1,6 +1,8 @@
 //const PouchDB = require('pouchdb')
 //PouchDB.debug.enable('pouchdb:find')
 
+
+
 import * as Faker from 'faker'
 import * as uuid from 'node-uuid'
 import {Coordinator,Log} from 'typestore'
@@ -8,21 +10,21 @@ import {PouchDBPlugin} from "../PouchDBPlugin";
 import * as Fixtures from './fixtures/PouchDBTestModel'
 import * as Bluebird from 'bluebird'
 
+Object.assign(global as any,{Promise:Bluebird})
+
 const log = Log.create(__filename)
 
+// Store is configured to reside in the tmp folder
+const tmpDir = process.env.TMP || process.env.TMPDIR || '/tmp'
 let coordinator:Coordinator = null
 let store:PouchDBPlugin = null
+
 const storeOpts = {
-	//filename: `test-db.websql.db`,
-	//sync: true
-	//filename: `http://127.0.0.1:5984/tstest-${new Date()}`
-	filename: `/tmp/tstest-${new Date()}`
+	filename: `${tmpDir}/tstest-${new Date()}`
 }
 
 /**
  * Reset TypeStore and start all over
- *
- * @returns {Bluebird<Coordinator>}
  */
 async function reset() {
 	// Init dynamo type
@@ -38,8 +40,11 @@ async function reset() {
 }
 
 
-
-describe.only('#plugin-pouchdb',() => {
+/**
+ * Pouchdb test suite - should be abstracted
+ * to be a store test suite in general
+ */
+describe('#plugin-pouchdb',() => {
 
 	before(async () => {
 		await reset()
@@ -78,7 +83,7 @@ describe.only('#plugin-pouchdb',() => {
 
 	})
 
-	it('#bulkSave',async () => {
+	it('#bulkSave+bulkRemove',async () => {
 
 		const repo = coordinator.getRepo(Fixtures.PDBRepo1)
 
@@ -107,6 +112,31 @@ describe.only('#plugin-pouchdb',() => {
 	})
 
 	it('#finder-selector',async () => {
+		const model = new Fixtures.PDBModel1()
+		const repo = coordinator.getRepo(Fixtures.PDBRepo1)
+
+		Object.assign(model,{
+			id: uuid.v4(),
+			name: Faker.lorem.words(1),
+			createdAt: Faker.date.past(),
+			randomText: Faker.lorem.words(10)
+		})
+
+		const savedModel = await repo.save(model)
+		const key = repo.key(model.id)
+
+		let foundModel = await repo.findByName(model.name)
+		expect(foundModel).toBeDefined()
+
+		foundModel = await repo.findByName(model.name + '123')
+		expect(foundModel).not.toBeDefined()
+
+		await repo.remove(key)
+		expect(await repo.count()).toBe(0)
+
+	})
+
+	it('#finder-fulltext',async () => {
 		const model = new Fixtures.PDBModel1()
 		const repo = coordinator.getRepo(Fixtures.PDBRepo1)
 

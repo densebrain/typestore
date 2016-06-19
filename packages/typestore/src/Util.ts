@@ -12,6 +12,10 @@ function isTypeOf(o,typeStr) {
 	return typeof o === typeStr
 }
 
+export function isNil(o:any) {
+	return isTypeOf(o,'undefined') || o === null
+}
+
 export function isFunction(o:any):o is Function {
 	return isTypeOf(o,'function')
 }

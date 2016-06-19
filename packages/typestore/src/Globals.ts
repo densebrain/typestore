@@ -15,7 +15,7 @@ declare global {
 		isEqual(arr1:any[],arr2:any[],ignoreOrder?:boolean):boolean
 	}
 
-
+	var __filename:string
 }
 
 /**

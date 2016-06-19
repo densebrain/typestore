@@ -3,6 +3,7 @@ import {
 	TypeStoreRepoKey,
 	TypeStoreFindersKey
 } from "./Constants"
+
 import {
 	IModel,
 	IFinderOptions,
@@ -17,8 +18,10 @@ import {
 	IFinderPlugin,
 	IIndexerPlugin,
 	ModelPersistenceEventType,
-	PluginType
+	PluginType,
+	Predicate
 } from "./Types"
+
 import {Coordinator} from './Coordinator'
 import {NotImplemented} from "./Errors"
 import * as Log from './log'
@@ -32,12 +35,13 @@ import {
 	isIndexerPlugin,
 	isNumberOrString
 } from "./Util"
+
 import {ModelMapper} from "./ModelMapper"
 import {IModelType} from "./ModelTypes"
 import {IModelOptions, IModelKey, IKeyValue, TKeyValue} from "./decorations/ModelDecorations";
 import {getMetadata} from "./MetadataManager";
 
-
+// Logger
 const log = Log.create(__filename)
 
 /**
@@ -126,28 +130,65 @@ export class Repo<M extends IModel> {
 		) as IFinderOptions
 	}
 
-	decorateFinders() {
-		const finderKeys = Reflect.getMetadata(TypeStoreFindersKey,this)
-		if (finderKeys) {
+	getPlugins = (predicate:Predicate) => this.plugins.filter(predicate)
 
-			finderKeys.forEach((finderKey) => {
-				let finder
 
-				for (let plugin of this.plugins.filter(isFinderPlugin)) {
-					if (!isFunction((plugin as any).decorateFinder))
-						continue
+	/**
+	 * Decorate finder by iterating all finder plugins
+	 * and trying until resolved
+	 *
+	 * @param finderKey
+	 */
+	decorateFinder(finderKey) {
+		let finder
 
-					const finderPlugin = plugin as IFinderPlugin
-					if (finder = finderPlugin.decorateFinder(this,finderKey))
-						break
-				}
+		// Iterate all finder plugins
+		for (let plugin of this.getPlugins(isFinderPlugin)) {
+			if (!isFunction((plugin as any).decorateFinder))
+				continue
 
-				if (!finder && this.getFinderOptions(finderKey).optional !== true)
-					NotImplemented(`No plugin supports this finder ${finderKey}`)
+			const finderPlugin = plugin as IFinderPlugin
 
-				this.setFinder(finderKey,finder)
-			})
+			//let finderResult
+
+			if (finder = finderPlugin.decorateFinder(this,finderKey)) {
+
+				/**
+				 * If we got a promise back then we need to wait
+				 *
+				 * IE. pouch db creating an index
+				 */
+				// if (isFunction(finderResult.then)) {
+				// 	finder = (...args) => {
+				// 		return (finderResult as Promise<any>).then(finderFn => {
+				// 			if (!finderFn)
+				// 				NotImplemented(`Promised finder is not available ${finderKey}`)
+				//
+				// 			return finderFn(...args)
+				// 		})
+				// 	}
+				// } else {
+				//
+				// }
+				//finder = finderResult
+
+				break
+			}
 		}
+
+		if (!finder && this.getFinderOptions(finderKey).optional !== true)
+			NotImplemented(`No plugin supports this finder ${finderKey}`)
+
+		this.setFinder(finderKey,finder)
+	}
+
+	/**
+	 * Decorate all finders on Repo
+	 */
+	decorateFinders() {
+		(Reflect.getMetadata(TypeStoreFindersKey,this) || [])
+			.forEach(finderKey => this.decorateFinder(finderKey))
+
 	}
 
 	/**

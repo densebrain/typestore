@@ -29,6 +29,7 @@ export interface IRepoOptions {
  */
 export interface IFinderOptions {
 	optional?:boolean
+	single?:boolean
 }
 
 
@@ -107,7 +108,33 @@ export interface IModelMapper<M extends IModel> {
 	fromJson(json:string,decorator?:IModelMapperDecorator<M>):M
 }
 
+/**
+ * Predicate for searching
+ */
+export interface Predicate {
+	(val:any):boolean
+}
 
+/**
+ * Makes a predicate for reuse
+ */
+export interface PredicateFactory {
+	(...args:any[]):Predicate
+}
+
+/**
+ * Predicate for searching
+ */
+export interface TypedPredicate<T> {
+	(val:T):boolean
+}
+
+/**
+ * Makes a predicate for reuse
+ */
+export interface TypedPredicateFactory<T> {
+	(type:{new():T},...args:any[]):TypedPredicate<T>
+}
 
 
 /**
