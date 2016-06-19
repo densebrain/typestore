@@ -1,20 +1,22 @@
+//const PouchDB = require('pouchdb')
+//PouchDB.debug.enable('pouchdb:find')
+
 import * as Faker from 'faker'
 import * as uuid from 'node-uuid'
-import {Coordinator,Repo,Log} from 'typestore'
+import {Coordinator,Log} from 'typestore'
 import {PouchDBPlugin} from "../PouchDBPlugin";
 import * as Fixtures from './fixtures/PouchDBTestModel'
-
-
-
+import * as Bluebird from 'bluebird'
 
 const log = Log.create(__filename)
 
-//Setup DynamoDBLocal
 let coordinator:Coordinator = null
 let store:PouchDBPlugin = null
 const storeOpts = {
-	//filename: `/tmp/ts-pouch-${uuid.v4()}`
-	filename: `http://127.0.0.1:5984/tstest-${new Date()}`
+	//filename: `test-db.websql.db`,
+	//sync: true
+	//filename: `http://127.0.0.1:5984/tstest-${new Date()}`
+	filename: `/tmp/tstest-${new Date()}`
 }
 
 /**
@@ -67,7 +69,9 @@ describe.only('#plugin-pouchdb',() => {
 		let modelGet = await repo.get(key)
 		expect(modelGet.id).toBe(model.id)
 		expect(modelGet.randomText).toBe(model.randomText)
-		expect(await repo.count()).toBe(1)
+
+		let currentCount = await repo.count()
+		expect(currentCount).toBe(1)
 
 		await repo.remove(key)
 		expect(await repo.count()).toBe(0)

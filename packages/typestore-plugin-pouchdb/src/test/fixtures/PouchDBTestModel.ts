@@ -50,7 +50,6 @@ export class PDBModel1 extends DefaultModel {
 
 
 @RepoDescriptor()
-
 export class PDBRepo1 extends Repo<PDBModel1> {
 
 	constructor() {
@@ -58,16 +57,19 @@ export class PDBRepo1 extends Repo<PDBModel1> {
 	}
 
 	@PouchDBFinderDescriptor({
+		filter: (doc,text) => new RegExp(text,'i')
+			.test(doc.randomText)
+
 		// selector: (...args:any[]) => ({
 		// 	// `(?i)${args[0]}`
 		// 	randomText: {$regex: `${args[0]}`}
 		// })
-		fn(repo,text) {
-			return repo.all().then(result => {
-				const textFilter = new RegExp(text,'i')
-				return result.docs.filter(doc => textFilter.test(doc.attrs.randomText))
-			})
-		}
+		// fn(repo,text) {
+		// 	return repo.all().then(result => {
+		// 		const textFilter = new RegExp(text,'i')
+		// 		return result.docs.filter(doc => textFilter.test(doc.attrs.randomText))
+		// 	})
+		// }
 	})
 	@FinderDescriptor()
 	findByRandomText(text:string):Promise<PDBModel1[]> {

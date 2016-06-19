@@ -205,6 +205,7 @@ interface PouchOptions {
 	name?: string;
 	adapter?: string;
 	skip_setup?: boolean;
+	sync?:boolean
 }
 
 interface PouchDB extends PouchApi {

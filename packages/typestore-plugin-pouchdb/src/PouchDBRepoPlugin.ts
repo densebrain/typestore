@@ -88,19 +88,33 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		if (!finderOpts)
 			return null
 
-		const {fn,selector,sort,limit,singleResult} = finderOpts
-		assert(fn || selector,'selector or fn properties MUST be provided on an pouchdb finder descriptor')
+		const {
+			fn,
+			filter,
+			selector,
+			sort,
+			limit,
+			singleResult
+		} = finderOpts
+
+		assert(fn || selector || filter,'selector or fn properties MUST be provided on an pouchdb finder descriptor')
 
 		return async(...args) => {
 
-			let result = null
+			let result = null,mappedResults = null
 			if (selector) {
 				result = this.findWithSelector(selector(...args),sort,limit)
 			} else if (fn) {
 				result = await fn(this, ...args)
+			} else if (filter) {
+				mappedResults = await this.all()
+				mappedResults = mappedResults
+					.filter((doc) => filter(doc,...args))
 			}
 
-			const mappedResults = this.mapDocs(result)
+			if (!mappedResults)
+				mappedResults = this.mapDocs(result)
+
 			return singleResult ? mappedResults[0] : mappedResults
 		}
 	}
@@ -206,7 +220,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		// 	log.info('all docs',allDocsResult)
 		// 	debugger
 		// })
-		console.log('selector',JSON.stringify(opts.selector))
+		//console.log('selector',JSON.stringify(opts.selector))
 
 		return this.db.find(opts)
 	}
@@ -286,13 +300,25 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	}
 
 	//TODO: make count efficient
-	count():Promise<number> {
-		return this.all(false).then((result:{docs:any[]}) => !result ? 0 : result.docs.length)
+	async count():Promise<number> {
+		const result = await this.all(false)
+		return !result ? 0 : result.length
 
 	}
 
 	all(includeDocs = true) {
-		return this.findWithSelector({},null,null,null,includeDocs)
+		//return this.findWithSelector({},null,null,null,includeDocs)
+		return this.db.allDocs({include_docs:true})
+			.then(result => {
+				const docs = result.rows
+					.reduce((allDocs,nextRow) => {
+						allDocs.push(nextRow.doc)
+						return allDocs
+					},[])
+					.filter(doc => doc.type === this.modelType.name)
+
+				return this.mapDocs(docs)
+			})
 	}
 
 	/**

@@ -1,9 +1,10 @@
 
 
 import * as PouchDB from 'pouchdb'
+//require('pouchdb/extras/websql')
 
 //const PouchDB = require('pouchdb')
-PouchDB.debug.enable('pouchdb:find')
+//PouchDB.debug.enable('pouchdb:find')
 PouchDB.plugin(require('pouchdb-find'))
 
 declare global {
@@ -49,7 +50,9 @@ export interface IPouchDBOptions {
 	/**
 	 * Database name for Dexie/indexdb
 	 */
-	filename:string
+	filename:string,
+
+	sync?:boolean
 }
 
 /**
@@ -82,6 +85,7 @@ export class PouchDBPlugin implements IStorePlugin {
 	}
 
 	private newPouch() {
+		//return new PouchDB(this.opts.filename,{adapter: 'websql'})
 		return new PouchDB(this.opts.filename)
 	}
 
