@@ -30,14 +30,20 @@ import {
 	IPouchDBFnFinderOptions,
 	IPouchDBFullTextFinderOptions
 } from './PouchDBDecorations'
+
 import {mapAttrsToField} from './PouchDBUtil'
 
 const log = Log.create(__filename)
 
-
-function transformSelectorKeys(o) {
+/**
+ * Prepends all keys - DEEP
+ * with `attrs.` making field reference easier
+ * @param o
+ * @returns {{}}
+ */
+function transformDocumentKeys(o) {
 	return (Array.isArray(o)) ?
-		o.map(aVal => transformSelectorKeys(aVal)) :
+		o.map(aVal => transformDocumentKeys(aVal)) :
 			(typeof o === "object") ?
 				Object
 					.keys(o)
@@ -47,7 +53,7 @@ function transformSelectorKeys(o) {
 						nextKey = PouchDBOperators.includes(nextKey) ?
 							nextKey : `${PouchDBAttributePrefix}${nextKey}`
 
-						newObj[nextKey] = transformSelectorKeys(nextVal)
+						newObj[nextKey] = transformDocumentKeys(nextVal)
 
 						return newObj
 					},{}) :
@@ -348,7 +354,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			opts.skip = offset
 		}
 
-		log.info('QUerying full text with opts',opts)
+		log.info('Querying full text with opts',opts)
 		return this.db.search(opts)
 			.then(result => {
 				log.debug(`Full-Text search result`,result)
@@ -358,25 +364,15 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	}
 
 	findWithSelector(selector,sort = null,limit = -1,offset = -1,includeDocs = true) {
-		selector = transformSelectorKeys(selector)
-		// Object.keys(selector).reduce((newSelector,nextKey) => {
-		// 	const finalKey = !['$or','$and'].includes(nextKey) ?
-		// 		`${PouchDBAttributePrefix}${nextKey}` :
-		// 		nextKey
-		//
-		// 	newSelector[finalKey] = selector[nextKey]
-		// 	return newSelector
-		// },{})
 
 		const opts = {
 			selector: Object.assign({
-				type: this.modelType.name,
-				// attrs: selector
-			},selector)
+				type: this.modelType.name
+			},transformDocumentKeys(selector))
 		} as any
 
 		if (sort)
-			opts.sort = sort
+			opts.sort = transformDocumentKeys(sort)
 
 		if (limit > -1)
 			opts.limit = limit
@@ -384,11 +380,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		if (offset > -1)
 			opts.offset = offset
 
-		// this.db.allDocs().then(allDocsResult => {
-		// 	log.info('all docs',allDocsResult)
-		// 	debugger
-		// })
-		log.info('selector',JSON.stringify(opts.selector,null,4))
+		log.debug('findWithSelector, selector',selector,'opts',JSON.stringify(opts,null,4))
 
 		return this.db.find(opts)
 	}

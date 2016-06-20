@@ -1,7 +1,9 @@
+//const PouchDB = require('pouchdb')
+//import * as PouchDB from 'pouchdb'
 import {Log,isString} from 'typestore'
-import * as PouchDB from 'pouchdb'
 import {cleanFieldPrefixes,filterReservedFields,mapAttrsToField} from './PouchDBUtil'
 import {PouchDBAttributePrefix, PouchDBReservedFields} from './PouchDBConstants'
+
 
 const log = Log.create(__filename)
 
@@ -86,7 +88,7 @@ export function makeMangoIndexConfig(modelName:string,indexName:string,fields:st
  * @param db
  * @param indexConfig
  */
-async function makeMangoIndex(db:PouchDB,indexConfig:PouchDBMangoIndexConfig)
+async function makeMangoIndex(db,indexConfig:PouchDBMangoIndexConfig)
 /**
  * Create an index config and then index
  *
@@ -95,8 +97,8 @@ async function makeMangoIndex(db:PouchDB,indexConfig:PouchDBMangoIndexConfig)
  * @param indexName
  * @param fields
  */
-async function makeMangoIndex(db:PouchDB,modelName:string, indexName:string,fields:string[])
-async function makeMangoIndex(db:PouchDB,indexConfigOrModelName:string|PouchDBMangoIndexConfig, indexName?:string,fields?:string[]) {
+async function makeMangoIndex(db,modelName:string, indexName:string,fields:string[])
+async function makeMangoIndex(db,indexConfigOrModelName:string|PouchDBMangoIndexConfig, indexName?:string,fields?:string[]) {
 
 	// Make sure we have a valid index config first thing
 	const indexConfig = (!indexConfigOrModelName || isString(indexConfigOrModelName)) ?

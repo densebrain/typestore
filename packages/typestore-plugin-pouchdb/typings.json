@@ -5,6 +5,6 @@
     "ambientDependencies": {},
     "ambientDevDependencies": {},
     "globalDependencies": {
-        "pouchdb/pouch": "registry:dt/pouchdb/pouch#0.1.0+20160608101805"
+
     }
 }

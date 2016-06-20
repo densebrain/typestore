@@ -1,7 +1,7 @@
 
-import * as PouchDB from 'pouchdb'
+const PouchDB = require('pouchdb')
 
-import {mapAttrsToField} from './PouchDBUtil'
+
 import {
 	ICoordinator,
 	ICoordinatorOptions,
@@ -56,7 +56,7 @@ export class PouchDBPlugin implements IStorePlugin {
 	supportedModels:any[]
 
 	private coordinator:ICoordinator
-	private internalDb:PouchDB
+	private internalDb:any
 	private schema:any
 	private repoPlugins:{[modelName:string]:PouchDBRepoPlugin<any>} = {}
 
@@ -76,7 +76,7 @@ export class PouchDBPlugin implements IStorePlugin {
 		this.internalDb = this.newPouch()
 
 		// Grab and cache index map
-		getIndexMap(this.internalDb, true)
+		//getIndexMap(this.internalDb, true)
 
 		return this.internalDb
 	}

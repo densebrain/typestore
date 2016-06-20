@@ -3,6 +3,7 @@ import {Repo} from "./Repo"
 import {NoReflectionMetataError} from './Errors'
 import {IModel, IModelType} from "./ModelTypes"
 import {IIndexOptions,IPlugin} from "./PluginTypes";
+import {isNumber} from './Util'
 
 
 export * from './ModelTypes'
@@ -15,7 +16,6 @@ export enum ModelPersistenceEventType {
 }
 
 export type ModelPersistenceEventCallback<M> = (type:ModelPersistenceEventType,...models:M[]) => void
-
 
 /**
  * Options for repo decorations
@@ -32,6 +32,44 @@ export interface IFinderOptions {
 	single?:boolean
 }
 
+/**
+ * Finder request for paging, etc
+ */
+export interface IFinderRequest {
+	/**
+	 * Record Offset to start from
+	 */
+	offset?:number
+
+	/**
+	 * Maximum number of results
+	 */
+	limit?:number
+}
+
+/**
+ * Finder result array - not implemented yet, mostly
+ */
+export class FinderResultArray<T> extends Array<T> {
+
+	pageNumber:number = -1
+	totalPages:number = -1
+
+	constructor(
+		items:T[],
+		public totalResults:number,
+		public request:IFinderRequest = null
+	) {
+		super(...items)
+
+		if (request) {
+			this.totalPages = Math.ceil(totalResults / request.limit)
+			this.pageNumber = isNumber(request.offset) ?
+				Math.floor(request.offset / request.limit) :
+				-1
+		}
+	}
+}
 
 /**
  * Simple base model implementation
@@ -111,29 +149,29 @@ export interface IModelMapper<M extends IModel> {
 /**
  * Predicate for searching
  */
-export interface Predicate {
+export interface IPredicate {
 	(val:any):boolean
 }
 
 /**
  * Makes a predicate for reuse
  */
-export interface PredicateFactory {
-	(...args:any[]):Predicate
+export interface IPredicateFactory {
+	(...args:any[]):IPredicate
 }
 
 /**
  * Predicate for searching
  */
-export interface TypedPredicate<T> {
+export interface ITypedPredicate<T> {
 	(val:T):boolean
 }
 
 /**
  * Makes a predicate for reuse
  */
-export interface TypedPredicateFactory<T> {
-	(type:{new():T},...args:any[]):TypedPredicate<T>
+export interface ITypedPredicateFactory<T> {
+	(type:{new():T},...args:any[]):ITypedPredicate<T>
 }
 
 

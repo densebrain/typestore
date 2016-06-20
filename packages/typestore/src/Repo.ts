@@ -19,7 +19,7 @@ import {
 	IIndexerPlugin,
 	ModelPersistenceEventType,
 	PluginType,
-	Predicate
+	IPredicate
 } from "./Types"
 
 import {Coordinator} from './Coordinator'
@@ -130,7 +130,7 @@ export class Repo<M extends IModel> {
 		) as IFinderOptions
 	}
 
-	getPlugins = (predicate:Predicate) => this.plugins.filter(predicate)
+	getPlugins = (predicate:IPredicate) => this.plugins.filter(predicate)
 
 
 	/**

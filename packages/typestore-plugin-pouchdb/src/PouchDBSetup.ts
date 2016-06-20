@@ -1,7 +1,7 @@
 /**
  * Import PouchDB
  */
-import * as PouchDB from 'pouchdb'
+const PouchDB = require('pouchdb') as any
 
 // Tracks whether quick search is enabled
 let quickSearchEnabled = false
@@ -16,20 +16,20 @@ PouchDB.plugin(require('pouchdb-find'))
  * Extend the DTS to include some more functions we
  * need to work with pouch
  */
-declare global {
-	interface PouchApi {
-		createIndex: (obj:any,callback?:any) => Promise<any>
-		deleteIndex: (obj:any,callback?:any) => Promise<any>
-		getIndexes: (callback?:any) => Promise<any>
-		find: (request:any,callback?:any) => Promise<any>
-		search: (request:any,callback?:any) => Promise<any>
-	}
-
-	interface PouchDB {
-		plugin: (plugin:any) => void
-		debug:any
-	}
-}
+// declare global {
+// 	interface PouchApi {
+// 		createIndex: (obj:any,callback?:any) => Promise<any>
+// 		deleteIndex: (obj:any,callback?:any) => Promise<any>
+// 		getIndexes: (callback?:any) => Promise<any>
+// 		find: (request:any,callback?:any) => Promise<any>
+// 		search: (request:any,callback?:any) => Promise<any>
+// 	}
+//
+// 	interface PouchDB {
+// 		plugin: (plugin:any) => void
+// 		debug:any
+// 	}
+// }
 
 /**
  * Enable quick search plugin
