@@ -90,6 +90,19 @@ export class PDBRepo1 extends Repo<PDBModel1> {
 		return null
 	}
 
+	@PouchDBMangoFinder({
+		selector: (...names) => ({
+			$or: names.map(name => ({
+				name: {$eq: name}
+			}))
+			//name: { $in: names }
+		}),
+		indexFields: ['name']
+	})
+	findByAnyName(...names:string[]):Promise<PDBModel1[]> {
+		return null
+	}
+
 
 
 

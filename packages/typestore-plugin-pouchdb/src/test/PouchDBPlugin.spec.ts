@@ -1,8 +1,6 @@
 //const PouchDB = require('pouchdb')
 //PouchDB.debug.enable('pouchdb:find')
 
-
-
 import * as Faker from 'faker'
 import * as uuid from 'node-uuid'
 import {Coordinator,Log} from 'typestore'
@@ -20,7 +18,24 @@ let coordinator:Coordinator = null
 let store:PouchDBPlugin = null
 
 const storeOpts = {
-	filename: `${tmpDir}/tstest-${new Date()}`
+	//filename: `test-db.websql.db`,
+	//sync: true
+	//filename: `http://127.0.0.1:5984/tstest-${new Date()}`
+	filename: `/tmp/tstest-${new Date()}`
+}
+
+
+function fakeModel() {
+	const model = new Fixtures.PDBModel1()
+
+	Object.assign(model,{
+		id: uuid.v4(),
+		name: Faker.lorem.words(1),
+		createdAt: Faker.date.past(),
+		randomText: Faker.lorem.words(10)
+	})
+
+	return model
 }
 
 /**
@@ -31,9 +46,9 @@ async function reset() {
 	// using local
 	store = new PouchDBPlugin(storeOpts)
 
-	if (coordinator)
+	if (coordinator) {
 		await coordinator.reset()
-
+	}
 	coordinator = new Coordinator()
 	await coordinator.init({},store)
 	return coordinator
@@ -112,26 +127,43 @@ describe('#plugin-pouchdb',() => {
 	})
 
 	it('#finder-selector',async () => {
-		const model = new Fixtures.PDBModel1()
+		const
+			model = fakeModel(),
+			model2 = fakeModel()
+
+		model.name = "name1"
+		model2.name = "name2"
+
 		const repo = coordinator.getRepo(Fixtures.PDBRepo1)
 
-		Object.assign(model,{
-			id: uuid.v4(),
-			name: Faker.lorem.words(1),
-			createdAt: Faker.date.past(),
-			randomText: Faker.lorem.words(10)
-		})
+
 
 		const savedModel = await repo.save(model)
+		const savedModel2 = await repo.save(model2)
+
 		const key = repo.key(model.id)
+		const key2 = repo.key(model2.id)
 
 		let foundModel = await repo.findByName(model.name)
 		expect(foundModel).toBeDefined()
+
+
+		let foundModels = await repo.findByAnyName(model.name)
+		expect(foundModels.length).toBe(1)
+
+		let foundModels2 = await repo.findByAnyName(
+			model.name,
+			model2.name
+		)
+		expect(foundModels2.length).toBe(2)
+
 
 		foundModel = await repo.findByName(model.name + '123')
 		expect(foundModel).not.toBeDefined()
 
 		await repo.remove(key)
+		await repo.remove(key2)
+
 		expect(await repo.count()).toBe(0)
 
 	})

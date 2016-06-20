@@ -21,7 +21,9 @@ import {
 import {enableQuickSearch} from './PouchDBSetup'
 import {makeMangoIndex,getIndexByNameOrFields} from './PouchDBIndexes'
 import {PouchDBPlugin} from "./PouchDBPlugin";
-import {PouchDBAttributePrefix} from "./PouchDBConstants";
+import {PouchDBAttributePrefix,PouchDBOperators}
+	from "./PouchDBConstants";
+
 import {
 	IPouchDBMangoFinderOptions,
 	IPouchDBFilterFinderOptions,
@@ -32,6 +34,26 @@ import {mapAttrsToField} from './PouchDBUtil'
 
 const log = Log.create(__filename)
 
+
+function transformSelectorKeys(o) {
+	return (Array.isArray(o)) ?
+		o.map(aVal => transformSelectorKeys(aVal)) :
+			(typeof o === "object") ?
+				Object
+					.keys(o)
+					.reduce((newObj,nextKey) => {
+						const nextVal = o[nextKey]
+
+						nextKey = PouchDBOperators.includes(nextKey) ?
+							nextKey : `${PouchDBAttributePrefix}${nextKey}`
+
+						newObj[nextKey] = transformSelectorKeys(nextVal)
+
+						return newObj
+					},{}) :
+				o
+
+}
 /**
  * Super simple plain jain key for now
  * what you send to the constructor comes out the
@@ -106,8 +128,6 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			const allModels = await this.all()
 			return allModels.filter((doc) => filter(doc,...args))
 		}
-
-
 	}
 
 	makeFnFinder(finderKey:string,opts:IPouchDBFnFinderOptions) {
@@ -338,14 +358,15 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	}
 
 	findWithSelector(selector,sort = null,limit = -1,offset = -1,includeDocs = true) {
-		selector = Object.keys(selector).reduce((newSelector,nextKey) => {
-			const finalKey = !['$or','$and'].includes(nextKey) ?
-				`${PouchDBAttributePrefix}${nextKey}` :
-				nextKey
-
-			newSelector[finalKey] = selector[nextKey]
-			return newSelector
-		},{})
+		selector = transformSelectorKeys(selector)
+		// Object.keys(selector).reduce((newSelector,nextKey) => {
+		// 	const finalKey = !['$or','$and'].includes(nextKey) ?
+		// 		`${PouchDBAttributePrefix}${nextKey}` :
+		// 		nextKey
+		//
+		// 	newSelector[finalKey] = selector[nextKey]
+		// 	return newSelector
+		// },{})
 
 		const opts = {
 			selector: Object.assign({
