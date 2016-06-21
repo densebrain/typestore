@@ -4,7 +4,7 @@ import {isString} from 'typestore'
 import {cleanFieldPrefixes,filterReservedFields,mapAttrsToField} from './PouchDBUtil'
 import {PouchDBAttributePrefix, PouchDBReservedFields} from './PouchDBConstants'
 
-
+const Bluebird = require('bluebird')
 const log = require('typelogger').create(__filename)
 
 let cachedIndexMapPromise = null
@@ -24,51 +24,57 @@ export interface IPouchDBIndex {
 export type TPouchDBIndexMap = {[idxName:string]:IPouchDBIndex}
 
 function updateCachedIndexMap(db) {
-	const getIndexPromise = db.getIndexes()
-	return getIndexPromise
-		.then(indexesResult => {
-			const
-				indexes = indexesResult.indexes
 
-			const cachedIndexMap = indexes.reduce((map,index,i) => {
-				map[index.name] = {
-					index:  i,
-					name:   index.name,
-					def:    index,
-					fields: index.def.fields.reduce((fieldList, nextFieldDef) => {
-						fieldList.push(...Object.keys(nextFieldDef))
-						return fieldList
-					}, [])
-				}
+	try {
+		return db.getIndexes()
+			.then(indexesResult => {
+				const
+					indexes = indexesResult.indexes
 
-				return map
+				debugger
+				return indexes.reduce((map,index,i) => {
+					map[index.name] = {
+						index:  i,
+						name:   index.name,
+						def:    index,
+						fields: index.def.fields.reduce((fieldList, nextFieldDef) => {
+							fieldList.push(...Object.keys(nextFieldDef))
+							return fieldList
+						}, [])
+					}
 
-			},{})
+					return map
 
-			return cachedIndexMap
+				},{})
+
+			}).catch(err => {
+				log.error('Failed to update index map', err)
+
+				return Promise.resolve({})
+
 		})
-		.catch(err => {
-			log.error('Failed to get index map', err)
-			throw err
-		})
+	} catch (err) {
+		log.error('index map failed try/catch', err)
+
+		return Promise.resolve({})
+	}
 }
 
 export function getIndexMap(db,force = false):Promise<TPouchDBIndexMap> {
+	log.info('GETTING INDEXES',force)
 
-
-	if (force || !cachedIndexMapPromise) {
-		if (cachedIndexMapPromise && force) {
-			cachedIndexMapPromise = Promise.resolve(cachedIndexMapPromise)
-				.then(() => {
-					return updateCachedIndexMap(db)
-				})
-
-		} else if (!cachedIndexMapPromise) {
-			cachedIndexMapPromise = updateCachedIndexMap(db)
-		}
-	}
-
-	return cachedIndexMapPromise
+	return updateCachedIndexMap(db)
+	// if (force || !cachedIndexMapPromise) {
+	// 	if (cachedIndexMapPromise && force) {
+	// 		cachedIndexMapPromise.then(() => {
+	// 			return updateCachedIndexMap(db)
+	// 		})
+	// 	} else if (!cachedIndexMapPromise) {
+	// 		cachedIndexMapPromise = updateCachedIndexMap(db)
+	// 	}
+	// }
+	//
+	// return cachedIndexMapPromise
 
 }
 
@@ -98,6 +104,7 @@ export function getIndexByNameOrFields(db,indexName:string,fields:string[]) {
 			return idxMap[existingIdxName]
 
 		})
+
 
 }
 
@@ -137,11 +144,7 @@ function makeMangoIndex(db,indexConfigOrModelName:string|PouchDBMangoIndexConfig
 
 	log.info(`Checking index ${indexName}`)
 
-	return getIndexMap(db)
-		.then(idxMap => {
-
-			return getIndexByNameOrFields(db, indexName, fields)
-		})
+	return getIndexByNameOrFields(db, indexName, fields)
 		.then(idx => {
 			if (idx && (idx.name !== indexName || indexFieldsMatch(idx, fields))) {
 				log.info(`Index def has not changed: ${indexName}`)
@@ -164,6 +167,7 @@ function makeMangoIndex(db,indexConfigOrModelName:string|PouchDBMangoIndexConfig
 						})
 				}
 
+				//return doCreate()
 				if (idx) {
 					log.info(`Index changed, deleting old version: ${indexName}`)
 					return db.deleteIndex(idx.def)

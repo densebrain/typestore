@@ -1,16 +1,12 @@
 /**
  * Import PouchDB
  */
-const PouchDB = require('pouchdb') as any
+const PouchDB:any = require('pouchdb').plugin(require('pouchdb-find'))
 
 // Tracks whether quick search is enabled
 let quickSearchEnabled = false
 
 
-/**
- * Add the find plugin / MANGO
- */
-PouchDB.plugin(require('pouchdb-find'))
 
 /**
  * Extend the DTS to include some more functions we
@@ -43,5 +39,5 @@ export function enableQuickSearch() {
 }
 
 export {
-
+	PouchDB
 }

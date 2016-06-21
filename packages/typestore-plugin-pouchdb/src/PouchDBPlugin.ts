@@ -1,5 +1,5 @@
 
-const PouchDB = require('pouchdb')
+const {PouchDB} = require('./PouchDBSetup')
 const Bluebird = require('bluebird')
 //const assert = require('assert')
 
@@ -30,20 +30,15 @@ const log = Log.create(__filename)
  */
 export interface IPouchDBOptions {
 
-	/**
-	 * Database name for Dexie/indexdb
-	 */
-	filename:string,
-
-	sync?:boolean
+	filename:string
+	createOptions?:any
 }
 
 /**
  * Default options
  */
 export const PouchDBOptionDefaults = {
-	filename:null,
-	version: 1
+	filename:null
 }
 
 /**
@@ -69,16 +64,22 @@ export class PouchDBPlugin implements IStorePlugin {
 
 	private newPouch() {
 		//return new PouchDB(this.opts.filename,{adapter: 'websql'})
-		return new PouchDB(this.opts.filename)
+		return new PouchDB(this.opts.filename,this.opts.createOptions || {})
 	}
 
 	private open() {
+
 
 		return this.newPouch()
 			.then(db => {
 				this.internalDb = db
 				return db
 			})
+		// this.internalDb = this.newPouch()
+		// return this.internalDb
+		// 	.then(db => {
+		// 		return db
+		// 	})
 
 		// Grab and cache index map
 		//getIndexMap(this.internalDb, true)
@@ -116,65 +117,80 @@ export class PouchDBPlugin implements IStorePlugin {
 
 		return this.open()
 			.then(db => {
-				log.info('Database is open, grabbing indexes')
-				return db.getIndexes()
-					.then(existingIndexes => {
-						log.info('Existing Indexes',existingIndexes)
+				log.info('Database is open, grabbing info')
+				return db.info()
+					.then(info => {
+						log.info('DB Info',info)
 						return db
 					})
+
+				// return db.getIndexes()
+				// 	.then(existingIndexes => {
+				// 		log.info('Existing Indexes',existingIndexes)
+				// 		return db
+				// 	})
 			})
-			.then(db => {
-			const makeIndexPromises = [
-				makeMangoIndex(db,null,PouchDBTypeIndex,['type'])
-			]
+			.then(async (db) => {
+				await makeMangoIndex(db,null,PouchDBTypeIndex,['type'])
+				// const makeIndexPromises = [
+				//
+				// ]
+
+				const indexArgs = []
+
+				// Create any/all indexes
+				this.schema = models.reduce((newSchema,modelType) => {
+
+					// Get all the known attributes for the table
+					const attrs = modelType.options.attrs
+						.filter(attr => !attr.transient)
 
 
-			// Create any/all indexes
-			this.schema = models.reduce((newSchema,modelType) => {
+					const attrDetails = attrs.reduce((newDetails,attr:IModelAttributeOptions) => {
+						const
+							{index,name,primaryKey,isArray} = attr
 
-				// Get all the known attributes for the table
-				const attrs = modelType.options.attrs
-					.filter(attr => !attr.transient)
-
-
-				const attrDetails = attrs.reduce((newDetails,attr:IModelAttributeOptions) => {
-					const
-						{index,name,primaryKey,isArray} = attr
-
-					if (attr.secondaryKey)
-						throw new Error('Secondary keys are not supported in pouchdb')
+						if (attr.secondaryKey)
+							throw new Error('Secondary keys are not supported in pouchdb')
 
 
-					if (index) {
-						if (primaryKey)
-							throw new Error('You can not specify a second index on the primary key')
+						if (index) {
+							if (primaryKey)
+								throw new Error('You can not specify a second index on the primary key')
 
-						makeIndexPromises.push(makeMangoIndex(db,modelType.name,index.name || name,[name]))
+							indexArgs.push([db,modelType.name,index.name || name,[name]])
+						}
+
+						if (primaryKey) {
+							indexArgs.push([db,modelType.name,PouchDBPKIndex,[name,'type']])
+						}
+
+						newDetails[name] = attr
+
+						return newDetails
+					},{})
+
+
+
+					// Added the attribute descriptor to the new schema
+					newSchema[modelType.name] = {
+						name: modelType.name,
+						attrNames: Object.keys(attrDetails),
+						attrs: attrDetails
 					}
-
-					if (primaryKey) {
-						makeIndexPromises.push(makeMangoIndex(db,modelType.name,PouchDBPKIndex,[name,'type']))
-					}
-
-					newDetails[name] = attr
-
-					return newDetails
+					log.debug(`Created schema for ${modelType.name}`,newSchema[modelType.name])
+					return newSchema
 				},{})
 
-				// Added the attribute descriptor to the new schema
-				newSchema[modelType.name] = {
-					name: modelType.name,
-					attrNames: Object.keys(attrDetails),
-					attrs: attrDetails
-				}
-				log.debug(`Created schema for ${modelType.name}`,newSchema[modelType.name])
-				return newSchema
-			},{})
+				await Bluebird.each(indexArgs,async (args) => {
+					await makeMangoIndex.apply(null,args)
+				})
 
-			// Wait for indexes
-			return Bluebird.all(makeIndexPromises).return(this.coordinator)
+				//await Bluebird.each(makeIndexPromises)
+				// Wait for indexes
+				return this.coordinator
 
-		})
+			})
 
 
 
