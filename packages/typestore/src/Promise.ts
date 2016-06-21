@@ -6,6 +6,12 @@ Bluebird.config({
 	monitoring: true
 })
 
+const g = global as any
+
+/**
+ * Replace es6-promise with bluebird
+ */
+require('babel-runtime/core-js/promise').default = require('bluebird')
 
 // const Log = require('./log')
 // const log = Log.create(__filename)

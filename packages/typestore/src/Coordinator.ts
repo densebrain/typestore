@@ -1,7 +1,8 @@
 //import 'reflect-metadata'
 import './Globals'
 
-Promise = require('bluebird')
+const Bluebird = require('bluebird')
+Promise = Bluebird
 
 
 import * as Log from './log'
@@ -17,7 +18,7 @@ import {
 } from './Types'
 import {msg, Strings} from "./Messages"
 import {Repo} from "./Repo";
-import {PluginFilter, assert,PromiseMap} from "./Util";
+import {PluginFilter, assert, PromiseMap, isNil} from "./Util";
 import {IModelOptions} from "./decorations/ModelDecorations";
 import {PluginEventType} from "./PluginTypes";
 
@@ -132,7 +133,7 @@ export class Coordinator implements ICoordinator {
 	/**
 	 * Set the coordinator options
 	 */
-	async init(newOptions:ICoordinatorOptions, ...newPlugins:IPlugin[]):Promise<ICoordinator> {
+	init(newOptions:ICoordinatorOptions, ...newPlugins:IPlugin[]):Promise<ICoordinator> {
 		this.checkStarted(true)
 		this.checkInitialized(true)
 		this.initialized = true
@@ -148,11 +149,12 @@ export class Coordinator implements ICoordinator {
 
 		// Coordinator is ready, now initialize the store
 		log.debug(msg(Strings.ManagerInitComplete))
-		await PromiseMap(this.plugins, async (plugin) =>  {
-			if (plugin)
-				await plugin.init(this,this.options)
-		})
-		return this
+		return Bluebird.all(
+			this.plugins
+				.filter(plugin => !isNil(plugin))
+				.map(plugin => plugin.init(this,this.options))
+		).return(this)
+
 	}
 
 
@@ -162,18 +164,23 @@ export class Coordinator implements ICoordinator {
 	 *
 	 * @returns {Bluebird<boolean>}
 	 */
-	async start(...models):Promise<ICoordinator> {
+	start(...models):Promise<ICoordinator> {
 		this.checkStarted(true)
 		models.forEach(model => this.registerModel(model))
 
-		try {
-			this.startPromise = PromiseMap(this.plugins, plugin => (plugin) && plugin.start())
-			await this.startPromise
-		} finally {
-			this.started = true
-			this.startPromise = null
-		}
-		return this
+		this.startPromise = PromiseMap(this.plugins, plugin => (plugin) && plugin.start())
+
+		return Bluebird.resolve(this.startPromise)
+			.return(this)
+			.catch(err => {
+				log.error('failed to start coordinator',err)
+				throw err
+			})
+			.finally(() => {
+				this.started = true
+				this.startPromise = null
+			})
+
 
 	}
 

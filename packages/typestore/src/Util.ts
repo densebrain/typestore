@@ -2,6 +2,7 @@ import {IPlugin, IRepoPlugin, PluginType, IStorePlugin,
 	IIndexerPlugin, IFinderPlugin,IRepoSupportPlugin} from "./Types"
 import {Repo} from "./Repo"
 
+const Bluebird = require('bluebird')
 
 export function assert(test,msg:string = null) {
 	if (!test)
@@ -65,9 +66,9 @@ export function isFinderPlugin(plugin:IPlugin):plugin is IFinderPlugin {
 	return isPluginOfType(plugin,PluginType.Finder)
 }
 
-export async function PromiseMap<T>(values:T[],mapper:(value:T) => any):Promise<any[]> {
-	const results = values.map(async (value) => await Promise.resolve(mapper(value)))
-	return await Promise.all(results)
+export function PromiseMap<T>(values:T[],mapper:(value:T) => any):Promise<any[]> {
+	const results = values.map(value => Promise.resolve(mapper(value)))
+	return Bluebird.all(results)
 }
 
 export function PluginFilter<P extends IPlugin>(plugins:IPlugin[],type:PluginType):P[] {

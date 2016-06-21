@@ -63,7 +63,7 @@ describe('#plugin-pouchdb',() => {
 
 	before(async () => {
 		await reset()
-		await coordinator.start(Fixtures.PDBModel1)
+		await coordinator.start(Fixtures.PDBModel1,Fixtures.PDBModel2)
 		return true
 	})
 

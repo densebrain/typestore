@@ -8,6 +8,7 @@ import {PouchDBAttributePrefix, PouchDBReservedFields} from './PouchDBConstants'
 const log = Log.create(__filename)
 
 let cachedIndexMap = null
+let cachedIndexMapPromise = null
 
 export interface PouchDBMangoIndexConfig {
 	name:string
@@ -23,28 +24,36 @@ export interface IPouchDBIndex {
 
 export type TPouchDBIndexMap = {[idxName:string]:IPouchDBIndex}
 
-export async function getIndexMap(db,force = false):Promise<TPouchDBIndexMap> {
-	if (!force && cachedIndexMap)
-		return cachedIndexMap
+export function getIndexMap(db,force = false):Promise<TPouchDBIndexMap> {
+	if (force) {
+		cachedIndexMapPromise = null
+	}
 
-	const
-		indexesResult = await db.getIndexes(),
-		indexes = indexesResult.indexes
+	if (!cachedIndexMapPromise) {
+		cachedIndexMapPromise = db.getIndexes()
+			.then(indexesResult => {
+				const
+					indexes = indexesResult.indexes
 
-	return cachedIndexMap = indexes.reduce((map,index,i) => {
-			map[index.name] = {
-		        index:  i,
-				name:   index.name,
-				def:    index,
-				fields: index.def.fields.reduce((fieldList, nextFieldDef) => {
-					fieldList.push(...Object.keys(nextFieldDef))
-					return fieldList
-				}, [])
-			}
+				return cachedIndexMap = indexes.reduce((map,index,i) => {
+					map[index.name] = {
+						index:  i,
+						name:   index.name,
+						def:    index,
+						fields: index.def.fields.reduce((fieldList, nextFieldDef) => {
+							fieldList.push(...Object.keys(nextFieldDef))
+							return fieldList
+						}, [])
+					}
 
-			return map
+					return map
 
-	},{})
+				},{})
+			})
+	}
+
+	return cachedIndexMapPromise
+
 }
 
 
@@ -102,34 +111,43 @@ async function makeMangoIndex(db,indexConfigOrModelName:string|PouchDBMangoIndex
 
 	// Make sure we have a valid index config first thing
 	const indexConfig = (!indexConfigOrModelName || isString(indexConfigOrModelName)) ?
-		makeMangoIndexConfig(<string>indexConfigOrModelName, indexName,fields) :
+		makeMangoIndexConfig(<string>indexConfigOrModelName, indexName, fields) :
 		indexConfigOrModelName
 
-	indexName = indexConfig.name
+	try {
 
-	let
-		idxMap = await getIndexMap(db),
-		idxNames = Object.keys(idxMap)
+		indexName = indexConfig.name
 
-	let idx = await getIndexByNameOrFields(db,indexName,fields)
+		log.info(`Checking index ${indexName}`)
 
-	if (idx && (idx.name !== indexName || indexFieldsMatch(idx,fields))) {
-		log.info(`Index def has not changed: ${indexName}`)
-	} else {
-		if (idx) {
-			log.info(`Index changed, deleting old version: ${indexName}`)
-			await db.deleteIndex(idx.def)
+		let
+			idxMap = await getIndexMap(db),
+			idxNames = Object.keys(idxMap)
+
+		let idx = await getIndexByNameOrFields(db, indexName, fields)
+
+
+		if (idx && (idx.name !== indexName || indexFieldsMatch(idx, fields))) {
+			log.info(`Index def has not changed: ${indexName}`)
+		} else {
+			if (idx) {
+				log.info(`Index changed, deleting old version: ${indexName}`)
+				await db.deleteIndex(idx.def)
+			}
+
+			log.info(`Index being created: ${indexName}`)
+			const createResult = await db.createIndex({index: indexConfig})
+			log.info(`Index created, result`, createResult)
+
+			idxMap = await getIndexMap(db, true)
+			idx = idxMap[indexName]
 		}
 
-		log.info(`Index being created: ${indexName}`)
-		const createResult = await db.createIndex({index: indexConfig})
-		log.info(`Index created, result`,createResult)
-
-		idxMap = await getIndexMap(db,true)
-		idx = idxMap[indexName]
+		return idx
+	} catch (err) {
+		log.error(`Failed to create index ${indexConfig.name} with fields ${indexConfig.fields.join(',')}`,err)
+		throw err
 	}
-
-	return idx
 }
 
 export {

@@ -1,6 +1,6 @@
 
 const PouchDB = require('pouchdb')
-
+const Bluebird = require('bluebird')
 
 import {
 	ICoordinator,
@@ -9,7 +9,6 @@ import {
 	IModel,
 	PluginType,
 	IStorePlugin,
-	IModelType,
 	Log,
 	PluginEventType,
 	repoAttachIfSupported,
@@ -82,7 +81,7 @@ export class PouchDBPlugin implements IStorePlugin {
 	}
 
 	get db() {
-		return this.internalDb
+		return (!this.internalDb) ? this.open() : this.internalDb
 	}
 
 
@@ -96,14 +95,14 @@ export class PouchDBPlugin implements IStorePlugin {
 
 
 
-	async init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
+	init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
 		this.coordinator = coordinator
-		return coordinator
+		return Bluebird.resolve(coordinator)
 	}
 
 
 
-	async start():Promise<ICoordinator> {
+	start():Promise<ICoordinator> {
 		const models = this.coordinator.getModels()
 
 		log.debug(`Opening database`,this.opts.filename)
@@ -131,7 +130,9 @@ export class PouchDBPlugin implements IStorePlugin {
 
 
 				if (index) {
-					assert(!primaryKey,'You can not specify a second index on the primary key')
+					if (primaryKey)
+						throw new Error('You can not specify a second index on the primary key')
+
 					makeIndexPromises.push(makeMangoIndex(db,modelType.name,index.name || name,[name]))
 				}
 
@@ -155,10 +156,8 @@ export class PouchDBPlugin implements IStorePlugin {
 		},{})
 
 		// Wait for indexes
-		await Promise.all(makeIndexPromises)
+		return Bluebird.all(makeIndexPromises).return(this.coordinator)
 
-		log.debug('PouchDB store is ready')
-		return this.coordinator
 
 
 	}
