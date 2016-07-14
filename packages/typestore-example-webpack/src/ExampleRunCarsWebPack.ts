@@ -1,4 +1,3 @@
-/// <reference path="../typings/typestore-example-webpack.d.ts"/>
 import 'reflect-metadata'
 const assert = require('assert')
 
@@ -126,15 +125,15 @@ export async function runCars() {
 
 	// Create a coordinator
 	const coordinator = new Coordinator()
-	
+
 	// Initialize it with all plugins
 	await coordinator.init({
 		syncStrategy: SyncStrategy.Overwrite
 	},idbStore)
-	
+
 	// Then start it with all models
 	await coordinator.start(Car)
-	
+
 	let car1 = new Car({
 		manufacturer: 'volvo',
 		year: 1956,

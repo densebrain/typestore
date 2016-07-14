@@ -249,7 +249,7 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 		const mapper = this.repo.getMapper(this.repo.modelClazz)
 		const jsons = models.map(model => mapper.toObject(model))
 
-		await this.table.bulkPut(jsons)
+		await (this.table as any).bulkPut(jsons)
 		this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save,...models)
 
 		return models
@@ -269,7 +269,7 @@ export class IndexedDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IF
 
 		const dbKeys = keys.map(key => this.dbKeyFromKey(key))
 
-		await this.table.bulkDelete(dbKeys)
+		await (this.table as any).bulkDelete(dbKeys)
 
 		if (models)
 			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove,...models)

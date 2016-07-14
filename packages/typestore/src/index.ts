@@ -1,6 +1,15 @@
-//import 'es6-shim'
+///<reference path="../typings/index.d.ts"/>
 
-import './Promise'
+
+
+//import 'es6-shim'
+import 'reflect-metadata'
+
+import {Promise} from './Promise'
+
+export {
+	Promise
+}
 
 /**
  * Export types as a a namespace and export all
@@ -56,6 +65,7 @@ export * from './Util'
 export * from './Messages'
 export * from './Errors'
 export * from './MetadataManager'
+export * from './ModelMapper'
 
 
 

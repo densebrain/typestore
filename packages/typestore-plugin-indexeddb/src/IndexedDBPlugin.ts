@@ -62,7 +62,7 @@ export class IndexedDBPlugin implements IStorePlugin {
 	}
 
 	private newDexie() {
-		return new Dexie(this.opts.databaseName,this.opts.provider)
+		return new Dexie(this.opts.databaseName,this.opts.provider as any)
 	}
 
 	private open() {

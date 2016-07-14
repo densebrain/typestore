@@ -1,3 +1,4 @@
+///<reference path="../typings/index.d.ts"/>
 import * as Decorations from './DynamoDBDecorations'
 import * as Store from './DynamoDBStorePlugin'
 

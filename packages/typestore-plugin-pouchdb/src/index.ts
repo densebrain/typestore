@@ -1,3 +1,5 @@
+///<reference path="../typings/index.d.ts"/>
+
 import './PouchDBSetup'
 /**
  * Re-export everything we need

@@ -1,24 +1,24 @@
 import {
 	IStorePlugin,
-	IKeyValue, 
-	ICoordinatorOptions, 
+	IKeyValue,
+	ICoordinatorOptions,
 	ICoordinator,
-	Repo, 
+	Repo,
 	IModel,
 	PluginType,
 	PluginEventType,
-	repoAttachIfSupported
+	repoAttachIfSupported,
+	IRepoPlugin
 } from 'typestore'
-import {IRepoPlugin} from "../../typestore/src/PluginTypes";
 import {MockRepoPlugin} from "./MockRepoPlugin";
 
 /**
  * Mock key value, gives whatever it gets
  */
 export class MockKeyValue implements IKeyValue {
-	
-	
-	
+
+
+
 	args
 
 	constructor(...args:any[]) {
@@ -33,12 +33,12 @@ export class MockKeyValue implements IKeyValue {
 export class MockStore implements IStorePlugin {
 
 	supportedModels:any[]
-	
+
 	type = PluginType.Store
-	
+
 	coordinator:ICoordinator
 	repoPlugins:IRepoPlugin<any>[]  = []
-	
+
 	constructor(...supportedModels:any[]) {
 		this.supportedModels = supportedModels
 	}

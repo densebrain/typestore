@@ -28,21 +28,19 @@ import * as Log from './log'
 
 import {
 	isFunction,
-	isRepoPlugin,
 	isFinderPlugin,
 	PluginFilter,
-	PromiseMap,
-	isIndexerPlugin,
-	isNumberOrString
+	PromiseMap
 } from "./Util"
 
-import {ModelMapper} from "./ModelMapper"
+import {ModelMapper,getDefaultMapper} from "./ModelMapper"
 import {IModelType} from "./ModelTypes"
-import {IModelOptions, IModelKey, IKeyValue, TKeyValue} from "./decorations/ModelDecorations";
+import {IModelOptions, IModelKey, IKeyValue, TKeyValue, IModelAttributeOptions} from "./decorations/ModelDecorations";
 import {getMetadata} from "./MetadataManager";
 
 // Logger
 const log = Log.create(__filename)
+
 
 /**
  * The core Repo implementation
@@ -82,6 +80,10 @@ export class Repo<M extends IModel> {
 		return PluginFilter<IFinderPlugin>(this.plugins,PluginType.Finder)
 	}
 
+	attr(name:string):IModelAttributeOptions {
+		return this.modelType.options.attrs.find(attr => attr.name === name)
+	}
+
 	init(coordinator) {
 		this.coordinator = coordinator
 		this.modelType = coordinator.getModel(this.modelClazz)
@@ -100,7 +102,7 @@ export class Repo<M extends IModel> {
 
 
 	getMapper<M extends IModel>(clazz:{new():M;}):IModelMapper<M> {
-		return new ModelMapper(clazz)
+		return getDefaultMapper(clazz)
 	}
 
 
@@ -231,7 +233,7 @@ export class Repo<M extends IModel> {
 				)
 			})
 
-			return keys.map(async (key) => await this.get(key))
+			return keys.map(async (key) => this.get(key))
 
 		}
 	}

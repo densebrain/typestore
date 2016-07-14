@@ -1,0 +1,8 @@
+{
+  "resolution": "main",
+  "tree": {
+    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/9cfb866c9f912174c8c6d15a2dc24399cfd71f37/reflect-metadata/reflect-metadata.d.ts",
+    "raw": "registry:dt/reflect-metadata#0.0.0+20160630155503",
+    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/9cfb866c9f912174c8c6d15a2dc24399cfd71f37/reflect-metadata/reflect-metadata.d.ts"
+  }
+}

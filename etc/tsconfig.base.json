@@ -1,10 +1,18 @@
 {
 	"compilerOptions": {
-		"target": "es6",
+		"target": "ES6",
+		"lib": [
+			"es7",
+			"es2015",
+			"es2016",
+			"es2017",
+			"dom"
+		],
 		"module": "commonjs",
 		"moduleResolution": "node",
-		"declaration": true,
+		"declaration": false,
 		"emitDecoratorMetadata": true,
+		"jsx": "react",
 		"experimentalDecorators": true,
 		"preserveConstEnums": true,
 		"allowSyntheticDefaultImports": true,
@@ -15,10 +23,6 @@
 	"exclude": [
 		"node_modules",
 		"**/node_modules",
-		"typings/main.d.ts",
-		"**/typings/main.d.ts",
-		"typings/main/**/*.*",
-		"**/typings/main/**/*.*",
 		"dist",
 		"**/dist"
 	]

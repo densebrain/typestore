@@ -6,5 +6,5 @@ function compileAll(done) {
 	runSequence(...compileTasks,done)
 }
 
-module.exports = gulp.task('compile', [], compileAll)
-module.exports = gulp.task('compile-all', ['compile'], () => {})
+gulp.task('compile', ['tsconfig'], compileAll)
+module.exports = gulp.task('compile-all', ['tsconfig','compile'], () => {})

@@ -1,4 +1,4 @@
-///<reference path="../typings/typestore-mocks"/>
+///<reference path="../typings/index.d.ts"/>
 import 'reflect-metadata'
 
 export * from './MockStore'

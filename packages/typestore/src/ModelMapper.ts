@@ -96,3 +96,17 @@ export class ModelMapper<M extends IModel> implements IModelMapper<M> {
 		return o
 	}
 }
+
+const mapperCache = new WeakMap<any,IModelMapper<IModel>>()
+
+export function getDefaultMapper<T extends IModel>(clazz:{new():T}):IModelMapper<T> {
+	let mapper = mapperCache.get(clazz) as IModelMapper<T>
+
+	if (!mapper) {
+		mapper = new ModelMapper(clazz)
+		mapperCache.set(clazz,(mapper))
+	}
+
+	return mapper
+
+}

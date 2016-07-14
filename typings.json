@@ -5,5 +5,18 @@
   "ambientDependencies": {},
   "ambientDevDependencies": {
     "faker": "registry:dt/faker#0.0.0+20160406111603"
+  },
+  "dependencies": {
+    "chalk": "registry:npm/chalk#1.0.0+20160211003958",
+    "lodash": "registry:npm/lodash#4.0.0+20160701205107",
+    "node-uuid": "registry:npm/node-uuid#1.4.7+20160503013124"
+  },
+  "globalDependencies": {
+    "bluebird": "registry:dt/bluebird#2.0.0+20160701023356",
+    "expectations": "registry:dt/expectations#0.2.5+20160317120654",
+    "faker": "registry:dt/faker#0.0.0+20160406111603",
+    "mocha": "registry:env/mocha#2.2.5+20160321223601",
+    "node": "registry:dt/node#6.0.0+20160709114037",
+    "reflect-metadata": "registry:dt/reflect-metadata#0.0.0+20160630155503"
   }
 }

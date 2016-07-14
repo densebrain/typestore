@@ -38,6 +38,13 @@ export function enableQuickSearch() {
 	PouchDB.plugin(require('pouchdb-quick-search'))
 }
 
+/**
+ * Declare emit for indexes, etc
+ */
+declare global {
+	var emit:any
+}
+
 export {
 	PouchDB
 }

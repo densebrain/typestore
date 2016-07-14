@@ -1,5 +1,3 @@
-///<reference path="../typings/typestore-plugin-dynamodb"/>
-
 // Set the aws promise provide to bluebird
 //(AWS.config as any).setPromiseDependency(Promise)
 Promise = require('bluebird')
@@ -76,7 +74,7 @@ export class DynamoDBStorePlugin implements IStorePlugin {
 			case PluginEventType.RepoInit:
 				return repoAttachIfSupported(args[0] as Repo<any>, this)
 
-				
+
 		}
 		return false;
 	}
@@ -127,7 +125,7 @@ export class DynamoDBStorePlugin implements IStorePlugin {
 
 	/**
 	 * Called during the coordinators initialization process
-	 * 
+	 *
 	 * @param coordinator
 	 * @param opts
 	 * @returns {Promise<ICoordinator>}
@@ -213,7 +211,7 @@ export class DynamoDBStorePlugin implements IStorePlugin {
 
 		const model = this.coordinator.getModelByName(clazzName)
 		const modelOptions = model.options as IDynamoDBModelOptions
-		
+
 		if (!modelOptions) {
 			log.info('No model options found, returning null')
 			return null
@@ -558,7 +556,7 @@ export class DynamoDBStorePlugin implements IStorePlugin {
 
 	async delete(params:DynamoDB.DeleteItemInput):Promise<DynamoDB.DeleteItemOutput> {
 		return await this.documentClient.delete(params).promise()
-		
+
 	}
 
 
