@@ -1,12 +1,14 @@
 {
-  "name": "typestore-project",
+  "name": "typestore",
   "internal": true,
   "description": "TypeStore development package",
   "version": "0.1.14",
+  "main": "packages/typestore/dist/index.js",
   "scripts": {
     "prepublish": "etc/scripts/prepublish.sh",
     "test": "gulp tsconfig && gulp compile-all && gulp test-all",
-    "publish": "gulp tsconfig && gulp compile-all && gulp publish-all"
+    "publish": "gulp tsconfig && gulp compile-all && gulp publish-all",
+    "publish-patch": "npm version patch && git push --tags"
   },
   "repository": {
     "type": "git",
@@ -33,6 +35,7 @@
     "typelogger": "^1.0.4"
   },
   "devDependencies": {
+    "aws-sdk": "^2.3.7",
     "app-module-path": "^1.0.6",
     "aws-sdk-typescript": "densebrain/aws-sdk-typescript#v0.0.4",
     "babel": "^6.5.2",
@@ -72,6 +75,6 @@
     "shelljs": "^0.7.0",
     "sinon": "^1.17.4",
     "typedoc": "sierrasoftworks/typedoc#v1.8.10",
-    "typescript": "^2.1.0-dev.20160714"
+    "typescript": ">=2.0.0"
   }
 }

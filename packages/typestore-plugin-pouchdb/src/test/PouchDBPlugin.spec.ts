@@ -116,6 +116,8 @@ describe('#plugin-pouchdb',() => {
 
 		const savedModels = await repo.bulkSave(...models)
 		expect(savedModels.length).toBe(models.length)
+		//const nextCount = await repo.count()
+		//expect(nextCount).toBe(models.length)
 
 		const ids = savedModels.map(savedModel => savedModel.id)
 		models.forEach(model => expect(model.$$doc).not.toBeNull())

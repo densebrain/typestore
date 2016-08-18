@@ -1,7 +1,5 @@
 
 import * as TypeStore from 'typestore'
-Promise = TypeStore.Promise
-
 
 import * as uuid from 'node-uuid'
 import {Coordinator,Log,SyncStrategy} from 'typestore'
@@ -55,7 +53,7 @@ async function reset(syncStrategy:SyncStrategy,endpoint:string) {
 /**
  * Global test suite
  */
-describe('#plugin-dynamodb', function() {
+xdescribe('#plugin-dynamodb', function() {
 	this.timeout(60000)
 
 	before(() => {

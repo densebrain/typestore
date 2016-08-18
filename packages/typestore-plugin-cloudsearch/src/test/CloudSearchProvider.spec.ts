@@ -11,7 +11,6 @@ import * as sinon from 'sinon'
 import * as uuid from 'node-uuid'
 
 import * as TypeStore from 'typestore'
-Promise = TypeStore.Promise
 import {Coordinator,Log,IndexAction} from 'typestore'
 import {MockStore} from "typestore-mocks"
 import {CloudSearchProviderPlugin} from "../CloudSearchProviderPlugin"

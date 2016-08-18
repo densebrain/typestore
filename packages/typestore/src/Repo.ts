@@ -233,7 +233,7 @@ export class Repo<M extends IModel> {
 				)
 			})
 
-			return keys.map(async (key) => this.get(key))
+			return keys.map(async (key) => await this.get(key))
 
 		}
 	}

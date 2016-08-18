@@ -1,5 +1,3 @@
-
-
 //import * as PouchDB from 'pouchdb'
 
 import {
@@ -258,8 +256,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		try {
 			const res:any = await this.db[doc._id ? 'put' : 'post'](doc)
 
-			const savedModel = mapper.fromObject(json)
-			Object.assign(savedModel as any,{$$doc: {_id: res.id, '_rev': res.rev,attrs:json}})
+			const savedModel = Object.assign({},model,{$$doc: {_id: res.id, '_rev': res.rev,attrs:json}})
 
 			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save, savedModel)
 
@@ -384,15 +381,15 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		const responses = await this.db.bulkDocs(docs)
 
 		// Docs -> Models
-		const savedModels = jsons.map((json,index) => {
-			const savedModel = mapper.fromObject(json)
+		const savedModels = docs.map((doc,index) => {
+			const savedModel = mapper.fromObject(doc.attrs)
 
 			const res = responses[index]
 			Object.assign(savedModel as any,{
 				$$doc: {
 					_id: res.id,
 					_rev: res.rev,
-					attrs:json
+					attrs:doc.attrs
 				}
 			})
 
@@ -418,11 +415,27 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		if (this.repo.supportPersistenceEvents())
 			models = await this.bulkGet(...keys)
 
-		await this.db.bulkDocs(keys.map(_id => ({_id,_deleted:true})))
+		
+		const deleteDocs:any[] = keys.map(_id => ({_id,_deleted:true}))
+		
+		// Get the revs for the keys
+		const deleteRevs = await this.db.allDocs({
+			include_docs:false,
+			keys
+		})
+		
+		// Map to delete docs
+		deleteRevs.rows
+			.filter(row => !row.error && row.value && row.value.rev)
+			.forEach(row => {
+				const id = row.id, rev = row.value.rev
+				const doc = deleteDocs.find(doc => `${doc._id}` === `${id}`)
+				doc._rev = rev
+			})
+		
+		// Bulk docs
+		await this.db.bulkDocs(deleteDocs)
 
-		//
-		// await Promise.all(models.map((model:any) => this.db.remove(model.$$doc)))
-		//
 		if (models)
 			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove,...models)
 

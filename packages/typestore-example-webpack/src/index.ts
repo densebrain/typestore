@@ -1,4 +1,4 @@
-///<reference path="../typings/index.d.ts"/>
+
 require('babel-polyfill')
 import {runCars} from './ExampleRunCarsWebPack'
 

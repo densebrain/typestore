@@ -1,4 +1,3 @@
-
 import {Log,FinderRequest,FinderResultArray,isFunction} from 'typestore'
 import {enableQuickSearch} from './PouchDBSetup'
 
@@ -9,7 +8,7 @@ import {
 import {PouchDBRepoPlugin} from './PouchDBRepoPlugin'
 import {getIndexByNameOrFields, makeMangoIndex} from './PouchDBIndexes'
 import {mapDocs, transformDocumentKeys, mapAttrsToField} from './PouchDBUtil'
-import assert = require('assert')
+
 
 const log = Log.create(__filename)
 
@@ -127,7 +126,7 @@ export async function findWithSelector(
 		opts.fields = (fields) ? mapAttrsToField(fields) : mapAttrsToField([pouchRepo.primaryKeyField])
 
 
-	log.debug('findWithSelector, selector',selector,'opts',JSON.stringify(opts,null,4))
+	log.info('findWithSelector, selector',selector,'opts',JSON.stringify(opts,null,4))
 	const results = await pouchRepo.db.find(opts)
 	log.info('RESULTS: findWithSelector, selector',selector,'opts',JSON.stringify(opts,null,4),'results',results)
 
@@ -245,10 +244,11 @@ export function makeMangoFinder(pouchRepo:PouchDBRepoPlugin<any>,finderKey:strin
 	if (all) {
 		indexCreate = Promise.resolve(null)
 	} else {
-		assert(indexName || indexFields,
-			"You MUST provide either indexFields or indexName")
+		if (!(indexName || indexFields))
+			throw new Error("You MUST provide either indexFields or indexName")
 
-		assert(indexName || finderKey,`No valid index name indexName(${indexName}) / finderKey(${finderKey}`)
+		if (!(indexName || finderKey))
+			throw new Error(`No valid index name indexName(${indexName}) / finderKey(${finderKey}`)
 
 		// In the background create a promise for the index
 		//const indexDeferred = Bluebird.defer()
@@ -260,8 +260,8 @@ export function makeMangoFinder(pouchRepo:PouchDBRepoPlugin<any>,finderKey:strin
 
 			log.debug(`found index for finder ${finderKey}: ${idx && idx.name}/${indexName} with fields ${idx && idx.fields.join(',')}`)
 
-			assert(idx || (indexFields && indexFields.length > 0),
-				`No index found for ${indexName} and no indexFields provided`)
+			if (!(idx || (indexFields && indexFields.length > 0)))
+				throw new Error(`No index found for ${indexName} and no indexFields provided`)
 
 			if (!idx || idx.name === indexName) {
 				idx = await makeMangoIndex(
@@ -282,6 +282,7 @@ export function makeMangoFinder(pouchRepo:PouchDBRepoPlugin<any>,finderKey:strin
 
 	// Actual finder function
 	const finder = async (request:FinderRequest,...args) => {
+
 		const selectorResult =
 			isFunction(selector) ? (selector as any)(...args) : selector
 

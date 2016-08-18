@@ -10,7 +10,7 @@
 		],
 		"module": "commonjs",
 		"moduleResolution": "node",
-		"declaration": false,
+		"declaration": true,
 		"emitDecoratorMetadata": true,
 		"jsx": "react",
 		"experimentalDecorators": true,

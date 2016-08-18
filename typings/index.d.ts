@@ -1,3 +1,7 @@
+/// <reference path="../node_modules/aws-sdk-typescript/output/typings/aws-sdk.d.ts" />
+/// <reference path="../node_modules/aws-sdk-typescript/output/typings/aws-dynamodb.d.ts" />
+/// <reference path="../node_modules/aws-sdk-typescript/output/typings/aws-cloudsearch.d.ts" />
+/// <reference path="../node_modules/aws-sdk-typescript/output/typings/aws-cloudsearchdomain.d.ts" />
 /// <reference path="globals/bluebird/index.d.ts" />
 /// <reference path="globals/expectations/index.d.ts" />
 /// <reference path="globals/faker/index.d.ts" />

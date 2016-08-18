@@ -9,12 +9,14 @@ module.exports = function(project,srcPath,isGlobalConfig=false) {
 		basePaths.concat(
 			(isGlobalConfig) ? [
 				`${processDir}/packages/*/src/**/*.ts`,
+				`${processDir}/typings/*.d.ts`,
 				`!${processDir}/packages/*/src/**/*.d.ts`	
 			] :
 			[
-				`${project.base}/typings/browser.d.ts`,
-				`${project.base}/typings/${project.name}.d.ts`,
 				`${srcPath}/**/*.ts`,
+				`${processDir}/typings/*.d.ts`,
+				// `${project.base}/typings/browser.d.ts`,
+				`${project.base}/typings/*.d.ts`,
 				`!${srcPath}/**/*.d.ts`
 			]
 		)
