@@ -11,7 +11,7 @@ const
 	path = require('path'),
 	gulp = require('gulp'),
 	del = require('del'),
-	tsdoc = require('gulp-typedoc'),
+	// tsdoc = require('gulp-typedoc'),
 	log = console,
 	runSequence = require('run-sequence'),
 	git = require('gulp-git'),

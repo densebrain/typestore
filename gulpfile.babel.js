@@ -6,7 +6,7 @@ require('./etc/global-env')
 const 
 	gulp = require('gulp'),
 	del = require('del'),
-	tsdoc = require('gulp-typedoc'),
+	// tsdoc = require('gulp-typedoc'),
 	runSequence = require('run-sequence'),
 	git = require('gulp-git'),
 	ghRelease = require('gulp-github-release'),
@@ -20,7 +20,7 @@ Object.assign(global,{
 	ts,
 	gulp,
 	runSequence,
-	tsdoc,
+	//tsdoc,
 	del,
 	git,
 	ghRelease

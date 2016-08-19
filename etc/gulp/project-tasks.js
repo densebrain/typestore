@@ -35,7 +35,6 @@ module.exports = function(projectName) {
 	 * Build the tasks
 	 */
 	const
-		//distPath = `${project.base}/src`,
 		distPath = `${project.base}/dist`,
 		srcPath = `${project.base}/src`,
 		testsPath = distPath
