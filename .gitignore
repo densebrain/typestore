@@ -1,9 +1,9 @@
 # Jetbrains
 .idea/workspace.xml
 .idea/tasks.xml
-.idea/dictionaries
+#.idea/dictionaries
 .idea/vcs.xml
-.idea/jsLibraryMappings.xml
+#.idea/jsLibraryMappings.xml
 
 .idea/dataSources.ids
 .idea/dataSources.xml
@@ -12,11 +12,13 @@
 .idea/dynamic.xml
 .idea/uiDesigner.xml
 .idea/gradle.xml
-.idea/libraries
+#.idea/libraries
 .idea_modules/
 .idea/mongoSettings.xml
 *.iws
 /out/
+
+dist
 
 # JIRA - Not used but in my common
 atlassian-ide-plugin.xml
