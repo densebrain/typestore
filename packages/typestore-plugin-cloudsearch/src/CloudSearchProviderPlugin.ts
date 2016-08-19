@@ -1,4 +1,3 @@
-///<reference path="../typings/typestore-plugin-cloudsearch.d.ts"/>
 import * as _ from 'lodash'
 
 import {
@@ -15,13 +14,14 @@ import {
 	ICoordinator,
 	ICoordinatorOptions,
 	PluginEventType,
+	IFinderPlugin,
 	repoAttachIfSupported
 } from 'typestore'
 
 import {CloudSearchDomain} from 'aws-sdk'
 import {ICloudSearchOptions} from "./CloudSearchTypes";
 import {CloudSearchDefaults, CloudSearchFinderKey} from "./CloudSearchConstants";
-import {IFinderPlugin} from "../../typestore/src/PluginTypes";
+
 import getMetadata = Reflect.getMetadata;
 
 
@@ -30,7 +30,7 @@ const clients:{[endpoint:string]:CloudSearchDomain} = {}
 
 /**
  * Retrieve an AWS CloudSearch client
- * 
+ *
  * @param endpoint
  * @param awsOptions
  * @returns {CloudSearchDomain}
@@ -58,7 +58,7 @@ export class CloudSearchProviderPlugin implements IIndexerPlugin, IFinderPlugin,
 	private awsOptions:any
 	private typeField:string
 	private coordinator
-	
+
 
 	/**
 	 * Create a new AWS CloudSearch Provider
@@ -69,15 +69,15 @@ export class CloudSearchProviderPlugin implements IIndexerPlugin, IFinderPlugin,
 	constructor(private options:ICloudSearchOptions,...supportedModels:any[]) {
 		this.supportedModels = supportedModels
 		_.defaultsDeep(options,CloudSearchDefaults)
-		
+
 		Object.assign(this,options)
-		
+
 		this.client = getClient(this.endpoint,this.awsOptions)
 	}
 
 
-	
-	
+
+
 	handle(eventType:PluginEventType, ...args):boolean|any {
 		switch(eventType) {
 			case PluginEventType.RepoInit:
@@ -94,7 +94,7 @@ export class CloudSearchProviderPlugin implements IIndexerPlugin, IFinderPlugin,
 
 	/**
 	 * Called to start the plugin
-	 * 
+	 *
 	 * @returns {any}
 	 */
 	async start():Promise<ICoordinator> {
@@ -103,7 +103,7 @@ export class CloudSearchProviderPlugin implements IIndexerPlugin, IFinderPlugin,
 
 	/**
 	 * Called to stop the plugin
-	 * 
+	 *
 	 * @returns {any}
 	 */
 	async stop():Promise<ICoordinator> {
@@ -112,7 +112,7 @@ export class CloudSearchProviderPlugin implements IIndexerPlugin, IFinderPlugin,
 
 	/**
 	 * Indexing action pushing documents to CloudSearch
-	 * 
+	 *
 	 * @param type
 	 * @param options
 	 * @param modelType
@@ -176,15 +176,15 @@ export class CloudSearchProviderPlugin implements IIndexerPlugin, IFinderPlugin,
 
 	/**
 	 * Create a cloud search finder if decorated
-	 * 
+	 *
 	 * @param repo
 	 * @param finderKey
 	 * @returns {function(...[any]): Promise<Promise<any>[]>}
 	 */
 	decorateFinder(repo:Repo<any>, finderKey:string) {
 		const searchOpts = getMetadata(CloudSearchFinderKey,repo,finderKey)
-		
-		return (searchOpts) ? 
+
+		return (searchOpts) ?
 			repo.makeGenericFinder(finderKey,this,searchOpts) :
 			null
 	}

@@ -1,4 +1,4 @@
-//import 'es6-shim'
+import 'reflect-metadata'
 
 import './Promise'
 
@@ -56,6 +56,6 @@ export * from './Util'
 export * from './Messages'
 export * from './Errors'
 export * from './MetadataManager'
-
+export * from './ModelMapper'
 
 

@@ -32,19 +32,40 @@ export interface IFinderOptions {
 	single?:boolean
 }
 
+
+
 /**
  * Finder request for paging, etc
  */
-export interface IFinderRequest {
-	/**
-	 * Record Offset to start from
-	 */
-	offset?:number
+export class FinderRequest {
+	extra:any
+	limit:number = -1
+	offset:number = 0
+	sort:string[]
+	sortDirection:'desc'|'asc'
+	includeModels:boolean = null
 
-	/**
-	 * Maximum number of results
-	 */
-	limit?:number
+	constructor(obj:any)
+	constructor(limit:number,offset:number,includeModels?:boolean,sort?:string[],sortDirection?:'asc'|'desc',extra?:any)
+	constructor(limitOrObject,offset = 0,includeModels:boolean = null,sort:string[] = null,sortDirection:'asc'|'desc' = 'asc',extra:any = null) {
+		if (typeof limitOrObject === 'number') {
+			Object.assign(this,{
+				limit:limitOrObject,
+				offset,
+				includeModels,
+				sort,
+				sortDirection,
+				extra
+			})
+		} else {
+			Object.assign(this,limitOrObject)
+		}
+	}
+}
+
+export interface IFinderItemMetadata {
+	score?:number
+	finderName?:string
 }
 
 /**
@@ -53,17 +74,19 @@ export interface IFinderRequest {
 export class FinderResultArray<T> extends Array<T> {
 
 	pageNumber:number = -1
-	totalPages:number = -1
+	pageCount:number = -1
 
 	constructor(
 		items:T[],
-		public totalResults:number,
-		public request:IFinderRequest = null
+		public total:number,
+		public request:FinderRequest = null,
+	    public itemMetadata:IFinderItemMetadata[] = null
 	) {
-		super(...items)
+		super(items.length)
+		items.forEach((item,index) => this[index] = item)
 
 		if (request) {
-			this.totalPages = Math.ceil(totalResults / request.limit)
+			this.pageCount = Math.ceil(total / request.limit)
 			this.pageNumber = isNumber(request.offset) ?
 				Math.floor(request.offset / request.limit) :
 				-1
@@ -83,6 +106,7 @@ export class DefaultModel implements IModel {
 
 		return type.name
 	}
+
 }
 
 /**

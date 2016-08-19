@@ -8,8 +8,8 @@
     "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
   },
   "dependencies": {
-    "pouchdb": "^5.4.4",
-    "pouchdb-find": "^0.10.2",
-    "pouchdb-quick-search": "^1.1.2"
+    "pouchdb": "^5.4.5",
+    "pouchdb-find": "^0.10.3",
+    "pouchdb-quick-search": "^1.1.3"
   }
 }

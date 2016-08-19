@@ -1,7 +1,7 @@
 
-Promise = require('bluebird')
+
 const AWS = require('aws-sdk')
-const log = getLogger(__filename)
+
 
 const sharedIniCreds =  new AWS.SharedIniFileCredentials({profile: 'default'})
 
@@ -10,11 +10,13 @@ import {CloudSearchTestModel,CloudSearchTest1Repo} from './fixtures/index'
 import * as sinon from 'sinon'
 import * as uuid from 'node-uuid'
 
-
-import {Coordinator,IndexAction} from 'typestore'
+import * as TypeStore from 'typestore'
+import {Coordinator,Log,IndexAction} from 'typestore'
 import {MockStore} from "typestore-mocks"
 import {CloudSearchProviderPlugin} from "../CloudSearchProviderPlugin"
 import {CloudSearchLocalEndpoint} from "../CloudSearchConstants"
+
+const log = Log.create(__filename)
 
 let coordinator:Coordinator = null
 
@@ -31,7 +33,7 @@ const cloudSearchProvider = new CloudSearchProviderPlugin({
 
 /**
  * Create a mock store for managing the model instances
- * 
+ *
  * @type {MockStore}
  */
 let store:MockStore = new MockStore(CloudSearchTestModel)
@@ -39,7 +41,7 @@ let store:MockStore = new MockStore(CloudSearchTestModel)
 
 /**
  * Global test suite
- * 
+ *
  * TODO: Somehow integrated mocked service
  */
 xdescribe('#plugin-cloudsearch',() => {
@@ -102,8 +104,8 @@ xdescribe('#plugin-cloudsearch',() => {
 		})
 	})
 
-	
-	
+
+
 	describe('#search',() => {
 
 		it('#add+search+remove', async () => {
@@ -127,7 +129,7 @@ xdescribe('#plugin-cloudsearch',() => {
 		})
 	})
 
-			
+
 
 
 })

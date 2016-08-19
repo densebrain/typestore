@@ -13,5 +13,4 @@ deploy:
     secure: FF41u2CIzC1SsFAncy0ZFJwqSl4Ag5lKBaqhEah+i3ZFOvU4XvDHPlkY17CXyroRL98Mbc3k44j0IiiW5jWifZt1vmzLGvajHLHrVr6ByKwbU2oE7Fsxml9C3USooohQvNSTqh7U2QKoRf6eGZtntEYXFJx9+gYJzBejpGvfaZTsKNsi8oTIPP+9woWT1cuK2GtMlxOy/k9lp3zINHRSYi+XdS1fTghtLc9uSixtehLSBKns05MNdJMCi8/H9U8awnHF51avCEqovsIOQmlFv+sNjhB4AQ9fC/8YK++KiizAQReKw2QvcQ+WJeNl3Scis0tPbltkmMs87CQlp+uHA6e45KexWd+MoBLqt38wUIv8dilDhpcMmhyFyaPQTTMpMQULqhnwHGKhKv9a6pBRnDgSaBpFPc7c8ZPDHziYd78qEfeJkOSCPseHEjZUYK3HUDJ1oAgXHotmH8CzSRj1rakcI/EAjGq+lB/twySXmcSn+F3bVRhv1wFqfAnMw6toiuUW3tuqP6vHk8D2T+AJQFG2jOW3T3gMba6DbjwnE0YYsPH/dOR487Kgh834JrXj5UMbTcv7cKjn/+xRXdtVKP9K7/INkvh51HcigYoNLPU7oJPlJM8zUjdHUzP4kBkLfaE2dEdtymn4thxXgEeKoaLTS8GoFK58IKd65wtMp10=
   on:
     branch: master
-    repo: densebrain/typestore
-#    tags: true
+    tags: true

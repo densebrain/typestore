@@ -8,7 +8,7 @@ function watchConfig(config) {
 	})
 	watcher.on('error', (event) => {
 		log.error(`Received watcher error`,event,config)
-		
+
 	})
 }
 
@@ -20,8 +20,8 @@ function watchConfig(config) {
  */
 function compileWatch(done) {
 	log.info('TypeScript Compilation Watching Files...')
-	
-	
+
+
 	runSequence(...compileTasks,() => {
 		allWatchConfigs.forEach((config) => {
 			watchConfig(config)
@@ -29,4 +29,4 @@ function compileWatch(done) {
 	})
 }
 
-gulp.task('compile-watch',[],compileWatch)
+gulp.task('compile-watch',['tsconfig'],compileWatch)

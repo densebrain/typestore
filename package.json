@@ -4,7 +4,6 @@
     "description": "TypeStore development package",
     "version": "0.1.14",
     "scripts": {
-        "local-install": "rm -Rf $(find . -name node_modules) && npm link typelogger && npm i && gulp compile && ./etc/scripts/link.sh",
         "prepublish": "etc/scripts/prepublish.sh",
         "test": "gulp tsconfig && gulp compile-all && gulp test-all",
         "publish": "gulp tsconfig && gulp compile-all && gulp publish-all"
@@ -71,6 +70,7 @@
         "semver": "^5.1.0",
         "shelljs": "^0.7.0",
         "sinon": "^1.17.4",
-        "typescript": ">=2.0"
+        "typedoc": "sierrasoftworks/typedoc#v1.8.10",
+        "typescript": "^1.9.0-dev.20160601-1.0"
     }
 }

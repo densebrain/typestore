@@ -1,4 +1,4 @@
-import {NoReflectionMetataError} from "./Errors";
+
 import {IModelOptions} from "./decorations/ModelDecorations";
 export interface IModel {
 	clazzType:string

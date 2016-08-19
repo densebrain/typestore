@@ -1,4 +1,4 @@
-/// <reference path="../typings/typestore-example-node.d.ts"/>
+
 import 'reflect-metadata'
 const assert = require('assert')
 
@@ -7,7 +7,7 @@ const assert = require('assert')
 Promise = require('bluebird')
 
 // We dont use the typings here - but you are welcome to
-// we are ONLY using it for credential config as you 
+// we are ONLY using it for credential config as you
 // will see
 const AWS = require('aws-sdk')
 
@@ -33,7 +33,7 @@ import {
 // Import the cloud search specific stuff
 import {CloudSearchProviderPlugin,CloudSearchFinderDescriptor,
 	CloudSearchLocalEndpoint} from 'typestore-plugin-cloudsearch'
-import {DynamoDBStorePlugin,DynamoDBFinderDescriptor,DynamoDBLocalEndpoint} 
+import {DynamoDBStorePlugin,DynamoDBFinderDescriptor,DynamoDBLocalEndpoint}
 	from 'typestore-plugin-dynamodb'
 
 
@@ -185,15 +185,15 @@ export async function runCars() {
 
 	// Create a coordinator
 	const coordinator = new Coordinator()
-	
+
 	// Initialize it with all plugins
 	await coordinator.init({
 		syncStrategy: SyncStrategy.Overwrite
 	},dynamoStore,cloudSearchProvider)
-	
+
 	// Then start it with all models
 	await coordinator.start(Car)
-	
+
 	let car1 = new Car({
 		manufacturer: 'volvo',
 		year: 1956,
@@ -205,12 +205,12 @@ export async function runCars() {
 	car1 = await repo1.save(car1)
 
 	let carCount = await repo1.count()
-	assert(carCount === 1, 'only 1 car in there today!')
+	assert.ok(carCount === 1, 'only 1 car in there today!')
 
 	const car1Key = repo1.key(car1.manufacturer,car1.year)
 	const car1FromRepo = await repo1.get(car1Key)
 
-	assert(car1FromRepo.manufacturer === car1.manufacturer &&
+	assert.ok(car1FromRepo.manufacturer === car1.manufacturer &&
 		car1FromRepo.year === car1.year &&
 			car1FromRepo.model === car1.model
 		,`These should be identical\n${JSON.stringify(car1,null,4)} 
@@ -218,7 +218,7 @@ export async function runCars() {
 
 	await repo1.remove(car1Key)
 	carCount = await repo1.count()
-	assert(carCount === 0, 'only 1 car in there today!')
+	assert.ok(carCount === 0, 'only 1 car in there today!')
 
 	if (dynamoLocal)
 		await dynamoLocal.stop(dynamoPort)

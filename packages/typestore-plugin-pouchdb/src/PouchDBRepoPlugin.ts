@@ -15,14 +15,14 @@ import {
 	getFinderOpts,
 	assert,
 	Log,
-	isFunction
+	isFunction,
+	IModelAttributeOptions,
+	FinderRequest,
+	getDefaultMapper
 } from 'typestore'
 
-import {enableQuickSearch} from './PouchDBSetup'
-import {makeMangoIndex,getIndexByNameOrFields} from './PouchDBIndexes'
+import * as Bluebird from 'bluebird'
 import {PouchDBPlugin} from "./PouchDBPlugin";
-import {PouchDBAttributePrefix,PouchDBOperators}
-	from "./PouchDBConstants";
 
 import {
 	IPouchDBMangoFinderOptions,
@@ -31,35 +31,13 @@ import {
 	IPouchDBFullTextFinderOptions
 } from './PouchDBDecorations'
 
-import {mapAttrsToField} from './PouchDBUtil'
+import {mapDocs, mapAttrsToField, transformDocumentKeys, dbKeyFromObject, convertModelToDoc} from './PouchDBUtil'
+import {makeMangoFinder, makeFilterFinder, makeFnFinder, makeFullTextFinder, findWithSelector} from './PouchDBFinders'
+
 
 const log = Log.create(__filename)
 
-/**
- * Prepends all keys - DEEP
- * with `attrs.` making field reference easier
- * @param o
- * @returns {{}}
- */
-function transformDocumentKeys(o) {
-	return (Array.isArray(o)) ?
-		o.map(aVal => transformDocumentKeys(aVal)) :
-			(typeof o === "object") ?
-				Object
-					.keys(o)
-					.reduce((newObj,nextKey) => {
-						const nextVal = o[nextKey]
 
-						nextKey = PouchDBOperators.includes(nextKey) ?
-							nextKey : `${PouchDBAttributePrefix}${nextKey}`
-
-						newObj[nextKey] = transformDocumentKeys(nextVal)
-
-						return newObj
-					},{}) :
-				o
-
-}
 /**
  * Super simple plain jain key for now
  * what you send to the constructor comes out the
@@ -84,8 +62,11 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	supportedModels:any[]
 
 	private coordinator
-	private modelType
-	private primaryKeyAttr:string
+	private primaryKeyAttr:IModelAttributeOptions
+	primaryKeyField:string
+	primaryKeyType:any
+	modelType
+
 
 	/**
 	 * Construct a new repo/store
@@ -94,123 +75,19 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 * @param store
 	 * @param repo
 	 */
-	constructor(private store:PouchDBPlugin, public repo:Repo<M>) {
+	constructor(public store:PouchDBPlugin, public repo:Repo<M>) {
 		this.supportedModels = [repo.modelClazz]
 		this.modelType = this.repo.modelType
 		this.primaryKeyAttr = this.modelType.options.attrs
-			.filter(attr => attr.primaryKey)
-			.map(attr => attr.name)[0]
+			.find(attr => attr.primaryKey)
 
+		this.primaryKeyField = this.primaryKeyAttr.name
+		this.primaryKeyType = this.primaryKeyAttr.type
 
 		repo.attach(this)
 	}
 
-	makeFullTextFinder(finderKey:string,opts:IPouchDBFullTextFinderOptions) {
-		enableQuickSearch()
-		let {textFields,queryMapper,build,minimumMatch,limit,offset} = opts
 
-		return (...args) => {
-			const query = (queryMapper) ?
-				queryMapper(...args) :
-				args[0]
-
-			return this.findWithText(
-				query,textFields,build,limit,offset,true)
-				.then(result => {
-					log.info('Full text result for ' + finderKey ,result,'args',args)
-					return this.mapDocs(result)
-				})
-
-
-		}
-	}
-
-	makeFilterFinder(finderKey:string,opts:IPouchDBFilterFinderOptions) {
-		log.warn(`Finder '${finderKey}' uses allDocs filter - THIS WILL BE SLOW`)
-
-		const {filter} = opts
-
-		return async (...args) => {
-			const allModels = await this.all()
-			return allModels.filter((doc) => filter(doc,...args))
-		}
-	}
-
-	makeFnFinder(finderKey:string,opts:IPouchDBFnFinderOptions) {
-		const {fn} = opts
-
-		return async (...args) => {
-			const result = await fn(this, ...args)
-			return this.mapDocs(result)
-		}
-	}
-
-	makeMangoFinder(finderKey:string,opts:IPouchDBMangoFinderOptions) {
-		let {selector,sort,limit,indexName,indexFields} = opts
-		assert((indexName || indexFields) && !(indexName && indexFields),
-			"You MUST provide either indexFields or indexName")
-
-		assert(indexName || finderKey,`No valid index name indexName(${indexName}) / finderKey(${finderKey}`)
-
-		// In the background create a promise for the index
-		//const indexDeferred = Bluebird.defer()
-		let indexReady = false
-		indexName = indexName || `idx_${finderKey}`
-
-		const indexCreate = () => getIndexByNameOrFields(this.db,indexName,indexFields)
-			.then(idx => {
-				assert(idx || (indexFields && indexFields.length > 0),
-					`No index found for ${indexName} and no indexFields provided`)
-
-				return (!idx || idx.name === indexName) ?
-					makeMangoIndex(
-						this.store.db,
-						this.modelType.name,
-						indexName || finderKey,
-						indexFields || []
-					).then(finalIdx => {
-						log.info('Index result received',finalIdx)
-						indexReady = true
-
-						return finalIdx
-					}) :
-					idx
-
-				// try {
-				// 	const idx = await
-				// 	indexDeferred.resolve(idx)
-				// } catch (err) {
-				// 	log.error(`Failed to create index for finder ${finderKey}`,err)
-				// 	indexDeferred.reject(err)
-				// }
-			})
-
-		const finder = (...args) => {
-			const selectorResult =
-				isFunction(selector) ? selector(...args) :
-					selector
-
-			return this.findWithSelector(
-				selectorResult,
-				sort,
-				limit).then(result => this.mapDocs(result))
-
-		}
-
-		return (...args) => {
-			if (!indexReady) {
-				log.info('index is not ready')
-				return indexCreate()
-					.then((idx) => {
-						log.info('Index is Ready')
-						return finder(...args)
-					})
-			} else {
-				return finder(...args) as any
-			}
-		}
-
-	}
 
 	/**
 	 * Create a finder method with descriptor
@@ -232,33 +109,31 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		if (!opts )
 			return null
 
-		const {
-			fn,
-			filter,
-			selector,
-			sort,
-			limit,
-			single,
-			textFields,
+		const { fn, filter, selector,
+			sort, limit, single,
+			textFields, all
 		} = opts
 
-		assert(fn || selector || filter || textFields,'selector or fn properties MUST be provided on an pouchdb finder descriptor')
 
-		const finderFn:any = (selector) ? this.makeMangoFinder(finderKey,opts) :
-			(filter) ? this.makeFilterFinder(finderKey,opts) :
-				(textFields) ? this.makeFullTextFinder(finderKey,opts) :
-					this.makeFnFinder(finderKey,opts)
 
-		return (...args) => {
-			return finderFn(...args)
-				.then((models) => {
-					log.info('Got finder result for ' + finderKey,'args',args,'models',models)
-					return (single) ? models[0] : models
-				})
+		assert(all || fn || selector || filter || textFields,'selector or fn properties MUST be provided on an pouchdb finder descriptor')
+
+		const finderFn:any = (selector || all) ? makeMangoFinder(this,finderKey,opts) :
+			(filter) ? makeFilterFinder(this,finderKey,opts) :
+				(textFields) ? makeFullTextFinder(this,finderKey,opts) :
+					makeFnFinder(this,finderKey,opts)
+
+		return async (...args) => {
+			const request:FinderRequest = (args[0] instanceof FinderRequest) ? args[0] : null
+			if (request)
+				args.shift()
+
+			const models = await finderFn(request,...args)
+
+			log.debug('Got finder result for ' + finderKey,'args',args,'models',models)
+			return (single) ? models[0] : models
+
 		}
-
-
-
 	}
 
 	/**
@@ -307,122 +182,81 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		return new PouchDBKeyValue(...args);
 	}
 
-
-	keyFromObject(o:any):PouchDBKeyValue {
-		return new PouchDBKeyValue(o[this.primaryKeyAttr])
+	private extractKeyValue(val:PouchDBKeyValue|any):any {
+		val = (val && val.pouchDBKey) ? val.args[0] : val
+		if (typeof val !== 'string')
+			val = `${val}`
+		return val
 	}
 
-	dbKeyFromObject(o:any):string {
-		const key = o[this.primaryKeyAttr]
-		return (key) ? '' + key : null
-	}
+	async get(key:PouchDBKeyValue):Promise<M> {
+		if (!key)
+			throw new Error('key can not be undefined or falsy')
+		key = this.extractKeyValue(key)
 
-	dbKeyFromKey(key:PouchDBKeyValue) {
-		return key.args[0]
-	}
+		//const result = await findWithSelector(this,{[this.primaryKeyAttr.name]: key})
+		const result = await Bluebird.resolve(this.db.get(key))
+			.then(doc => {
+				return doc
+			})
+			.catch(err => {
+				if (err.status === 404)
+					return null
 
-	private mapDocs(result:any):M[] {
-		const mapper = this.repo.getMapper(this.repo.modelClazz)
-
-		let docs = (result && Array.isArray(result)) ? result : result.docs
-		docs = docs || []
-		return docs.map(doc => mapper.fromObject(doc.attrs,(o, model) => {
-			(model as any).$$doc = doc
-			return model
-		}))
-	}
-
-	findWithText(text:string,fields:string[],build = true,limit = -1,offset = -1,includeDocs = true) {
-		enableQuickSearch()
-
-		const attrFields = mapAttrsToField(fields)
-		const opts:any = {
-			query:text,
-			fields: attrFields,
-			include_docs: includeDocs,
-			filter: (doc) => {
-				log.info('filtering full text',doc)
-				return doc.type === this.modelType.name
-			}
-		}
-
-		if (limit > 0) {
-			opts.limit = limit
-		}
-
-		if (offset > 0) {
-			opts.skip = offset
-		}
-
-		log.info('Querying full text with opts',opts)
-		return this.db.search(opts)
-			.then(result => {
-				log.debug(`Full-Text search result`,result)
-				return result.rows.map(row => row.doc)
+				throw err
 			})
 
-	}
+		if (!result)
+			return null
 
-	findWithSelector(selector,sort = null,limit = -1,offset = -1,includeDocs = true) {
+		const mapper = getDefaultMapper(this.repo.modelClazz)
+		return mapper.fromObject(result.attrs,(o, model:any) => {
+			const $$doc = Object.assign({},result)
+			delete $$doc['attrs']
 
-		const opts = {
-			selector: Object.assign({
-				type: this.modelType.name
-			},transformDocumentKeys(selector))
-		} as any
+			model.$$doc = $$doc
 
-		if (sort)
-			opts.sort = transformDocumentKeys(sort)
-
-		if (limit > -1)
-			opts.limit = limit
-
-		if (offset > -1)
-			opts.offset = offset
-
-		log.debug('findWithSelector, selector',selector,'opts',JSON.stringify(opts,null,4))
-
-		return this.db.find(opts)
-	}
-
-
-
-	get(key:PouchDBKeyValue):Promise<M> {
-		key = key.pouchDBKey ? key.args[0] : key
-
-		return this.findWithSelector({[this.primaryKeyAttr]: key}).then((result) => {
-
-			if (result && result.docs.length > 1)
-				throw new Error(`More than one database object returned for key: ${key}`)
-
-			return this.mapDocs(result)[0] as M
+			return model
 		})
 
+	}
 
 
+	/**
+	 * Retrieve the rev for a model id
+	 *
+	 * @param id
+	 * @returns {null}
+	 */
+	async getRev(id:any):Promise<string> {
+		const model:any = await this.get(id)
+		return (model) ? model.$$doc._rev : null
 	}
 
 	async save(model:M):Promise<M> {
 		const mapper = this.mapper
 		const json = mapper.toObject(model)
-		const doc = (model as any).$$doc || {} as any
 
-		if (!doc._id) {
-			const key = this.dbKeyFromObject(model)
-			if (key)
-				doc._id = key
+		const doc = convertModelToDoc(
+			this.modelType,
+			mapper,
+			this.primaryKeyAttr.name,
+			model
+		)
+
+		const id = model[this.primaryKeyAttr.name]
+		if (id && doc._id && !doc._rev) {
+			const rev = await this.getRev(doc._id)
+			if (rev) {
+				doc._rev = rev
+			}
 		}
 
-
-
-		doc.type = this.modelType.name
-		doc.attrs = json
 
 		try {
 			const res:any = await this.db[doc._id ? 'put' : 'post'](doc)
 
-			const savedModel = mapper.fromObject(json)
-			Object.assign(savedModel as any,{$$doc: {_id: res.id, '_rev': res.rev,attrs:json}})
+			const savedModel = Object.assign({},model,{$$doc: {_id: res.id, '_rev': res.rev,attrs:json}})
 
 			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save, savedModel)
 
@@ -459,26 +293,26 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		return Promise.resolve(result);
 	}
 
-	//TODO: make count efficient
-	async count():Promise<number> {
-		const result = await this.all(false)
-		return !result ? 0 : result.length
-
+	/**
+	 * Get count using the type indexes in db open
+	 *
+	 * @returns {Promise<number>}
+	 */
+	count():Promise<number> {
+		return this.store.getModelCount(this.modelType.name)
 	}
 
-	all(includeDocs = true) {
-		//return this.findWithSelector({},null,null,null,includeDocs)
-		return this.db.allDocs({include_docs:true})
-			.then(result => {
-				const docs = result.rows
-					.reduce((allDocs,nextRow) => {
-						allDocs.push(nextRow.doc)
-						return allDocs
-					},[])
-					.filter(doc => doc.type === this.modelType.name)
+	async all(includeDocs = true) {
+		const result = await this.db.allDocs({include_docs:true})
 
-				return this.mapDocs(docs)
-			})
+		const docs = result.rows
+			.reduce((allDocs,nextRow) => {
+				allDocs.push(nextRow.doc)
+				return allDocs
+			},[])
+			.filter(doc => doc.type === this.modelType.name)
+
+		return mapDocs(this,this.repo.modelClazz,docs,includeDocs)
 	}
 
 	/**
@@ -491,16 +325,6 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		keys = keys.map(key => (key.pouchDBKey) ? key.args[0] : key)
 
 		return await Promise.all(keys.map(key => this.get(key)))
-		//const result
-		// const result = await this.findWithSelector({
-		// 	$or: keys.map(key => ({
-		// 		[PouchDBAttributePrefix + this.primaryKeyAttr]: key
-		// 	}))
-		// })
-
-
-		//return this.mapDocs(result) as M[]
-
 	}
 
 	/**
@@ -512,24 +336,62 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	async bulkSave(...models:M[]):Promise<M[]> {
 		const mapper = this.repo.getMapper(this.repo.modelClazz)
 		const jsons = []
-		const docs = models.map(model => {
-			const json = mapper.toObject(model)
-			jsons.push(json)
 
-			const doc = (model as any).$$doc || {} as any
-			doc.type = this.modelType.name
-			doc.attrs = json
+		// Models -> Docs
+		const docs = models.map(model => convertModelToDoc(
+			this.modelType,
+			mapper,
+			this.primaryKeyAttr.name,
+			model
+		))
 
-			return doc
+		// Find all docs that have _id and not _rev
+		const revPromises = []
+		const missingRefs = await this.db.allDocs({
+			include_docs:false,
+			keys: docs.filter(doc => doc._id && !doc._rev)
+				.map(doc => doc._id)
 		})
 
+		missingRefs.rows
+			.filter(row => !row.error && row.value && row.value.rev)
+			.forEach(row => {
+				const id = row.id, rev = row.value.rev
+				const doc = docs.find(doc => `${doc._id}` === `${id}`)
+				doc._rev = rev
+			})
+		//
+		// docs.forEach(async (doc,index) => {
+		// 	const id = models[index][this.primaryKeyAttr.name]
+		// 	if (!id || !doc._id  || (doc._id && doc._rev))
+		// 		return
+		//
+		// 	revPromises.push(
+		// 		this.getRev(id)
+		// 			.then(rev => {
+		// 				if (rev)
+		// 					doc._rev = rev
+		// 			})
+		// 	)
+		// })
+
+		//await Promise.all(revPromises)
+
+		// Do Save
 		const responses = await this.db.bulkDocs(docs)
 
-		const savedModels = jsons.map((json,index) => {
-			const savedModel = mapper.fromObject(json)
+		// Docs -> Models
+		const savedModels = docs.map((doc,index) => {
+			const savedModel = mapper.fromObject(doc.attrs)
 
 			const res = responses[index]
-			Object.assign(savedModel as any,{$$doc: {_id: res.id, '_rev': res.rev,attrs:json}})
+			Object.assign(savedModel as any,{
+				$$doc: {
+					_id: res.id,
+					_rev: res.rev,
+					attrs:doc.attrs
+				}
+			})
 
 			return savedModel
 		})
@@ -547,11 +409,34 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 * @returns {PouchDBKeyValue[]}
 	 */
 	async bulkRemove(...keys:PouchDBKeyValue[]):Promise<any[]> {
-		const models = await this.bulkGet(...keys)
+		keys = keys.map(key => (key.pouchDBKey) ? key.args[0] : key)
 
-		await Promise.all(models.map((model:any) => this.db.remove(model.$$doc)))
-
+		let models = null
 		if (this.repo.supportPersistenceEvents())
+			models = await this.bulkGet(...keys)
+
+		
+		const deleteDocs:any[] = keys.map(_id => ({_id,_deleted:true}))
+		
+		// Get the revs for the keys
+		const deleteRevs = await this.db.allDocs({
+			include_docs:false,
+			keys
+		})
+		
+		// Map to delete docs
+		deleteRevs.rows
+			.filter(row => !row.error && row.value && row.value.rev)
+			.forEach(row => {
+				const id = row.id, rev = row.value.rev
+				const doc = deleteDocs.find(doc => `${doc._id}` === `${id}`)
+				doc._rev = rev
+			})
+		
+		// Bulk docs
+		await this.db.bulkDocs(deleteDocs)
+
+		if (models)
 			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove,...models)
 
 		return keys

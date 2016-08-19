@@ -255,9 +255,7 @@ export class Coordinator implements ICoordinator {
 	/**
 	 * Register a model with the system
 	 *
-	 * @param clazzName
 	 * @param constructor
-	 * @param opts
 	 */
 	registerModel(constructor:Function) {
 		this.checkStarted(true)
@@ -269,6 +267,11 @@ export class Coordinator implements ICoordinator {
 		}
 
 		const modelOpts:IModelOptions = Reflect.getMetadata(TypeStoreModelKey,constructor)
+		if (!modelOpts) {
+			log.info(`Can not register a model without metadata ${(constructor && constructor.name) || 'unknown'}`)
+			return
+		}
+
 		model = {
 			options: modelOpts,
 			name: modelOpts.clazzName,
@@ -282,6 +285,8 @@ export class Coordinator implements ICoordinator {
 	}
 
 
+	private repoMap = new WeakMap<any,any>()
+
 	/**
 	 * Get a repository for the specified model/class
 	 *
@@ -289,12 +294,17 @@ export class Coordinator implements ICoordinator {
 	 * @returns {T}
 	 */
 	getRepo<T extends Repo<M>,M extends IModel>(clazz:{new(): T; }):T {
-		const repo = new clazz()
+		let repo:T = this.repoMap.get(clazz)
+		if (repo)
+			return repo
+
+		repo = new clazz()
 		repo.init(this)
 
 		this.notify(PluginEventType.RepoInit,repo)
 
 		repo.start()
+		this.repoMap.set(clazz,repo)
 		return repo
 	}
 

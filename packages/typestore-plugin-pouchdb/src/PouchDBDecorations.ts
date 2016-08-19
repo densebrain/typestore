@@ -14,6 +14,7 @@ export type PouchDBFilterFn = (doc,...args:any[]) => boolean
 export interface IPouchDBFinderOptions extends IFinderOptions {
 	limit?:number
 	offset?:number
+	includeDocs?:boolean
 }
 
 export interface IPouchDBFullTextFinderOptions extends IPouchDBFinderOptions {
@@ -32,9 +33,12 @@ export interface IPouchDBFilterFinderOptions extends IPouchDBFinderOptions {
 }
 
 export interface IPouchDBMangoFinderOptions extends IPouchDBFinderOptions {
-	selector:PouchDBSelectorFn|Object
-	sort?:any
+	all?:boolean
+	selector?:PouchDBSelectorFn|Object
+	sort?:string[]
+	sortDirection?:'asc'|'desc'
 	indexName?:string
+	indexDirection?:string
 	indexFields?:string[]
 }
 

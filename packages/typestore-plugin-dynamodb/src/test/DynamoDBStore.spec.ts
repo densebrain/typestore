@@ -1,12 +1,13 @@
-Promise = require('bluebird')
 
-const log = getLogger(__filename)
+import * as TypeStore from 'typestore'
 
 import * as uuid from 'node-uuid'
-import {Coordinator,SyncStrategy} from 'typestore'
+import {Coordinator,Log,SyncStrategy} from 'typestore'
 import {IDynamoDBStorePluginOptions} from "../DynamoDBTypes"
 import {DynamoDBStorePlugin} from '../DynamoDBStorePlugin'
 import * as Fixtures from './fixtures/index'
+
+const log = Log.create(__filename)
 
 //Setup DynamoDBLocal
 const DynamoDBPort = 8787
@@ -27,13 +28,13 @@ let coordinator:Coordinator = null
 async function reset(syncStrategy:SyncStrategy,endpoint:string) {
 	// Init dynamo type
 	// using local
-	
+
 
 	const opts:IDynamoDBStorePluginOptions = {
 		endpoint: endpoint,
 		prefix: `test_${process.env.USER}_`
 	}
-	
+
 	store = new DynamoDBStorePlugin(opts,Fixtures.Test1)
 
 	if (!endpoint)
@@ -52,7 +53,7 @@ async function reset(syncStrategy:SyncStrategy,endpoint:string) {
 /**
  * Global test suite
  */
-describe('#plugin-dynamodb', function() {
+xdescribe('#plugin-dynamodb', function() {
 	this.timeout(60000)
 
 	before(() => {

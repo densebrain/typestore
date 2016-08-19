@@ -10,7 +10,7 @@ require("babel-polyfill")
 require('expectations')
 require('reflect-metadata')
 
-var Log = require('typestore').Log
+var Log = require('typelogger')
 
 if (!process.env.DEBUG)
 	Log.setLogThreshold(Log.LogLevel.WARN)

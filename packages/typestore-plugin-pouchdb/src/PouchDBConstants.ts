@@ -23,6 +23,7 @@ export const PouchDBOperators = [
 	'$all',
 	'$size',
 	'$or',
+	'$and',
 	'$nor',
 	'$not',
 	'$mod',

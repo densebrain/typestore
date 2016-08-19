@@ -1,12 +1,12 @@
 import * as uuid from 'node-uuid'
-const FakeIndexedDB:any = require('fake-indexeddb')
-const FDBKeyRange:any = require('fake-indexeddb/lib/FDBKeyRange')
-import {Coordinator,Repo} from 'typestore'
+import {Coordinator,Log,Repo} from 'typestore'
 import * as Fixtures from './fixtures/IndexDBTestModel'
 import * as Faker from 'faker'
 import {IndexedDBPlugin} from "../IndexedDBPlugin";
+const FakeIndexedDB:any = require('fake-indexeddb')
+const FDBKeyRange:any = require('fake-indexeddb/lib/FDBKeyRange')
 
-const log = getLogger(__filename)
+const log = Log.create(__filename)
 
 //Setup DynamoDBLocal
 let coordinator:Coordinator = null
