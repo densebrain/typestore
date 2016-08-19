@@ -11,4 +11,5 @@ do
 done
 
 echo "Linking root typestore dep"
+rm -Rf $PWD/node_modules/typestore
 ln -fs $PWD/packages/typestore $PWD/node_modules/typestore

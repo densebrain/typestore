@@ -1,5 +1,5 @@
 
-import {ISearchOptions,makeOptionsDecorator} from 'typestore'
+import {ISearchOptions,makeOptionsDecorator,MetadataPropertyDecoratorFactory} from 'typestore'
 import {CloudSearchFinderKey} from "./CloudSearchConstants";
 
 /**

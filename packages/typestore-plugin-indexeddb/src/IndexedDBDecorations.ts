@@ -1,4 +1,4 @@
-import {makeOptionsDecorator, IModel} from 'typestore'
+import {makeOptionsDecorator, IModel,MetadataPropertyDecoratorFactory} from 'typestore'
 import {IndexedDBFinderKey} from "./IndexedDBConstants";
 import {IndexedDBRepoPlugin} from './IndexedDBRepoPlugin'
 

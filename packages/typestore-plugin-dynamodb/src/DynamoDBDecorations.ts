@@ -1,4 +1,4 @@
-import {Repo,makeOptionsDecorator,getMetadataReturnType} from 'typestore'
+import {Repo, makeOptionsDecorator, getMetadataReturnType, MetadataPropertyDecoratorFactory} from 'typestore'
 import {IDynamoDBFinderOptions} from "./DynamoDBTypes"
 import {DynamoDBFinderKey} from "./DynamoDBConstants";
 
