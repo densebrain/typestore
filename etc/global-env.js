@@ -2,8 +2,6 @@ require('source-map-support').install()
 require('shelljs/global')
 
 
-
-
 const
 	semver = require('semver'),
 	fs = require('fs'),

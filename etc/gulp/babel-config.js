@@ -1,3 +1,4 @@
+/* global log */
 const fs = require('fs')
 const path = require('path')
 const _ = require('lodash')
@@ -8,12 +9,10 @@ const babelDefaultConfig = readJSONFileSync(path.resolve(__dirname,'../.././.bab
 module.exports = {
 	makeBabelConfig(project) {
 
-		/**
-		 * Load the babel config
-		 *
-		 * @type {null}
-		 */
+		// Load the babel config
 		let babelConfig = null
+		
+		// If load fails, set to empty
 		try {
 			const babelPath = path.resolve(project.base, '.babelrc')
 			if (fs.existsSync(babelPath)) {
@@ -22,10 +21,11 @@ module.exports = {
 			}
 		} catch (e) {
 			log.error('Failed to load babel config', e)
+			
+			// Set to
+			babelConfig = {}
 		}
 
-		babelConfig = babelConfig || {}
 		return _.defaultsDeep(babelConfig, babelDefaultConfig)
-
 	}
 }
