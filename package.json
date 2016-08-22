@@ -4,7 +4,7 @@
 	"description": "TypeStore development package",
 	"version": "0.1.14",
 	"scripts": {
-		"local-install": "rm -Rf $(find . -name node_modules) && npm link typelogger && npm i && gulp compile && ./etc/scripts/link.sh",
+		"local-install": "./etc/scripts/local-install.sh",
 		"prepublish": "etc/scripts/prepublish.sh",
 		"compile-watch": "gulp compile-watch",
 		"test": "gulp tsconfig && gulp compile-all && gulp test-all",
