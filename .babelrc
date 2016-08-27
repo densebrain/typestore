@@ -6,7 +6,7 @@
 	],
 	"sourceMaps": "both",
 	"plugins": [
-
+		"transform-runtime"
 	]
 }
 
