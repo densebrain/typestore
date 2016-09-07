@@ -1,14 +1,14 @@
 <component name="libraryTable">
-  <library name="tsconfig$roots" type="javaScript">
-    <CLASSES>
-      <root url="file://$PROJECT_DIR$/packages/typestore/dist" />
-      <root url="file://$PROJECT_DIR$/packages/typestore-plugin-dynamodb/dist/index.d.ts" />
-      <root url="file://$PROJECT_DIR$/packages/typestore-plugin-cloudsearch/dist/index.d.ts" />
-      <root url="file://$PROJECT_DIR$/packages/typestore/dist/index.d.ts" />
-      <root url="file://$PROJECT_DIR$/packages/typestore-plugin-cloudsearch/dist" />
-      <root url="file://$PROJECT_DIR$/packages/typestore-plugin-dynamodb/dist" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
+    <library name="tsconfig$roots" type="javaScript">
+        <CLASSES>
+            <root url="file://$PROJECT_DIR$/packages/typestore-plugin-dynamodb/dist/index.d.ts" />
+            <root url="file://$PROJECT_DIR$/packages/typestore-plugin-cloudsearch/dist" />
+            <root url="file://$PROJECT_DIR$/packages/typestore/dist/index.d.ts" />
+            <root url="file://$PROJECT_DIR$/packages/typestore-plugin-cloudsearch/dist/index.d.ts" />
+            <root url="file://$PROJECT_DIR$/packages/typestore-plugin-dynamodb/dist" />
+            <root url="file://$PROJECT_DIR$/packages/typestore/dist" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+    </library>
 </component>
