@@ -1,7 +1,10 @@
 
-const {PouchDB} = require('./PouchDBSetup')
+let PouchDB = null
 const Bluebird = require('bluebird')
 
+function initPouchDB() {
+	PouchDB = require('./PouchDBSetup').PouchDB
+}
 
 import {
 	ICoordinator,
@@ -80,6 +83,8 @@ export class PouchDBPlugin implements IStorePlugin {
 	private repoPlugins:{[modelName:string]:PouchDBRepoPlugin<any>} = {}
 
 	constructor(private opts:IPouchDBOptions,...supportedModels:any[]) {
+		initPouchDB()
+		
 		this.opts = Object.assign({},PouchDBOptionDefaults,opts)
 		assert(this.opts.filename,'A valid database path is required')
 

@@ -1,4 +1,4 @@
-import './PouchDBSetup'
+
 /**
  * Re-export everything we need
  */

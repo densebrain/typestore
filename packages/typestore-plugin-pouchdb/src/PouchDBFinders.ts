@@ -1,5 +1,5 @@
 import {Log,FinderRequest,FinderResultArray,isFunction} from 'typestore'
-import {enableQuickSearch} from './PouchDBSetup'
+
 
 import {
 	IPouchDBFullTextFinderOptions, IPouchDBFilterFinderOptions, IPouchDBFnFinderOptions,
@@ -12,6 +12,10 @@ import {mapDocs, transformDocumentKeys, mapAttrsToField} from './PouchDBUtil'
 
 const log = Log.create(__filename)
 
+function enableQuickSearch() {
+	require('./PouchDBSetup').enableQuickSearch()
+}
+
 /**
  * Map docs to results
  *
@@ -21,7 +25,7 @@ const log = Log.create(__filename)
  * @param limit
  * @param offset
  * @param includeDocs
- * @returns {FinderResultArray}
+ * @returns {FinderResultArray<any>}
  */
 function makeFinderResults(pouchRepo,results,request,limit:number,offset:number,includeDocs:boolean) {
 	const
