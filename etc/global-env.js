@@ -14,6 +14,8 @@ const
 	helpers = require('./tools/helpers'),
 	{readJSONFileSync} = helpers
 
+Object.keys(projectConfigs).forEach(projectName => projectConfigs[projectName].name = projectName)
+
 Object.assign(global,{
 	_,
 	tsc,

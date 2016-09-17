@@ -1,196 +1,440 @@
-//const PouchDB = require('pouchdb')
-//PouchDB.debug.enable('pouchdb:find')
+const PouchDB = require('pouchdb')
+//PouchDB.debug.enable('pouchdb:*')
+//PouchDB.debug.enable('*');
 
 import * as Faker from 'faker'
 import * as uuid from 'node-uuid'
-import {Coordinator,Log} from 'typestore'
-import {PouchDBPlugin} from "../PouchDBPlugin";
+import { Coordinator, Log } from 'typestore'
+import { PouchDBPlugin } from "../PouchDBPlugin";
 import * as Fixtures from './fixtures/PouchDBTestModel'
 import * as Bluebird from 'bluebird'
+import { IPouchDBOptions } from "../PouchDBPlugin"
+import { mkdirp } from '../PouchDBUtil'
+import {FinderRequest} from 'typestore'
 
-Object.assign(global as any,{Promise:Bluebird})
-
-const log = Log.create(__filename)
 
 // Store is configured to reside in the tmp folder
-const tmpDir = process.env.TMP || process.env.TMPDIR || '/tmp'
-let coordinator:Coordinator = null
-let store:PouchDBPlugin = null
+const
+	log = Log.create(__filename),
+	tmpDir = process.env.TMP || process.env.TMPDIR || '/tmp'
 
-const storeOpts = {
-	//filename: `test-db.websql.db`,
-	//sync: true
-	//filename: `http://127.0.0.1:5984/tstest-${new Date()}`
-	filename: `/tmp/tstest-${new Date()}`
-}
+
+let
+	coordinator:Coordinator = null,
+	store:PouchDBPlugin
 
 
 function fakeModel() {
 	const model = new Fixtures.PDBModel1()
-
-	Object.assign(model,{
+	
+	Object.assign(model, {
 		id: uuid.v4(),
 		name: Faker.lorem.words(1),
 		createdAt: Faker.date.past(),
 		randomText: Faker.lorem.words(10)
 	})
-
+	
 	return model
 }
+
+async function stop() {
+	if (coordinator) {
+		log.info(`Stopping coordinator`)
+		await coordinator.reset()
+	}
+	
+	coordinator = null
+}
+
 
 /**
  * Reset TypeStore and start all over
  */
-async function reset() {
-	// Init dynamo type
-	// using local
+async function reset(useGlobal = true, ...models) {
+	
+	await stop()
+	
+	const
+		storeOpts:IPouchDBOptions = {
+			//filename: `test-db.websql.db`,
+			//sync: true
+			//filename: `http://127.0.0.1:5984/tstest-${new Date()}`
+			filename: `/tmp/tstest-${Date.now()}`,
+			databasePerRepo: !useGlobal
+		}
+	
+	//if (!useGlobal)
+	//mkdirp(storeOpts.filename)
+	
+	log.info(`Create store - global = ${useGlobal}`)
 	store = new PouchDBPlugin(storeOpts)
-
-	if (coordinator) {
-		await coordinator.reset()
-	}
+	
 	coordinator = new Coordinator()
-	await coordinator.init({},store)
+	log.info(`Init coordinator`)
+	await coordinator.init({}, store)
+	
+	log.info(`Start coordinator`)
+	await coordinator.start(...models)
 	return coordinator
 }
 
 
 /**
- * Pouchdb test suite - should be abstracted
+ * Pouch test suite - should be abstracted
  * to be a store test suite in general
  */
-describe('#plugin-pouchdb',() => {
-
-	before(async () => {
-		await reset()
-		await coordinator.start(Fixtures.PDBModel1,Fixtures.PDBModel2)
-		return true
-	})
-
-	// it('#open', async () => {
-	// 	expect(store.db.name).toBe(storeOpts.filename)
-	// })
-
-
-	it('#puts',async () => {
-		const model = new Fixtures.PDBModel1()
-		const repo = coordinator.getRepo(Fixtures.PDBRepo1)
-
-		Object.assign(model,{
-			id: uuid.v4(),
-			createdAt: Faker.date.past(),
-			randomText: Faker.lorem.words(10)
-		})
-
-		const savedModel = await repo.save(model)
-		expect((savedModel as any).$$doc).not.toBe(null)
-
-		const key = repo.key(model.id)
-		let modelGet = await repo.get(key)
-		expect(modelGet.id).toBe(model.id)
-		expect(modelGet.randomText).toBe(model.randomText)
-
-		let currentCount = await repo.count()
-		expect(currentCount).toBe(1)
-
-		await repo.remove(key)
-		expect(await repo.count()).toBe(0)
-
-	})
-
-	it('#bulkSave+bulkRemove',async () => {
-
-		const repo = coordinator.getRepo(Fixtures.PDBRepo1)
-
-		const models = []
-		for (let i = 0; i < 20;i++) {
-			const model = new Fixtures.PDBModel1()
-			Object.assign(model, {
-				id:         uuid.v4(),
-				createdAt:  Faker.date.past(),
-				randomText: Faker.lorem.words(10)
+describe('#plugin-pouchdb', () => {
+	
+	[ true, false ].forEach((useGlobal) => {
+		describe(`#global-repo-${useGlobal}`, function () {
+			
+			this.timeout(120 * 60000)
+			
+			before(async() => {
+				await reset(
+					useGlobal,
+					Fixtures.PDBModel1,
+					Fixtures.PDBModel2,
+					Fixtures.PDBModel3,
+					Fixtures.PDBModel4
+				)
+				return true
 			})
-
-			models.push(model)
-		}
-
-		const savedModels = await repo.bulkSave(...models)
-		expect(savedModels.length).toBe(models.length)
-		//const nextCount = await repo.count()
-		//expect(nextCount).toBe(models.length)
-
-		const ids = savedModels.map(savedModel => savedModel.id)
-		models.forEach(model => expect(model.$$doc).not.toBeNull())
-
-		await repo.bulkRemove(...ids)
-
-		const finalCount = await repo.count()
-		expect(finalCount).toBe(0)
-	})
-
-	it('#finder-selector',async () => {
-		const
-			model = fakeModel(),
-			model2 = fakeModel()
-
-		model.name = "name1"
-		model2.name = "name2"
-
-		const repo = coordinator.getRepo(Fixtures.PDBRepo1)
-
-
-
-		const savedModel = await repo.save(model)
-		const savedModel2 = await repo.save(model2)
-
-		const key = repo.key(model.id)
-		const key2 = repo.key(model2.id)
-
-		let foundModel = await repo.findByName(model.name)
-		expect(foundModel).toBeDefined()
-
-
-		let foundModels = await repo.findByAnyName(model.name)
-		expect(foundModels.length).toBe(1)
-
-		let foundModels2 = await repo.findByAnyName(
-			model.name,
-			model2.name
-		)
-		expect(foundModels2.length).toBe(2)
-
-
-		foundModel = await repo.findByName(model.name + '123')
-		expect(foundModel).not.toBeDefined()
-
-		await repo.remove(key)
-		await repo.remove(key2)
-
-		expect(await repo.count()).toBe(0)
-
-	})
-
-	it('#finder-fulltext',async () => {
-		const model = new Fixtures.PDBModel1()
-		const repo = coordinator.getRepo(Fixtures.PDBRepo1)
-
-		Object.assign(model,{
-			id: uuid.v4(),
-			createdAt: Faker.date.past(),
-			randomText: Faker.lorem.words(10)
+			
+			after(async() => {
+				await stop()
+			})
+			
+			it('#puts', async() => {
+				const model = new Fixtures.PDBModel1()
+				const repo = coordinator.getRepo(Fixtures.PDBRepo1)
+				
+				Object.assign(model, {
+					id: uuid.v4(),
+					createdAt: Faker.date.past(),
+					randomText: Faker.lorem.words(10)
+				})
+				
+				const
+					savedModel = await repo.save(model),
+					key = repo.key(model.id)
+				
+				// Check we got a doc value
+				expect((savedModel as any).$$doc).not.toBe(null)
+				
+				let
+					modelGet = await repo.get(key)
+				
+				expect(modelGet.id).toBe(model.id)
+				expect(modelGet.randomText).toBe(model.randomText)
+				
+				let currentCount = await repo.count()
+				expect(currentCount).toBe(1)
+				
+				await repo.remove(key)
+				expect(await repo.count()).toBe(0)
+				
+			})
+			
+			it('#bulkSave+bulkRemove', async() => {
+				
+				const repo = coordinator.getRepo(Fixtures.PDBRepo1)
+				
+				const models = []
+				for (let i = 0; i < 2000; i++) {
+					const model = new Fixtures.PDBModel1()
+					Object.assign(model, {
+						id: uuid.v4(),
+						createdAt: Faker.date.past(),
+						randomText: Faker.lorem.words(10)
+					})
+					
+					models.push(model)
+				}
+				
+				const savedModels = await repo.bulkSave(...models)
+				expect(savedModels.length).toBe(models.length)
+				//const nextCount = await repo.count()
+				//expect(nextCount).toBe(models.length)
+				
+				const ids = savedModels.map(savedModel => savedModel.id)
+				models.forEach(model => expect(model.$$doc).not.toBeNull())
+				
+				await repo.bulkRemove(...ids)
+				
+				const finalCount = await repo.count()
+				expect(finalCount).toBe(0)
+			})
+			
+			it('#finder-selector', async() => {
+				const
+					model = fakeModel(),
+					model2 = fakeModel()
+				
+				model.name = "name1"
+				model2.name = "name2"
+				
+				const
+					repo = coordinator.getRepo(Fixtures.PDBRepo1),
+					savedModel = await repo.save(model),
+					savedModel2 = await repo.save(model2),
+				
+					key = repo.key(model.id),
+					key2 = repo.key(model2.id)
+				
+				let
+					foundModel = await repo.findByName(model.name)
+				
+				
+				expect(foundModel).toBeDefined()
+				
+				let
+					foundModels = await repo.findByAnyName(model.name)
+				
+				expect(foundModels.length).toBe(1)
+				
+				let
+					foundModels2 = await repo.findByAnyName(
+						model.name,
+						model2.name
+					)
+				
+				expect(foundModels2.length).toBe(2)
+				
+				
+				foundModel = await repo.findByName(model.name + '123')
+				
+				expect(foundModel).not.toBeDefined()
+				
+				await repo.remove(key)
+				await repo.remove(key2)
+				
+				expect(await repo.count()).toBe(0)
+				
+			})
+			
+			it('#finder-fulltext', async() => {
+				const model = new Fixtures.PDBModel1()
+				const repo = coordinator.getRepo(Fixtures.PDBRepo1)
+				
+				Object.assign(model, {
+					id: uuid.v4(),
+					createdAt: Faker.date.past(),
+					randomText: Faker.lorem.words(10)
+				})
+				
+				const savedModel = await repo.save(model)
+				const key = repo.key(model.id)
+				
+				const secondWord = model.randomText.split(' ')[ 2 ]
+				let results = await repo.findByRandomText(secondWord)
+				expect(results.length).toBe(1)
+				
+				await repo.remove(key)
+				expect(await repo.count()).toBe(0)
+				
+			})
+			
+			it.only('#iterate finder request', async() => {
+				const
+					repo = coordinator.getRepo(Fixtures.PDBRepo1),
+					models = []
+				
+				for (let i = 0; i < 10; i++) {
+					const model = new Fixtures.PDBModel1()
+					Object.assign(model, {
+						id: 'a//' + i,
+						createdAt: Faker.date.past(),
+						randomText: Faker.lorem.words(10)
+					})
+					
+					models.push(model)
+				}
+				
+				const
+					savedModels = await repo.bulkSave(...models),
+					loadedModels = []
+				
+				expect(savedModels.length).toBe(models.length)
+				
+				for (let i = 0; i < 100; i++) {
+					
+					const
+						results = await repo.findByPrefix(new FinderRequest(1,i,true),'a//')
+					
+					
+					log.info(`Got page ${i} - results`,results)
+					if (!results.length) {
+						log.info(`No results - the end`)
+						break
+					}
+					
+					loadedModels.push(...results)
+				}
+				
+				expect(loadedModels.length).toBe(savedModels.length)
+				
+				savedModels.forEach((model,index) => {
+					log.info(`Checking index ${index} with id ${model.id}`)
+					expect(model.id).toBe(loadedModels[index].id)
+				})
+				
+			})
+			
+			it('#keymapper', async() => {
+				const
+					repo = coordinator.getRepo(Fixtures.PDBRepo4),
+					{ makeId } = Fixtures.PDBModel4
+					
+				const
+					id = 'id1',
+					second = '2',
+					model = Object.assign(new Fixtures.PDBModel3(), {
+						id,
+						second,
+						name: Faker.lorem.words(10)
+					}),
+					savedModel = await repo.save(model),
+					loadedModel = await repo.get(makeId(id,second)),
+					loadedRawIdModel = await repo.get(id)
+				
+				
+				log.info(`Checking saved model`)
+				expect(savedModel).not.toBeNull()
+				
+				log.info(`Checking loaded model`)
+				expect(loadedModel).not.toBeNull()
+				
+				log.info(`Checking ids`)
+				expect(loadedModel.id).toBe(id)
+				expect(savedModel.id).toBe(id)
+				expect(loadedRawIdModel).toBeNull()
+				
+				await repo.remove(id)
+				expect(await repo.count()).toBe(1)
+				
+				await repo.remove(makeId(id,second))
+				expect(await repo.count()).toBe(0)
+				
+			})
+			
+			/**
+			 * Finder prefix test
+			 */
+			it('#finder-prefix', async() => {
+				const
+					repo = coordinator.getRepo(Fixtures.PDBRepo3),
+					{ makeId } = Fixtures.PDBModel3,
+					group1Prefix = 'one',
+					group1Count = 6,
+					group2Prefix = 'two',
+					group2Count = 11
+				
+				
+				const makeBatch = async(prefix, count) => {
+					const
+						models = []
+					
+					for (let l = 0; l < count; l++) {
+						const
+							id = makeId(prefix, uuid.v4()),
+							model = Object.assign(new Fixtures.PDBModel3(), {
+								id,
+								group1: prefix,
+								name: Faker.lorem.words(10)
+							})
+						
+						models.push(model)
+					}
+					
+					const savedModels = await repo.bulkSave(...models)
+					log.info(`Saved models length ${savedModels.length}`, savedModels[ 0 ])
+				}
+				
+				await makeBatch(group1Prefix, group1Count)
+				makeBatch(group2Prefix, group2Count)
+				
+				log.info(`Checking group 1`)
+				const group1Models = await repo.findByGroups(group1Prefix)
+				expect(group1Models.length).toBe(group1Count)
+				
+				log.info(`Checking group 2`)
+				const group2Models = await repo.findByGroups(group2Prefix)
+				expect(group2Models.length).toBe(group2Count)
+			})
+			
+			
+			/**
+			 * Bulk load test
+			 */
+			it('#bulk-load', (done) => {
+				
+				const
+					repo = coordinator.getRepo(Fixtures.PDBRepo3),
+					{ makeId } = Fixtures.PDBModel3,
+					group1 = '' + 0
+				
+				let
+					counter = -1,
+					modelCount = 0
+				
+				repo
+					.count()
+					.then((startCount) => {
+						const add10000 = async() => {
+							counter++
+							
+							const
+								group2 = '' + counter
+							
+							
+							// Iterate 10 batches of 100
+							for (let k = 0; k < 30; k++) {
+								
+								const
+									group3 = '' + k,
+									models = []
+								
+								for (let l = 0; l < 100; l++) {
+									const
+										id = makeId(group1, group2, group3, uuid.v4()),
+										model = Object.assign(new Fixtures.PDBModel3(), {
+											id,
+											group1,
+											group2,
+											group3,
+											name: Faker.lorem.words(1001)
+										})
+									
+									models.push(model)
+								}
+								
+								await repo.bulkSave(...models)
+								
+								modelCount += models.length
+							}
+							
+							log.info(`GROUP = ${counter} / CURRENT MODEL COUNT = ${modelCount}`)
+							
+							if (counter < 10) {
+								log.info(`waiting 1 seconds`)
+								setTimeout(() => add10000(), 1000)
+							} else {
+								
+								expect(await repo.count()).toBe(modelCount + startCount)
+								done()
+							}
+						}
+						
+						// Start the iterations
+						add10000()
+					})
+			})
+			
+			
 		})
-
-		const savedModel = await repo.save(model)
-		const key = repo.key(model.id)
-
-		const secondWord = model.randomText.split(' ')[2]
-		let results = await repo.findByRandomText(secondWord)
-		expect(results.length).toBe(1)
-
-		await repo.remove(key)
-		expect(await repo.count()).toBe(0)
-
 	})
+
 
 //
 // 	it('#finder-fn',async () => {

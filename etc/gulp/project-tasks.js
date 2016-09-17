@@ -1,12 +1,13 @@
 
 
 
-const path = require('path')
-const babel = require('gulp-babel')
-const fs = require('fs')
-const merge = require('merge2')
-const sourceMaps = require('gulp-sourcemaps')
 const
+	path = require('path'),
+	babel = require('gulp-babel'),
+	fs = require('fs'),
+	merge = require('merge2'),
+	sourceMaps = require('gulp-sourcemaps'),
+
 	makeSrcGlobs = require('../tools/project-srcs'),
 	makeTypeScriptConfig = require('../tools/make-typescript-config'),
 	{makeBabelConfig} = require('./babel-config'),
@@ -16,7 +17,7 @@ const SourceMapModes = {
 	SourceMap: 1,
 	InlineSourceMap: 2
 }
-const sourceMapMode = SourceMapModes.SourceMap
+const sourceMapMode = SourceMapModes.InlineSourceMap
 
 module.exports = function(projectName) {
 	const projectConfig = projectConfigs[projectName]
@@ -140,7 +141,7 @@ module.exports = function(projectName) {
 
 		const tsResult = gulp.src(project.srcs,{cwd:processDir})
 		//const tsResult = gulp.src(project.srcs)
-			.pipe(sourceMaps.init())
+			.pipe(sourceMaps.init({loadMaps:true}))
 			//.pipe(ts(tsSettings))
 			.pipe(ts(tsProject))
 

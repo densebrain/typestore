@@ -12,14 +12,16 @@ const path = require('path')
  * @returns {{tsConfig,tsSettings,tsConfig}}
  */
 function makeTypeScriptConfig(project,isGlobalConfig = false) {
-	const tsConfig = _.cloneDeep(tsBaseConfig)
-	const tsCompilerOptions = tsConfig.compilerOptions
+	const
+		tsConfig = _.cloneDeep(tsBaseConfig),
+		tsCompilerOptions = tsConfig.compilerOptions,
 
-	const configBaseDir = (isGlobalConfig) ?
-		processDir:
-		project.base
+		configBaseDir = (isGlobalConfig) ?
+			processDir:
+			project.base,
 
-	const baseUrl = path.resolve(isGlobalConfig ? `${processDir}/packages/typestore` : configBaseDir,'src')
+		baseUrl = path.resolve(isGlobalConfig ? `${processDir}/packages/typestore` : configBaseDir,'src'),
+		outDir = path.resolve(processDir,`dist${project ? '/' + project.name : ''}`)
 
 	function makePackageDir(packageName,suffix) {
 		return path.relative(baseUrl,`${processDir}/packages/${packageName}/src/${suffix}`)
@@ -29,6 +31,7 @@ function makeTypeScriptConfig(project,isGlobalConfig = false) {
 
 	_.assign(tsCompilerOptions,{
 		baseUrl,
+		//outDir,
 		paths: projectNames.reduce((projectPaths,name) => {
 			return Object.assign(projectPaths, {
 				[name]: [makePackageDir(name,'index')],

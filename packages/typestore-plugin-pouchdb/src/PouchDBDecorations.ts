@@ -1,9 +1,4 @@
-import {makeOptionsDecorator,FinderDescriptor, Repo,IModel,IFinderOptions} from 'typestore'
-import {
-	PouchDBMangoFinderKey,
-	PouchDBFilterFinderKey,
-	PouchDBFnFinderKey
-} from "./PouchDBConstants"
+import {FinderDescriptor, Repo,ModelDescriptor,IModelOptions,IModel,IFinderOptions} from 'typestore'
 
 import {PouchDBRepoPlugin} from './PouchDBRepoPlugin'
 
@@ -28,6 +23,10 @@ export interface IPouchDBFnFinderOptions extends IPouchDBFinderOptions {
 	fn:PouchDBFinderFn
 }
 
+export interface IPouchDBPrefixFinderOptions extends IPouchDBFinderOptions {
+	keyProvider:(...args) => {startKey:string,endKey:string}
+}
+
 export interface IPouchDBFilterFinderOptions extends IPouchDBFinderOptions {
 	filter:PouchDBFilterFn
 }
@@ -42,16 +41,78 @@ export interface IPouchDBMangoFinderOptions extends IPouchDBFinderOptions {
 	indexFields?:string[]
 }
 
+/**
+ * Custom model options for PouchDB
+ */
+export interface IPouchDBModelOptions extends IModelOptions {
+	
+	/**
+	 * A mapper for creating unique ids,
+	 * original key is still returned, this is only accessible on $$doc
+	 *
+	 * @param o
+	 */
+	keyMapper?:(o:any) => string
+	
+	/**
+	 * Unwrap a pouch key to external key
+	 *
+	 * @param key
+	 */
+	keyUnwrap?:(key:string) => any
+}
+
+/**
+ * PouchDB specific model decorator
+ *
+ * @param opts
+ * @returns {(constructor:Function)=>undefined}
+ */
+export function PouchDBModel(opts:IPouchDBModelOptions) {
+	return ModelDescriptor(opts)
+}
+
+/**
+ * Full text search decorator
+ *
+ * @param opts
+ */
 export const PouchDBFullTextFinder =
 	(opts:IPouchDBFullTextFinderOptions) => FinderDescriptor(opts)
 
+
+/**
+ * Mango finder
+ *
+ * @param opts
+ */
 export const PouchDBMangoFinder =
 	(opts:IPouchDBMangoFinderOptions) => FinderDescriptor(opts)
 
+/**
+ * Prefix finder
+ *
+ * @param opts
+ */
+export const PouchDBPrefixFinder =
+	(opts:IPouchDBPrefixFinderOptions) => FinderDescriptor(opts)
+
+
+
+/**
+ * Filter finder
+ *
+ * @param opts
+ */
 export const PouchDBFilterFinder =
 	(opts:IPouchDBFilterFinderOptions) => FinderDescriptor(opts)
 
+/**
+ * Function finder
+ *
+ * @param opts
+ */
 export const PouchDBFnFinder =
 	(opts:IPouchDBFnFinderOptions) => FinderDescriptor(opts)
 
-//makeOptionsDecorator<IPouchDBMangoFinderOptions>(PouchDBMangoFinderKey)
+

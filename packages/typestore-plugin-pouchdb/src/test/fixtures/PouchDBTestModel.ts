@@ -7,10 +7,18 @@ import {
 	FinderDescriptor,
 	ModelDescriptor,
 	AttributeDescriptor,
-	DefaultModel
+	DefaultModel,
+	FinderRequest,
+	FinderResultArray
 } from "typestore"
 
-import {PouchDBFilterFinder,PouchDBMangoFinder,PouchDBFullTextFinder} from 'typestore-plugin-pouchdb'
+import {
+	PouchDBFilterFinder,
+	PouchDBPrefixFinder,
+	PouchDBModel,
+	PouchDBMangoFinder,
+	PouchDBFullTextFinder
+} from 'typestore-plugin-pouchdb'
 
 
 const log = Log.create(__filename)
@@ -83,7 +91,6 @@ export class PDBModel1 extends DefaultModel {
 
 	constructor() {
 		super()
-		log.info(`constructor for ${(this.constructor as any).name}`)
 	}
 }
 
@@ -125,9 +132,116 @@ export class PDBRepo1 extends Repo<PDBModel1> {
 	findByAnyName(...names:string[]):Promise<PDBModel1[]> {
 		return null
 	}
+	
+	@PouchDBPrefixFinder({
+		keyProvider: (prefix) => {
+			const
+				startKey = prefix
+			
+			return {
+				startKey,
+				endKey: `${startKey}\uffff`
+			}
+		}
+	})
+	findByPrefix(request:FinderRequest,name:string):Promise<FinderResultArray<PDBModel1>> {
+		return null
+	}
+
+}
 
 
 
 
 
+/**
+ * Used for prefix and bulk test
+ */
+
+
+@ModelDescriptor({tableName:'idb_model_3'})
+export class PDBModel3 extends DefaultModel {
+	
+	static makeId(...groups:string[]) {
+		return groups.join('-')
+	}
+	
+	@AttributeDescriptor({name:'id',primaryKey:true})
+	id:string
+	
+	@AttributeDescriptor()
+	group1:string
+	
+	@AttributeDescriptor()
+	group2:string
+	
+	@AttributeDescriptor()
+	group3:string
+	
+	
+	@AttributeDescriptor()
+	name:string
+}
+
+@RepoDescriptor()
+export class PDBRepo3 extends Repo<PDBModel3> {
+	
+	constructor() {
+		super(PDBRepo3,PDBModel3)
+	}
+	
+	
+	@PouchDBPrefixFinder({
+		keyProvider: (...groups) => {
+			const
+				startKey = PDBModel3.makeId(...groups)
+			
+			return {
+				startKey,
+				endKey: `${startKey}\uffff`
+			}
+		}
+	})
+	findByGroups(...groups:string[]):Promise<PDBModel3[]> {
+		return null
+	}
+	
+}
+
+
+
+
+/**
+ * Used for prefix and bulk test
+ */
+
+export function makeModel4Id(id,second) {
+	return `${id}/${second}`
+}
+
+@PouchDBModel({
+	tableName:'idb_model_4',
+	keyMapper: (o) => makeModel4Id(o.id,o.second)
+})
+export class PDBModel4 extends DefaultModel {
+	
+	static makeId = makeModel4Id
+	
+	@AttributeDescriptor({name:'id',primaryKey:true})
+	id:string
+	
+	@AttributeDescriptor()
+	second:string
+	
+	@AttributeDescriptor()
+	name:string
+}
+
+@RepoDescriptor()
+export class PDBRepo4 extends Repo<PDBModel4> {
+	
+	constructor() {
+		super(PDBRepo4,PDBModel4)
+	}
+	
 }
