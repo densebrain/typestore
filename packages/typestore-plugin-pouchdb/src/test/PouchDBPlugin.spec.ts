@@ -206,8 +206,7 @@ describe('#plugin-pouchdb', () => {
 				
 				expect(foundModel).not.toBeDefined()
 				
-				await repo.remove(key)
-				await repo.remove(key2)
+				await Promise.all([repo.remove(key),repo.remove(key2)])
 				
 				expect(await repo.count()).toBe(0)
 				
@@ -235,7 +234,7 @@ describe('#plugin-pouchdb', () => {
 				
 			})
 			
-			it.only('#iterate finder request', async() => {
+			it('#iterate finder request', async() => {
 				const
 					repo = coordinator.getRepo(Fixtures.PDBRepo1),
 					models = []
@@ -352,7 +351,7 @@ describe('#plugin-pouchdb', () => {
 				}
 				
 				await makeBatch(group1Prefix, group1Count)
-				makeBatch(group2Prefix, group2Count)
+				await makeBatch(group2Prefix, group2Count)
 				
 				log.info(`Checking group 1`)
 				const group1Models = await repo.findByGroups(group1Prefix)
