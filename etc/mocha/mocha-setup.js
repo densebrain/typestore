@@ -1,23 +1,32 @@
 require('source-map-support').install()
 require('../packages-path')
-require('bluebird').config({
-	cancellation: true,
-	longStackTraces: true,
-	warnings: true,
-	monitoring: false
-})
+
+
 require("babel-polyfill")
 require('expectations')
 require('reflect-metadata')
 
-var Log = require('typelogger')
 
-if (!process.env.DEBUG)
-	Log.setLogThreshold(Log.LogLevel.WARN)
+const
+	Bluebird = require('bluebird'),
+	Log = require('typelogger')
 
-global.getLogger = function(filename) {
-	return console
-}
+Bluebird
+	.config({
+		cancellation: true,
+		longStackTraces: true,
+		warnings: true,
+		monitoring: false
+	})
+
+Log.setLogThreshold(process.env.DEBUG ? Log.LogLevel.DEBUG : Log.LogLevel.WARN )
+ 
+Object.assign(global,{
+	Promise:Bluebird,
+	getLogger: Log.create
+})
+
+
 
 
 //global.Promise = global.BBPromise = require('../../packages/typestore/dist/Promise')

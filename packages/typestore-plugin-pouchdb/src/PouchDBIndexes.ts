@@ -1,7 +1,8 @@
 //const PouchDB = require('pouchdb')
 //import * as PouchDB from 'pouchdb'
-import {isString} from 'typestore'
+import {isString,IModelType} from 'typestore'
 import {cleanFieldPrefixes,filterReservedFields,mapAttrsToField} from './PouchDBUtil'
+import { PouchDBRepoPlugin } from "typestore-plugin-pouchdb/PouchDBRepoPlugin"
 
 const log = require('typelogger').create(__filename)
 
@@ -88,17 +89,27 @@ function indexFieldsMatch(idx:IPouchDBIndex,fields:string[]) {
 	)
 }
 
+function checkGlobalIndexFields(useGlobal:boolean,fields:string[]) {
+	if (useGlobal && (!fields || fields.indexOf('type') === -1))
+		fields = ['type',...(fields || [])]
+	
+	return fields
+}
+
 /**
  * Get an index by name
  *
+ * @param useGlobal
  * @param db
  * @param indexName
  * @param fields
  * @returns {IPouchDBIndex}
  */
-export async function  getIndexByNameOrFields(db,indexName:string,fields:string[]|any[]) {
+export async function  getIndexByNameOrFields(useGlobal:boolean,db,indexName:string,fields:string[]|any[]) {
 	const idxMap = await getIndexMap(db)
-
+	
+	fields = checkGlobalIndexFields(useGlobal,fields)
+	
 	if (idxMap[indexName] || !fields || !fields.length)
 		return idxMap[indexName]
 
@@ -114,10 +125,14 @@ export async function  getIndexByNameOrFields(db,indexName:string,fields:string[
 
 }
 
-export function makeMangoIndexConfig(modelName:string,indexName:string,indexDirection:string,fields:string[]) {
+export function makeMangoIndexConfig(useGlobal:boolean,modelName:string,indexName:string,indexDirection:string,fields:string[]) {
 	const name = `${modelName ? modelName + '_' : ''}${indexName}`
-
-	fields = [...mapAttrsToField(fields),'type']
+	
+	// In global mode then add the type attribute
+	fields = checkGlobalIndexFields(useGlobal, fields)
+	
+	fields = [...mapAttrsToField(fields)]
+	
 
 	return {name,direction:indexDirection,fields}
 }
@@ -125,24 +140,29 @@ export function makeMangoIndexConfig(modelName:string,indexName:string,indexDire
 /**
  * Create an index directly
  *
+ * @param useGlobal
  * @param db
  * @param indexConfig
  */
-async function makeMangoIndex(db,indexConfig:PouchDBMangoIndexConfig)
+async function makeMangoIndex(useGlobal:boolean,db,indexConfig:PouchDBMangoIndexConfig)
 /**
  * Create an index config and then index
  *
+ * @param useGlobal
  * @param db
  * @param modelName
  * @param indexName
+ * @param indexDirection
  * @param fields
  */
-async function makeMangoIndex(db,modelName:string, indexName:string,indexDirection:string,fields:string[])
-async function makeMangoIndex(db,indexConfigOrModelName:string|PouchDBMangoIndexConfig, indexName?:string,indexDirection?:string,fields?:string[]) {
-
+async function makeMangoIndex(useGlobal:boolean,db,modelName:string, indexName:string,indexDirection:string,fields:string[])
+async function makeMangoIndex(useGlobal:boolean,db,indexConfigOrModelName:string|PouchDBMangoIndexConfig, indexName?:string,indexDirection?:string,fields?:string[]) {
+	
+	fields = checkGlobalIndexFields(useGlobal,fields)
+	
 	// Make sure we have a valid index config first thing
 	const indexConfig = (!indexConfigOrModelName || isString(indexConfigOrModelName)) ?
-		makeMangoIndexConfig(<string>indexConfigOrModelName, indexName,indexDirection, fields) :
+		makeMangoIndexConfig(useGlobal,<string>indexConfigOrModelName, indexName,indexDirection, fields) :
 		indexConfigOrModelName
 
 
@@ -150,7 +170,7 @@ async function makeMangoIndex(db,indexConfigOrModelName:string|PouchDBMangoIndex
 
 	log.info(`Checking index ${indexName} with fields`,fields)
 
-	let idx:IPouchDBIndex = await getIndexByNameOrFields(db, indexName, fields)
+	let idx:IPouchDBIndex = await getIndexByNameOrFields(useGlobal,db, indexName, fields)
 
 	if (idx && (idx.name !== indexName || indexFieldsMatch(idx, fields))) {
 		log.info(`Index def has not changed: ${indexName}`)
@@ -169,14 +189,25 @@ async function makeMangoIndex(db,indexConfigOrModelName:string|PouchDBMangoIndex
 			const deleteResult = await db.deleteIndex(idx.def)
 			log.info(`Index changed, deleting old version: ${indexName}`,deleteResult)
 		}
-
-		const createRequest = Object.assign({},indexConfig,{
-			fields: indexConfig.fields.map(field => ({[field]: indexConfig.direction || 'asc'}))
-		})
-		const createResult = await db.createIndex(createRequest)
+		
+		if (useGlobal)
+			indexConfig.fields = checkGlobalIndexFields(useGlobal,indexConfig.fields)
+		
+		if (!indexConfig.fields.length)
+			throw new Error(`You can not create an index with no fields`)
+		
+		const
+			createRequest = Object.assign({},indexConfig,{
+				fields: indexConfig.fields.map(field => ({[field]: indexConfig.direction || 'asc'}))
+			}),
+			createResult = await db.createIndex(createRequest),
+			updatedIdxMap = await getIndexMap(db, true)
 
 		log.info(`Create result for ${indexName}`,createResult)
-		const updatedIdxMap = await getIndexMap(db, true)
+		
+		 
+			
+		
 		idx = updatedIdxMap[indexName]
 
 	}

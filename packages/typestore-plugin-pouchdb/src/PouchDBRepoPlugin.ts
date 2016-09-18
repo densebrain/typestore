@@ -15,10 +15,12 @@ import {
 	getFinderOpts,
 	assert,
 	Log,
-	isFunction,
 	IModelAttributeOptions,
 	FinderRequest,
-	getDefaultMapper
+	getDefaultMapper,
+	IModelType,
+	IModelOptions,
+	FinderResultArray
 } from 'typestore'
 
 import * as Bluebird from 'bluebird'
@@ -28,11 +30,14 @@ import {
 	IPouchDBMangoFinderOptions,
 	IPouchDBFilterFinderOptions,
 	IPouchDBFnFinderOptions,
-	IPouchDBFullTextFinderOptions
+	IPouchDBFullTextFinderOptions,
+	IPouchDBModelOptions,
+	IPouchDBPrefixFinderOptions
 } from './PouchDBDecorations'
 
-import {mapDocs, mapAttrsToField, transformDocumentKeys, dbKeyFromObject, convertModelToDoc} from './PouchDBUtil'
-import {makeMangoFinder, makeFilterFinder, makeFnFinder, makeFullTextFinder, findWithSelector} from './PouchDBFinders'
+import {mapDocs, convertModelToDoc} from './PouchDBUtil'
+import {makeFinderResults,makeMangoFinder, makePrefixFinder,makeFilterFinder, makeFnFinder, makeFullTextFinder} from './PouchDBFinders'
+
 
 
 const log = Log.create(__filename)
@@ -56,16 +61,40 @@ export class PouchDBKeyValue implements IKeyValue {
 	}
 }
 
+/**
+ * PouchDB repo plugin
+ */
 export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFinderPlugin {
 
-	type = PluginType.Repo | PluginType.Finder
-	supportedModels:any[]
-
+	readonly type = PluginType.Repo | PluginType.Finder
+	
+	/**
+	 * The model type supported
+	 */
+	readonly modelType:IModelType
+	
+	get modelOptions():IPouchDBModelOptions {
+		return this.modelType.options
+	}
+	
+	readonly supportedModels:any[]
+	
+	/**
+	 * ref to coordinator
+	 */
 	private coordinator
+	
+	/**
+	 * ref to primary key attr
+	 */
 	private primaryKeyAttr:IModelAttributeOptions
+	
+	/**
+	 * primary key field
+	 */
 	primaryKeyField:string
 	primaryKeyType:any
-	modelType
+	
 
 
 	/**
@@ -104,33 +133,40 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			IPouchDBFnFinderOptions &
 			IPouchDBFilterFinderOptions &
 			IPouchDBMangoFinderOptions &
-			IPouchDBFullTextFinderOptions
+			IPouchDBFullTextFinderOptions &
+			IPouchDBPrefixFinderOptions
 
 		if (!opts )
 			return null
 
-		const { fn, filter, selector,
-			sort, limit, single,
-			textFields, all
-		} = opts
+		const
+			{
+				fn, filter, selector,
+				keyProvider,
+				sort, limit, single,
+				textFields, all
+			} = opts
 
+		assert(all || keyProvider || fn || selector || filter || textFields,'selector or fn properties MUST be provided on an pouchdb finder descriptor')
 
-
-		assert(all || fn || selector || filter || textFields,'selector or fn properties MUST be provided on an pouchdb finder descriptor')
-
-		const finderFn:any = (selector || all) ? makeMangoFinder(this,finderKey,opts) :
-			(filter) ? makeFilterFinder(this,finderKey,opts) :
-				(textFields) ? makeFullTextFinder(this,finderKey,opts) :
-					makeFnFinder(this,finderKey,opts)
+		const
+			finderFn:any = (selector || all) ? makeMangoFinder(this,finderKey,opts) :
+				(keyProvider) ? makePrefixFinder(this,finderKey,opts) :
+					(filter) ? makeFilterFinder(this,finderKey,opts) :
+						(textFields) ? makeFullTextFinder(this,finderKey,opts) :
+							makeFnFinder(this,finderKey,opts)
 
 		return async (...args) => {
-			const request:FinderRequest = (args[0] instanceof FinderRequest) ? args[0] : null
+			const
+				request:FinderRequest = (args[0] instanceof FinderRequest) ? args[0] : null
+			
 			if (request)
 				args.shift()
 
-			const models = await finderFn(request,...args)
+			const
+				models = await finderFn(request,...args)
 
-			log.debug('Got finder result for ' + finderKey,'args',args,'models',models)
+			//log.debug('Got finder result for ' + finderKey,'args',args,'models',models)
 			return (single) ? models[0] : models
 
 		}
@@ -159,21 +195,32 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	/**
 	 * Get db ref
 	 *
-	 * @returns {Dexie}
 	 */
 	get db() {
-		return this.store.db
+		return this.store.getDB(this)
 	}
 
 
 	async init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
 		return (this.coordinator = coordinator)
 	}
-
+	
+	/**
+	 * Start the repo plugin
+	 *
+	 * @returns {any}
+	 */
 	async start():Promise<ICoordinator> {
+		await this.store.open(this.modelType)
+		
 		return this.coordinator
 	}
-
+	
+	/**
+	 * Stop the repo plugin
+	 *
+	 * @returns {any}
+	 */
 	async stop():Promise<ICoordinator> {
 		return this.coordinator
 	}
@@ -238,6 +285,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		const json = mapper.toObject(model)
 
 		const doc = convertModelToDoc(
+			this,
 			this.modelType,
 			mapper,
 			this.primaryKeyAttr.name,
@@ -278,19 +326,22 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 */
 	async remove(key:PouchDBKeyValue):Promise<any> {
 		key = key.pouchDBKey ? key : this.key(key as any)
-
-		const model = await this.get(key)
-
-
+		
+		
+		
+		const
+			model = await this.get(key)
+		
 		if (!model)
 			return null
 
-		const result = await this.db.remove((model as any).$$doc)
+		const
+			result = await this.db.remove((model as any).$$doc)
 
 		if (this.repo.supportPersistenceEvents())
 			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove,model)
 
-		return Promise.resolve(result);
+		return result
 	}
 
 	/**
@@ -299,20 +350,56 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 * @returns {Promise<number>}
 	 */
 	count():Promise<number> {
-		return this.store.getModelCount(this.modelType.name)
+		return this.store.getModelCount(this.modelType.name,this)
 	}
-
-	async all(includeDocs = true) {
-		const result = await this.db.allDocs({include_docs:true})
-
-		const docs = result.rows
-			.reduce((allDocs,nextRow) => {
-				allDocs.push(nextRow.doc)
-				return allDocs
-			},[])
-			.filter(doc => doc.type === this.modelType.name)
-
-		return mapDocs(this,this.repo.modelClazz,docs,includeDocs)
+	
+	/**
+	 * Get all documents
+	 *
+	 * @param request - for finder options
+	 * @param includeDocs - if true complete docs are returned - otherwise just ids
+	 * @param startkey - start with key (if provided, endkey is required too
+	 * @param endkey
+	 */
+	async all(request:FinderRequest, includeDocs = true,startkey:string = null,endkey:string = null) {
+		assert((!startkey && !endkey) || (startkey && endkey),`Either provide start key and end key or neither`)
+		
+		const
+			keyOpts = !startkey ? {} : {startkey,endkey},
+			opts = Object.assign({
+				include_docs: includeDocs
+			},keyOpts),
+			{limit,offset} = request || ({} as FinderRequest)
+		
+		if (limit && limit > 0) {
+			opts.limit = limit
+		}
+		
+		if (offset && offset > 0) {
+			opts.skip = offset
+		}
+		
+		const
+			result = await this.db.allDocs(opts),
+			
+			// Now reduce the docs, filtering by type
+			
+			docs = result
+				.rows
+				.reduce((allDocs,nextRow) => {
+					// Filter other types or special docs here
+					if (nextRow.doc.type === this.modelType.name)
+						allDocs.push(nextRow.doc)
+					
+					return allDocs
+				},[])
+		
+		result.rows = docs
+		
+		
+		return makeFinderResults(this,result,request,limit,offset,includeDocs)
+		
+		//return mapDocs(this,this.repo.modelClazz,docs,includeDocs)
 	}
 
 	/**
@@ -339,6 +426,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 
 		// Models -> Docs
 		const docs = models.map(model => convertModelToDoc(
+			this,
 			this.modelType,
 			mapper,
 			this.primaryKeyAttr.name,
@@ -346,12 +434,13 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		))
 
 		// Find all docs that have _id and not _rev
-		const revPromises = []
-		const missingRefs = await this.db.allDocs({
-			include_docs:false,
-			keys: docs.filter(doc => doc._id && !doc._rev)
-				.map(doc => doc._id)
-		})
+		const
+			revPromises = [],
+			missingRefs = await this.db.allDocs({
+				include_docs:false,
+				keys: docs.filter(doc => doc._id && !doc._rev)
+					.map(doc => doc._id)
+			})
 
 		missingRefs.rows
 			.filter(row => !row.error && row.value && row.value.rev)
@@ -360,41 +449,27 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 				const doc = docs.find(doc => `${doc._id}` === `${id}`)
 				doc._rev = rev
 			})
-		//
-		// docs.forEach(async (doc,index) => {
-		// 	const id = models[index][this.primaryKeyAttr.name]
-		// 	if (!id || !doc._id  || (doc._id && doc._rev))
-		// 		return
-		//
-		// 	revPromises.push(
-		// 		this.getRev(id)
-		// 			.then(rev => {
-		// 				if (rev)
-		// 					doc._rev = rev
-		// 			})
-		// 	)
-		// })
+		
+		
+		const
+			// Save all docs
+			responses = await this.db.bulkDocs(docs),
 
-		//await Promise.all(revPromises)
-
-		// Do Save
-		const responses = await this.db.bulkDocs(docs)
-
-		// Docs -> Models
-		const savedModels = docs.map((doc,index) => {
-			const savedModel = mapper.fromObject(doc.attrs)
-
-			const res = responses[index]
-			Object.assign(savedModel as any,{
-				$$doc: {
-					_id: res.id,
-					_rev: res.rev,
-					attrs:doc.attrs
-				}
+			// Map Docs -> Models
+			savedModels = docs.map((doc,index) => {
+				const savedModel = mapper.fromObject(doc.attrs)
+	
+				const res = responses[index]
+				Object.assign(savedModel as any,{
+					$$doc: {
+						_id: res.id,
+						_rev: res.rev,
+						attrs:doc.attrs
+					}
+				})
+	
+				return savedModel
 			})
-
-			return savedModel
-		})
 
 		if (this.repo.supportPersistenceEvents())
 			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save,...savedModels)

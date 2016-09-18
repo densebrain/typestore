@@ -25,8 +25,14 @@ import {PluginEventType} from "./PluginTypes";
 // Create logger
 const log = Log.create(__filename)
 
+/**
+ * ClassName -> ModelClass Mapping table
+ */
 export type TModelTypeMap = {[clazzName:string]:IModelType}
 
+/**
+ * The overall coordinator
+ */
 export class Coordinator implements ICoordinator {
 
 	private plugins:IPlugin[] = []

@@ -16,7 +16,7 @@
 		"experimentalDecorators": true,
 		"preserveConstEnums": true,
 		"allowSyntheticDefaultImports": true,
-		"sourceMap": true
+		"inlineSourceMap": true
 	},
 
 

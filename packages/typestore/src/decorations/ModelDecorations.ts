@@ -69,14 +69,21 @@ export interface IModelOptions {
 	attrs?:IModelAttributeOptions[]
 	transientAttrs?:string[]
 	onPersistenceEvent?:ModelPersistenceEventCallback<any>
+	
 }
 
+
+/**
+ * Model key shape
+ */
 export interface IModelKey {
 
 }
 
 
-
+/**
+ * Model key value shape
+ */
 export interface IKeyValue {
 
 }
@@ -95,18 +102,19 @@ export type TKeyValue = IKeyValue|string|number
  * @param opts
  */
 export function ModelDescriptor(opts:IModelOptions = {}) {
+	
 	return function(constructor:Function) {
 		// Make sure everything is valid
 		//const type = Reflect.getOwnMetadata('design:type',constructor)
-		const type = constructor as any
-		const attrs = Reflect.getOwnMetadata(TypeStoreAttrKey, constructor) as IModelAttributeOptions[]
-
-		const finalOpts = Object.assign({},{
-			clazz: constructor,
-			clazzName: type.name,
-			tableName: type.name,
-			attrs
-		},opts)
+		const
+			type = constructor as any,
+			attrs = Reflect.getOwnMetadata(TypeStoreAttrKey, constructor) as IModelAttributeOptions[],
+			finalOpts = Object.assign({},{
+				clazz: constructor,
+				clazzName: type.name,
+				tableName: type.name,
+				attrs
+			},opts)
 
 
 		log.debug(`Decorating: ${finalOpts.clazzName}`)
@@ -153,6 +161,7 @@ export function DefaultValue(defaultValueFn:DefaultValueFn) {
 
 /**
  * Decorator model attribute
+ *
  * @param opts
  * @returns {function(any, string): undefined}
  * @constructor
