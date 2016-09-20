@@ -133,6 +133,18 @@ export class PDBRepo1 extends Repo<PDBModel1> {
 		return null
 	}
 	
+	@PouchDBMangoFinder({
+		selector: (...names) => ({
+			$or: names.map(name => ({
+				name: {$eq: name}
+			}))
+		}),
+		indexFields: ['name']
+	})
+	findByAnyNameWithRequest(request:FinderRequest,...names:string[]):Promise<PDBModel1[]> {
+		return null
+	}
+	
 	@PouchDBPrefixFinder({
 		keyProvider: (prefix) => {
 			const
@@ -206,6 +218,8 @@ export class PDBRepo3 extends Repo<PDBModel3> {
 		return null
 	}
 	
+	
+	
 }
 
 
@@ -242,6 +256,24 @@ export class PDBRepo4 extends Repo<PDBModel4> {
 	
 	constructor() {
 		super(PDBRepo4,PDBModel4)
+	}
+	
+	@PouchDBPrefixFinder({
+		includeDocs: false,
+		keyProvider: (...parts) => {
+			const
+				startKey = parts.join('/')
+			
+			log.info(`Using start key ${startKey}`)
+			
+			return {
+				startKey,
+				endKey: `${startKey}\uffff`
+			}
+		}
+	})
+	findIdsByMappedKey(...parts:string[]):Promise<string[]> {
+		return null
 	}
 	
 }

@@ -78,6 +78,7 @@ export interface IPouchDBOptions {
 	filename:string
 	databasePerRepo?:boolean
 	createOptions?:any
+	cacheSize?:number,
 	replication?: IPouchDBReplication
 	sync?: IPouchDBReplication
 }

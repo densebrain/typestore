@@ -1,4 +1,4 @@
-import {Log,FinderRequest,FinderResultArray,isFunction} from 'typestore'
+import {Log,FinderRequest,FinderResultArray,isFunction,isNil} from 'typestore'
 
 
 import {
@@ -23,6 +23,7 @@ import {
 } from './PouchDBUtil'
 
 
+
 const log = Log.create(__filename)
 
 function enableQuickSearch() {
@@ -45,6 +46,7 @@ export function makeFinderResults(pouchRepo,results,request,limit:number,offset:
 		items = mapDocs(pouchRepo,pouchRepo.repo.modelClazz,results,includeDocs),
 		total = results.total_rows || items.length
 
+	//log.info(`Mapped results`,results,'to items',items)
 	return new FinderResultArray<any>(items,total,request,results.metadata || [])
 }
 
@@ -231,17 +233,19 @@ export function makeFullTextFinder(pouchRepo:PouchDBRepoPlugin<any>,finderKey:st
  * @param opts
  */
 export function makePrefixFinder(pouchRepo:PouchDBRepoPlugin<any>,finderKey:string,opts:IPouchDBPrefixFinderOptions) {
-	log.info(`Finder '${finderKey}' uses allDocs with prefixes`)
+	log.debug(`Finder '${finderKey}' uses allDocs with prefixes`)
 	
 	const
-		{keyProvider,includeDocs} = opts
+		{keyProvider} = opts
 	
 	return async (request:FinderRequest,...args) => {
 		const
-			{startKey:startkey,endKey:endkey} = keyProvider(...args)
+			{startKey:startkey,endKey:endkey} = keyProvider(...args),
+			requestInclude = request && request.includeModels,
+			includeDocs =  requestInclude === true ||  (requestInclude !== false && opts.includeDocs !== false)
 		
-		log.info(`Start key = ${startkey} / End key = ${endkey}`)
-		return pouchRepo.all(request,includeDocs !== false,startkey,endkey)
+		//log.debug(`Start key = ${startkey} / End key = ${endkey}`,'IncludeDocs',includeDocs, ' request.includeDocs',request && request.includeModels,'opts.includeDocs',opts.includeDocs)
+		return pouchRepo.all(request,includeDocs,startkey,endkey)
 	}
 }
 
@@ -254,7 +258,7 @@ export function makePrefixFinder(pouchRepo:PouchDBRepoPlugin<any>,finderKey:stri
  * @param opts
  */
 export function makeFilterFinder(pouchRepo:PouchDBRepoPlugin<any>,finderKey:string,opts:IPouchDBFilterFinderOptions) {
-	log.warn(`Finder '${finderKey}' uses allDocs filter - THIS WILL BE SLOW`)
+	log.debug(`Finder '${finderKey}' uses allDocs filter - Slow if improperly used`)
 
 	const {filter,includeDocs} = opts
 
@@ -345,6 +349,10 @@ export function makeMangoFinder(pouchRepo:PouchDBRepoPlugin<any>,finderKey:strin
 	// Actual finder function
 	const finder = async (request:FinderRequest,...args) => {
 
+		if (all) {
+			return pouchRepo.all(request,includeDocs)
+		}
+		
 		const
 			selectorResult =
 				isFunction(selector) ? (selector as any)(...args) : selector

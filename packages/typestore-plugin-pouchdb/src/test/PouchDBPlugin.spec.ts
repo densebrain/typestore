@@ -141,7 +141,7 @@ describe('#plugin-pouchdb', () => {
 				const repo = coordinator.getRepo(Fixtures.PDBRepo1)
 				
 				const models = []
-				for (let i = 0; i < 2000; i++) {
+				for (let i = 0; i < 1000; i++) {
 					const model = new Fixtures.PDBModel1()
 					Object.assign(model, {
 						id: uuid.v4(),
@@ -234,7 +234,7 @@ describe('#plugin-pouchdb', () => {
 				
 			})
 			
-			it('#iterate finder request', async() => {
+			it.only('#iterate finder request', async() => {
 				const
 					repo = coordinator.getRepo(Fixtures.PDBRepo1),
 					models = []
@@ -243,6 +243,7 @@ describe('#plugin-pouchdb', () => {
 					const model = new Fixtures.PDBModel1()
 					Object.assign(model, {
 						id: 'a//' + i,
+						name: "My Name",
 						createdAt: Faker.date.past(),
 						randomText: Faker.lorem.words(10)
 					})
@@ -259,7 +260,32 @@ describe('#plugin-pouchdb', () => {
 				for (let i = 0; i < 100; i++) {
 					
 					const
-						results = await repo.findByPrefix(new FinderRequest(1,i,true),'a//')
+						results = await repo.findByPrefix(new FinderRequest(5,i * 5,true),'a//')
+					
+					
+					//log.info(`Got page ${i} - results`,results)
+					if (!results.length) {
+						log.info(`No results - the end`)
+						break
+					}
+					
+					loadedModels.push(...results)
+				}
+				
+				expect(loadedModels.length).toBe(savedModels.length)
+				
+				savedModels.forEach((model,index) => {
+					log.info(`Checking index ${index} with id ${model.id}`)
+					expect(model.id).toBe(loadedModels[index].id)
+				})
+				
+				// Now test a mango finder
+				loadedModels.length = 0
+				
+				for (let i = 0; i < 100; i++) {
+					
+					const
+						results = await repo.findByAnyNameWithRequest(new FinderRequest(5,i * 5,true),'My Name')
 					
 					
 					log.info(`Got page ${i} - results`,results)
@@ -278,6 +304,7 @@ describe('#plugin-pouchdb', () => {
 					expect(model.id).toBe(loadedModels[index].id)
 				})
 				
+				
 			})
 			
 			it('#keymapper', async() => {
@@ -288,7 +315,7 @@ describe('#plugin-pouchdb', () => {
 				const
 					id = 'id1',
 					second = '2',
-					model = Object.assign(new Fixtures.PDBModel3(), {
+					model = Object.assign(new Fixtures.PDBModel4(), {
 						id,
 						second,
 						name: Faker.lorem.words(10)
@@ -308,6 +335,13 @@ describe('#plugin-pouchdb', () => {
 				expect(loadedModel.id).toBe(id)
 				expect(savedModel.id).toBe(id)
 				expect(loadedRawIdModel).toBeNull()
+				
+				const
+					finderIds = await repo.findIdsByMappedKey('id1')
+				
+				expect(finderIds.length).toBe(1)
+				expect(finderIds[0]).toBe(makeId(id,second))
+				
 				
 				await repo.remove(id)
 				expect(await repo.count()).toBe(1)
@@ -360,6 +394,9 @@ describe('#plugin-pouchdb', () => {
 				log.info(`Checking group 2`)
 				const group2Models = await repo.findByGroups(group2Prefix)
 				expect(group2Models.length).toBe(group2Count)
+				
+				
+				
 			})
 			
 			
@@ -394,7 +431,7 @@ describe('#plugin-pouchdb', () => {
 									group3 = '' + k,
 									models = []
 								
-								for (let l = 0; l < 100; l++) {
+								for (let l = 0; l < 30; l++) {
 									const
 										id = makeId(group1, group2, group3, uuid.v4()),
 										model = Object.assign(new Fixtures.PDBModel3(), {

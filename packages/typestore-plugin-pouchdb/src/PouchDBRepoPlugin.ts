@@ -24,7 +24,7 @@ import {
 } from 'typestore'
 
 import * as Bluebird from 'bluebird'
-import {PouchDBPlugin} from "./PouchDBPlugin";
+import { PouchDBPlugin } from "./PouchDBPlugin";
 
 import {
 	IPouchDBMangoFinderOptions,
@@ -35,9 +35,15 @@ import {
 	IPouchDBPrefixFinderOptions
 } from './PouchDBDecorations'
 
-import {mapDocs, convertModelToDoc} from './PouchDBUtil'
-import {makeFinderResults,makeMangoFinder, makePrefixFinder,makeFilterFinder, makeFnFinder, makeFullTextFinder} from './PouchDBFinders'
-
+import { mapDocs, convertModelToDoc, dbKeyFromObject } from './PouchDBUtil'
+import {
+	makeFinderResults,
+	makeMangoFinder,
+	makePrefixFinder,
+	makeFilterFinder,
+	makeFnFinder,
+	makeFullTextFinder
+} from './PouchDBFinders'
 
 
 const log = Log.create(__filename)
@@ -51,11 +57,11 @@ const log = Log.create(__filename)
  * just like poop!
  */
 export class PouchDBKeyValue implements IKeyValue {
-
+	
 	public args:any[]
-
+	
 	pouchDBKey = true
-
+	
 	constructor(...args:any[]) {
 		this.args = args
 	}
@@ -65,7 +71,7 @@ export class PouchDBKeyValue implements IKeyValue {
  * PouchDB repo plugin
  */
 export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFinderPlugin {
-
+	
 	readonly type = PluginType.Repo | PluginType.Finder
 	
 	/**
@@ -95,8 +101,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	primaryKeyField:string
 	primaryKeyType:any
 	
-
-
+	
 	/**
 	 * Construct a new repo/store
 	 * manager for a given repo/model
@@ -105,19 +110,18 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 * @param repo
 	 */
 	constructor(public store:PouchDBPlugin, public repo:Repo<M>) {
-		this.supportedModels = [repo.modelClazz]
+		this.supportedModels = [ repo.modelClazz ]
 		this.modelType = this.repo.modelType
 		this.primaryKeyAttr = this.modelType.options.attrs
 			.find(attr => attr.primaryKey)
-
+		
 		this.primaryKeyField = this.primaryKeyAttr.name
 		this.primaryKeyType = this.primaryKeyAttr.type
-
+		
 		repo.attach(this)
 	}
-
-
-
+	
+	
 	/**
 	 * Create a finder method with descriptor
 	 * and signature
@@ -127,18 +131,18 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 * @returns {any}
 	 */
 	decorateFinder(repo:Repo<any>, finderKey:string) {
-
+		
 		// Get the finder opts 1st
-		const opts = getFinderOpts(repo,finderKey) as
+		const opts = getFinderOpts(repo, finderKey) as
 			IPouchDBFnFinderOptions &
-			IPouchDBFilterFinderOptions &
-			IPouchDBMangoFinderOptions &
-			IPouchDBFullTextFinderOptions &
-			IPouchDBPrefixFinderOptions
-
-		if (!opts )
+				IPouchDBFilterFinderOptions &
+				IPouchDBMangoFinderOptions &
+				IPouchDBFullTextFinderOptions &
+				IPouchDBPrefixFinderOptions
+		
+		if (!opts)
 			return null
-
+		
 		const
 			{
 				fn, filter, selector,
@@ -146,32 +150,32 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 				sort, limit, single,
 				textFields, all
 			} = opts
-
-		assert(all || keyProvider || fn || selector || filter || textFields,'selector or fn properties MUST be provided on an pouchdb finder descriptor')
-
+		
+		assert(all || keyProvider || fn || selector || filter || textFields, 'selector or fn properties MUST be provided on an pouchdb finder descriptor')
+		
 		const
-			finderFn:any = (selector || all) ? makeMangoFinder(this,finderKey,opts) :
-				(keyProvider) ? makePrefixFinder(this,finderKey,opts) :
-					(filter) ? makeFilterFinder(this,finderKey,opts) :
-						(textFields) ? makeFullTextFinder(this,finderKey,opts) :
-							makeFnFinder(this,finderKey,opts)
-
-		return async (...args) => {
+			finderFn:any = (selector || all) ? makeMangoFinder(this, finderKey, opts) :
+				(keyProvider) ? makePrefixFinder(this, finderKey, opts) :
+					(filter) ? makeFilterFinder(this, finderKey, opts) :
+						(textFields) ? makeFullTextFinder(this, finderKey, opts) :
+							makeFnFinder(this, finderKey, opts)
+		
+		return async(...args) => {
 			const
-				request:FinderRequest = (args[0] instanceof FinderRequest) ? args[0] : null
+				request:FinderRequest = (args[ 0 ] instanceof FinderRequest) ? args[ 0 ] : null
 			
 			if (request)
 				args.shift()
-
+			
 			const
-				models = await finderFn(request,...args)
-
+				models = await finderFn(request, ...args)
+			
 			//log.debug('Got finder result for ' + finderKey,'args',args,'models',models)
-			return (single) ? models[0] : models
-
+			return (single) ? models[ 0 ] : models
+			
 		}
 	}
-
+	
 	/**
 	 * Handle a plugin event
 	 *
@@ -182,7 +186,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	handle(eventType:PluginEventType, ...args):boolean|any {
 		return false;
 	}
-
+	
 	/**
 	 * Model mapper
 	 *
@@ -191,7 +195,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	get mapper():IModelMapper<M> {
 		return this.repo.getMapper(this.repo.modelClazz)
 	}
-
+	
 	/**
 	 * Get db ref
 	 *
@@ -199,8 +203,8 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	get db() {
 		return this.store.getDB(this)
 	}
-
-
+	
+	
 	async init(coordinator:ICoordinator, opts:ICoordinatorOptions):Promise<ICoordinator> {
 		return (this.coordinator = coordinator)
 	}
@@ -224,23 +228,23 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	async stop():Promise<ICoordinator> {
 		return this.coordinator
 	}
-
+	
 	key(...args):PouchDBKeyValue {
 		return new PouchDBKeyValue(...args);
 	}
-
+	
 	private extractKeyValue(val:PouchDBKeyValue|any):any {
-		val = (val && val.pouchDBKey) ? val.args[0] : val
+		val = (val && val.pouchDBKey) ? val.args[ 0 ] : val
 		if (typeof val !== 'string')
 			val = `${val}`
 		return val
 	}
-
+	
 	async get(key:PouchDBKeyValue):Promise<M> {
 		if (!key)
 			throw new Error('key can not be undefined or falsy')
 		key = this.extractKeyValue(key)
-
+		
 		//const result = await findWithSelector(this,{[this.primaryKeyAttr.name]: key})
 		const result = await Bluebird.resolve(this.db.get(key))
 			.then(doc => {
@@ -249,26 +253,26 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			.catch(err => {
 				if (err.status === 404)
 					return null
-
+				
 				throw err
 			})
-
+		
 		if (!result)
 			return null
-
+		
 		const mapper = getDefaultMapper(this.repo.modelClazz)
-		return mapper.fromObject(result.attrs,(o, model:any) => {
-			const $$doc = Object.assign({},result)
-			delete $$doc['attrs']
-
+		return mapper.fromObject(result.attrs, (o, model:any) => {
+			const $$doc = Object.assign({}, result)
+			delete $$doc[ 'attrs' ]
+			
 			model.$$doc = $$doc
-
+			
 			return model
 		})
-
+		
 	}
-
-
+	
+	
 	/**
 	 * Retrieve the rev for a model id
 	 *
@@ -279,11 +283,12 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		const model:any = await this.get(id)
 		return (model) ? model.$$doc._rev : null
 	}
-
+	
 	async save(model:M):Promise<M> {
 		const mapper = this.mapper
-		const json = mapper.toObject(model)
-
+		const
+			json = mapper.toObject(model)
+		
 		const doc = convertModelToDoc(
 			this,
 			this.modelType,
@@ -291,33 +296,37 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			this.primaryKeyAttr.name,
 			model
 		)
-
-		const id = model[this.primaryKeyAttr.name]
+		
+		const
+			id = dbKeyFromObject(this,this.primaryKeyAttr.name,model)// model[ this.primaryKeyAttr.name ]
+		
 		if (id && doc._id && !doc._rev) {
-			const rev = await this.getRev(doc._id)
+			const
+				rev = await this.getRev(doc._id)
+			
 			if (rev) {
 				doc._rev = rev
 			}
 		}
-
-
+		
+		
 		try {
-			const res:any = await this.db[doc._id ? 'put' : 'post'](doc)
-
-			const savedModel = Object.assign({},model,{$$doc: {_id: res.id, '_rev': res.rev,attrs:json}})
-
+			const res:any = await this.db[ doc._id ? 'put' : 'post' ](doc)
+			
+			const savedModel = Object.assign({}, model, { $$doc: { _id: res.id, '_rev': res.rev, attrs: json } })
+			
 			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save, savedModel)
-
+			
 			return savedModel as M
-
+			
 		} catch (err) {
-			log.error('Failed to persist model',err)
-			log.error('Failed persisted json',json,model)
-
+			log.error('Failed to persist model', err)
+			log.error('Failed persisted json', json, model)
+			
 			throw err
 		}
 	}
-
+	
 	/**
 	 * Remove implementation
 	 *
@@ -328,29 +337,28 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		key = key.pouchDBKey ? key : this.key(key as any)
 		
 		
-		
 		const
 			model = await this.get(key)
 		
 		if (!model)
 			return null
-
+		
 		const
 			result = await this.db.remove((model as any).$$doc)
-
+		
 		if (this.repo.supportPersistenceEvents())
-			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove,model)
-
+			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove, model)
+		
 		return result
 	}
-
+	
 	/**
 	 * Get count using the type indexes in db open
 	 *
 	 * @returns {Promise<number>}
 	 */
 	count():Promise<number> {
-		return this.store.getModelCount(this.modelType.name,this)
+		return this.store.getModelCount(this.modelType.name, this)
 	}
 	
 	/**
@@ -361,15 +369,15 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 * @param startkey - start with key (if provided, endkey is required too
 	 * @param endkey
 	 */
-	async all(request:FinderRequest, includeDocs = true,startkey:string = null,endkey:string = null) {
-		assert((!startkey && !endkey) || (startkey && endkey),`Either provide start key and end key or neither`)
+	async all(request:FinderRequest, includeDocs = true, startkey:string = null, endkey:string = null) {
+		assert((!startkey && !endkey) || (startkey && endkey), `Either provide start key and end key or neither`)
 		
 		const
-			keyOpts = !startkey ? {} : {startkey,endkey},
+			keyOpts = !startkey ? {} : { startkey, endkey },
 			opts = Object.assign({
 				include_docs: includeDocs
-			},keyOpts),
-			{limit,offset} = request || ({} as FinderRequest)
+			}, keyOpts),
+			{ limit, offset } = request || ({} as FinderRequest)
 		
 		if (limit && limit > 0) {
 			opts.limit = limit
@@ -379,6 +387,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			opts.skip = offset
 		}
 		
+		//noinspection UnnecessaryLocalVariableJS
 		const
 			result = await this.db.allDocs(opts),
 			
@@ -386,22 +395,26 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			
 			docs = result
 				.rows
-				.reduce((allDocs,nextRow) => {
+				.reduce((allDocs, nextRow) => {
 					// Filter other types or special docs here
-					if (nextRow.doc.type === this.modelType.name)
-						allDocs.push(nextRow.doc)
-					
+					if (includeDocs) {
+						if (nextRow.doc.type === this.modelType.name)
+							allDocs.push(nextRow.doc)
+					} else {
+						allDocs.push(nextRow.id)
+					}
 					return allDocs
-				},[])
+				}, [])
+		
 		
 		result.rows = docs
 		
 		
-		return makeFinderResults(this,result,request,limit,offset,includeDocs)
+		return makeFinderResults(this, result, request, limit, offset, includeDocs)
 		
 		//return mapDocs(this,this.repo.modelClazz,docs,includeDocs)
 	}
-
+	
 	/**
 	 * Bulk get
 	 *
@@ -409,11 +422,11 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 * @returns {any}
 	 */
 	async bulkGet(...keys:PouchDBKeyValue[]):Promise<M[]> {
-		keys = keys.map(key => (key.pouchDBKey) ? key.args[0] : key)
-
+		keys = keys.map(key => (key.pouchDBKey) ? key.args[ 0 ] : key)
+		
 		return await Promise.all(keys.map(key => this.get(key)))
 	}
-
+	
 	/**
 	 * Bulk save/put
 	 *
@@ -423,7 +436,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	async bulkSave(...models:M[]):Promise<M[]> {
 		const mapper = this.repo.getMapper(this.repo.modelClazz)
 		const jsons = []
-
+		
 		// Models -> Docs
 		const docs = models.map(model => convertModelToDoc(
 			this,
@@ -432,21 +445,22 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			this.primaryKeyAttr.name,
 			model
 		))
-
+		
 		// Find all docs that have _id and not _rev
 		const
 			revPromises = [],
 			missingRefs = await this.db.allDocs({
-				include_docs:false,
+				include_docs: false,
 				keys: docs.filter(doc => doc._id && !doc._rev)
 					.map(doc => doc._id)
 			})
-
+		
 		missingRefs.rows
 			.filter(row => !row.error && row.value && row.value.rev)
 			.forEach(row => {
-				const id = row.id, rev = row.value.rev
-				const doc = docs.find(doc => `${doc._id}` === `${id}`)
+				const
+					id = row.id, rev = row.value.rev,
+					doc = docs.find(doc => `${doc._id}` === `${id}`)
 				doc._rev = rev
 			})
 		
@@ -454,29 +468,29 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		const
 			// Save all docs
 			responses = await this.db.bulkDocs(docs),
-
+			
 			// Map Docs -> Models
-			savedModels = docs.map((doc,index) => {
+			savedModels = docs.map((doc, index) => {
 				const savedModel = mapper.fromObject(doc.attrs)
-	
-				const res = responses[index]
-				Object.assign(savedModel as any,{
+				
+				const res = responses[ index ]
+				Object.assign(savedModel as any, {
 					$$doc: {
 						_id: res.id,
 						_rev: res.rev,
-						attrs:doc.attrs
+						attrs: doc.attrs
 					}
 				})
-	
+				
 				return savedModel
 			})
-
+		
 		if (this.repo.supportPersistenceEvents())
-			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save,...savedModels)
-
+			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save, ...savedModels)
+		
 		return savedModels
 	}
-
+	
 	/**
 	 * Bulk remove
 	 *
@@ -484,37 +498,41 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 * @returns {PouchDBKeyValue[]}
 	 */
 	async bulkRemove(...keys:PouchDBKeyValue[]):Promise<any[]> {
-		keys = keys.map(key => (key.pouchDBKey) ? key.args[0] : key)
-
-		let models = null
+		keys = keys.map(key => (key.pouchDBKey) ? key.args[ 0 ] : key)
+		
+		let
+			models = null
+		
 		if (this.repo.supportPersistenceEvents())
 			models = await this.bulkGet(...keys)
-
 		
-		const deleteDocs:any[] = keys.map(_id => ({_id,_deleted:true}))
 		
 		// Get the revs for the keys
-		const deleteRevs = await this.db.allDocs({
-			include_docs:false,
-			keys
-		})
+		const
+			deleteDocs:any[] = keys.map(_id => ({ _id, _deleted: true })),
+			deleteRevs = await this.db.allDocs({
+				include_docs: false,
+				keys
+			})
 		
 		// Map to delete docs
 		deleteRevs.rows
 			.filter(row => !row.error && row.value && row.value.rev)
 			.forEach(row => {
-				const id = row.id, rev = row.value.rev
-				const doc = deleteDocs.find(doc => `${doc._id}` === `${id}`)
-				doc._rev = rev
+				const
+					id = row.id,
+					doc = deleteDocs.find(doc => `${doc._id}` === `${id}`)
+				
+				doc._rev = row.value.rev
 			})
 		
 		// Bulk docs
 		await this.db.bulkDocs(deleteDocs)
-
+		
 		if (models)
-			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove,...models)
-
+			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Remove, ...models)
+		
 		return keys
 	}
-
+	
 }

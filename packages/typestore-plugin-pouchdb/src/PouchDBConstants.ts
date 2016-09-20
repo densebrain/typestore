@@ -10,6 +10,8 @@ export const PouchDBAttributePrefix = 'attrs.'
 
 export const PouchDBReservedFields = ['type']
 
+export const PouchDBPrefixEndChar = '\uffff'
+
 export const PouchDBOperators = [
 	'$lt',
 	'$gt',

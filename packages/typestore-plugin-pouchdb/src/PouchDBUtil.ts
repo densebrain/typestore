@@ -1,7 +1,11 @@
-import {Log,IModelMapper,IModel,IModelType,getDefaultMapper,isFunction,ModelMapper} from 'typestore'
+import {Log,isString,IModelMapper,IModel,IModelType,getDefaultMapper,isFunction,ModelMapper} from 'typestore'
 
-import {PouchDBAttributePrefix, PouchDBReservedFields, PouchDBOperators} from './PouchDBConstants'
+import {
+	PouchDBAttributePrefix, PouchDBReservedFields, PouchDBOperators,
+	PouchDBPrefixEndChar
+} from './PouchDBConstants'
 import {PouchDBKeyValue, PouchDBRepoPlugin} from './PouchDBRepoPlugin'
+
 
 /**
  * RegEx for matching model mapping prefix
@@ -12,6 +16,10 @@ const
 	attrRegex = new RegExp(`^${PouchDBAttributePrefix}`,'g'),
 	log = Log.create(__filename)
 
+
+export function makePrefixEndKey(startKey:string) {
+	return startKey + PouchDBPrefixEndChar
+}
 
 export function mkdirp(filename,skipLast = false) {
 	const
@@ -147,22 +155,21 @@ export function convertModelToDoc(
  * @returns {any}
  */
 export function mapDocs<M extends IModel>(pouchRepo:PouchDBRepoPlugin<any>,modelClazz:{new():M},result:any,includeDocs = true):M[]|number[]|string[] {
-
-
-	//const mapper = new ModelMapper(modelClazz)
-
-	let docs =
-		(result && Array.isArray(result)) ?
-			result :
-			result.rows ? result.rows :
-			result.docs
 	
-	docs = docs || []
+	let docs =
+		(!result) ? [] :
+			result.docs && Array.isArray(result.docs) ? result.docs :
+				result.rows && Array.isArray(result.rows) ? result.rows :
+					result
+	
+	// Make sure we have an array
+	docs = !docs ? [] : !Array.isArray(docs) ? [docs] : docs
 
 	// if we only want the ids then return only the ids
 	if (includeDocs === false) {
 		return docs.map(doc => {
 			let val =
+				isString(doc) ? doc :
 				(doc && doc.attrs) ?
 					doc.attrs[pouchRepo.primaryKeyField] :
 					(doc && doc._id) ? doc._id :
@@ -173,6 +180,8 @@ export function mapDocs<M extends IModel>(pouchRepo:PouchDBRepoPlugin<any>,model
 				pouchRepo.primaryKeyType
 			
 			val =
+				(pkType === String) ?
+					val :
 				(pkType === Number) ?
 					parseInt(val,10) :
 					(isFunction(pkType)) ? new pkType(val) :
