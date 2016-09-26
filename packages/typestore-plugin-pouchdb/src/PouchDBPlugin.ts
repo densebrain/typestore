@@ -76,6 +76,7 @@ export interface IPouchDBReplication {
  */
 export interface IPouchDBOptions {
 	filename:string
+	overwriteConflicts?:boolean
 	databasePerRepo?:boolean
 	createOptions?:any
 	cacheSize?:number,
@@ -108,6 +109,15 @@ export class PouchDBPlugin implements IStorePlugin {
 	 * All supported models
 	 */
 	supportedModels:any[]
+	
+	/**
+	 * Whether we should overwrite docs on conflicts
+	 *
+	 * @returns {IPouchDBOptions|boolean}
+	 */
+	get overwriteConflicts() {
+		return this.opts && this.opts.overwriteConflicts === true
+	}
 	
 	/**
 	 * Reference to the current coordinator

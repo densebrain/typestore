@@ -7,9 +7,7 @@ import * as uuid from 'node-uuid'
 import { Coordinator, Log } from 'typestore'
 import { PouchDBPlugin } from "../PouchDBPlugin";
 import * as Fixtures from './fixtures/PouchDBTestModel'
-import * as Bluebird from 'bluebird'
 import { IPouchDBOptions } from "../PouchDBPlugin"
-import { mkdirp } from '../PouchDBUtil'
 import {FinderRequest} from 'typestore'
 
 
@@ -50,18 +48,18 @@ async function stop() {
 /**
  * Reset TypeStore and start all over
  */
-async function reset(useGlobal = true, ...models) {
+async function reset(useGlobal = true, extraOpts = null,...models) {
 	
 	await stop()
 	
 	const
-		storeOpts:IPouchDBOptions = {
+		storeOpts:IPouchDBOptions = Object.assign({
 			//filename: `test-db.websql.db`,
 			//sync: true
 			//filename: `http://127.0.0.1:5984/tstest-${new Date()}`
 			filename: `/tmp/tstest-${Date.now()}`,
 			databasePerRepo: !useGlobal
-		}
+		},extraOpts || {})
 	
 	//if (!useGlobal)
 	//mkdirp(storeOpts.filename)
@@ -85,7 +83,122 @@ async function reset(useGlobal = true, ...models) {
  */
 describe('#plugin-pouchdb', () => {
 	
-	[ true, false ].forEach((useGlobal) => {
+	describe.only(`#conflict-overwrite-test`, async () => {
+		before(async() => {
+			await reset(
+				false,
+				null,
+				Fixtures.PDBModel1,
+				Fixtures.PDBModel2
+			)
+			return true
+		})
+		
+		after(async() => {
+			await stop()
+		})
+		
+		it('#conflict-overwrite',async () => {
+			
+			let
+				err:Error = null
+			
+			const
+				doTest = async (modelClazz,repoClazz) => {
+					try {
+						let
+							model = new modelClazz(),
+							repo = coordinator.getRepo(repoClazz)
+						
+						Object.assign(model, {
+							id: uuid.v4(),
+							createdAt: Faker.date.past(),
+							randomText: Faker.lorem.words(10)
+						})
+						
+						model = await repo.save(model)
+						
+						const
+							model2 = Object.assign(new modelClazz(),model, {
+								randomText: Faker.lorem.words(10),
+								$$doc: Object.assign({},(model as any).$$doc,{
+									_rev: '1-aa86c0e405a07fb76ef3e523dd1c2ae1'
+								}),
+							})
+						
+						await repo.save(model2)
+						
+						return null
+					} catch (anErr) {
+						return anErr
+						
+					}
+				}
+				
+			err = await doTest(Fixtures.PDBModel1,Fixtures.PDBRepo1)
+			expect(err && (err as any).status).toBe(409)
+			
+			err = await doTest(Fixtures.PDBModel2,Fixtures.PDBRepo2)
+			expect(err).toBeNull()
+			
+		})
+		
+		it.only('#conflict-overwrite-bulk',async () => {
+			
+			let
+				err:Error = null
+			
+			const
+				doTest = async (modelClazz,repoClazz) => {
+					try {
+						const makeModel = () =>
+							Object.assign(new modelClazz(), {
+								id: uuid.v4(),
+								createdAt: Faker.date.past(),
+								randomText: Faker.lorem.words(10)
+							})
+						
+						let
+							models = [makeModel(),makeModel()],
+							repo = coordinator.getRepo(repoClazz)
+						
+						
+						const
+							models1 = await repo.bulkSave(...models)
+						
+						const
+							models2 = [
+								Object.assign(new modelClazz(),models1[0], {
+									randomText: Faker.lorem.words(10),
+									$$doc: Object.assign({},(models1[0] as any).$$doc,{
+										_rev: '1-aa86c0e405a07fb76ef3e523dd1c2ae1'
+									}),
+								}),
+								models1[1]
+							]
+								
+						
+						await repo.bulkSave(...models2)
+						
+						return null
+					} catch (anErr) {
+						return anErr
+						
+					}
+				}
+			
+			err = await doTest(Fixtures.PDBModel1,Fixtures.PDBRepo1)
+			expect(err && (err as any).status).toBe(409)
+			
+			err = await doTest(Fixtures.PDBModel2,Fixtures.PDBRepo2)
+			expect(err).toBeNull()
+			
+		})
+		
+	})
+	
+	// REGULAR TESTS
+	for (let useGlobal of [ true, false ]) {
 		describe(`#global-repo-${useGlobal}`, function () {
 			
 			this.timeout(120 * 60000)
@@ -93,6 +206,7 @@ describe('#plugin-pouchdb', () => {
 			before(async() => {
 				await reset(
 					useGlobal,
+					null,
 					Fixtures.PDBModel1,
 					Fixtures.PDBModel2,
 					Fixtures.PDBModel3,
@@ -106,8 +220,9 @@ describe('#plugin-pouchdb', () => {
 			})
 			
 			it('#puts', async() => {
-				const model = new Fixtures.PDBModel1()
-				const repo = coordinator.getRepo(Fixtures.PDBRepo1)
+				const
+					model = new Fixtures.PDBModel1(),
+					repo = coordinator.getRepo(Fixtures.PDBRepo1)
 				
 				Object.assign(model, {
 					id: uuid.v4(),
@@ -213,8 +328,9 @@ describe('#plugin-pouchdb', () => {
 			})
 			
 			it('#finder-fulltext', async() => {
-				const model = new Fixtures.PDBModel1()
-				const repo = coordinator.getRepo(Fixtures.PDBRepo1)
+				const
+					model = new Fixtures.PDBModel1(),
+					repo = coordinator.getRepo(Fixtures.PDBRepo1)
 				
 				Object.assign(model, {
 					id: uuid.v4(),
@@ -222,11 +338,14 @@ describe('#plugin-pouchdb', () => {
 					randomText: Faker.lorem.words(10)
 				})
 				
-				const savedModel = await repo.save(model)
-				const key = repo.key(model.id)
+				const
+					savedModel = await repo.save(model),
+					key = repo.key(model.id),
+					secondWord = model.randomText.split(' ')[ 2 ]
 				
-				const secondWord = model.randomText.split(' ')[ 2 ]
-				let results = await repo.findByRandomText(secondWord)
+				let
+					results = await repo.findByRandomText(secondWord)
+				
 				expect(results.length).toBe(1)
 				
 				await repo.remove(key)
@@ -234,7 +353,9 @@ describe('#plugin-pouchdb', () => {
 				
 			})
 			
-			it.only('#iterate finder request', async() => {
+			
+			
+			it('#iterate finder request', async() => {
 				const
 					repo = coordinator.getRepo(Fixtures.PDBRepo1),
 					models = []
@@ -469,7 +590,7 @@ describe('#plugin-pouchdb', () => {
 			
 			
 		})
-	})
+	}
 
 
 //

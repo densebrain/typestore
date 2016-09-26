@@ -24,7 +24,10 @@ import {
 const log = Log.create(__filename)
 
 
-@ModelDescriptor({tableName:'idb_model_2'})
+@PouchDBModel({
+	tableName:'idb_model_2',
+	overwriteConflicts: true
+})
 export class PDBModel2 extends DefaultModel {
 
 	@AttributeDescriptor({name:'id',primaryKey:true})
@@ -34,14 +37,12 @@ export class PDBModel2 extends DefaultModel {
 	createdAt:number
 
 
-	@AttributeDescriptor(
-		{
-			name:'randomText',
-			index:{
-				name: 'randomText'
-			}
+	@AttributeDescriptor({
+		name:'randomText',
+		index:{
+			name: 'randomText'
 		}
-	)
+	})
 	randomText:string
 
 	@AttributeDescriptor()
@@ -66,7 +67,10 @@ export class PDBRepo2 extends Repo<PDBModel2> {
  * Plain Jane super simple model
  */
 
-@ModelDescriptor({tableName:'idb_model_1'})
+@PouchDBModel({
+	tableName:'idb_model_1',
+	overwriteConflicts: false
+})
 export class PDBModel1 extends DefaultModel {
 
 	@AttributeDescriptor({name:'id',primaryKey:true})

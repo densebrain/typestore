@@ -72,6 +72,11 @@ export class PouchDBKeyValue implements IKeyValue {
  */
 export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFinderPlugin {
 	
+	/**
+	 * Plugin type
+	 *
+	 * @type {number}
+	 */
 	readonly type = PluginType.Repo | PluginType.Finder
 	
 	/**
@@ -79,10 +84,29 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 */
 	readonly modelType:IModelType
 	
+	/**
+	 * Model options
+	 *
+	 * @returns {IModelOptions}
+	 */
 	get modelOptions():IPouchDBModelOptions {
 		return this.modelType.options
 	}
 	
+	/**
+	 * Overwrite model conflicts
+	 * @returns {boolean}
+	 */
+	get overwriteConflicts() {
+		let
+			{overwriteConflicts} = this.modelOptions
+		
+		return (this.store.overwriteConflicts === true  && overwriteConflicts !== false) || (overwriteConflicts === true)
+	}
+	
+	/**
+	 * All supported models
+	 */
 	readonly supportedModels:any[]
 	
 	/**
@@ -110,13 +134,21 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 * @param repo
 	 */
 	constructor(public store:PouchDBPlugin, public repo:Repo<M>) {
-		this.supportedModels = [ repo.modelClazz ]
-		this.modelType = this.repo.modelType
-		this.primaryKeyAttr = this.modelType.options.attrs
-			.find(attr => attr.primaryKey)
+		const
+			{modelType} = repo,
+			primaryKeyAttr = modelType
+				.options
+				.attrs
+				.find(attr => attr.primaryKey)
 		
-		this.primaryKeyField = this.primaryKeyAttr.name
-		this.primaryKeyType = this.primaryKeyAttr.type
+		// ASSIGN PROPS
+		Object.assign(this, {
+			supportedModels:[ repo.modelClazz ],
+			modelType,
+			primaryKeyAttr,
+			primaryKeyField: primaryKeyAttr.name,
+			primaryKeyType: primaryKeyAttr.type
+		})
 		
 		repo.attach(this)
 	}
@@ -133,8 +165,9 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	decorateFinder(repo:Repo<any>, finderKey:string) {
 		
 		// Get the finder opts 1st
-		const opts = getFinderOpts(repo, finderKey) as
-			IPouchDBFnFinderOptions &
+		const
+			opts = getFinderOpts(repo, finderKey) as
+				IPouchDBFnFinderOptions &
 				IPouchDBFilterFinderOptions &
 				IPouchDBMangoFinderOptions &
 				IPouchDBFullTextFinderOptions &
@@ -260,15 +293,18 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		if (!result)
 			return null
 		
-		const mapper = getDefaultMapper(this.repo.modelClazz)
-		return mapper.fromObject(result.attrs, (o, model:any) => {
-			const $$doc = Object.assign({}, result)
-			delete $$doc[ 'attrs' ]
-			
-			model.$$doc = $$doc
-			
-			return model
-		})
+		const
+			mapper = getDefaultMapper(this.repo.modelClazz)
+		
+		return mapper
+			.fromObject(result.attrs, (o, model:any) => {
+				const $$doc = Object.assign({}, result)
+				delete $$doc[ 'attrs' ]
+				
+				model.$$doc = $$doc
+				
+				return model
+			})
 		
 	}
 	
@@ -285,22 +321,21 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	}
 	
 	async save(model:M):Promise<M> {
-		const mapper = this.mapper
 		const
-			json = mapper.toObject(model)
-		
-		const doc = convertModelToDoc(
-			this,
-			this.modelType,
-			mapper,
-			this.primaryKeyAttr.name,
-			model
-		)
-		
-		const
-			id = dbKeyFromObject(this,this.primaryKeyAttr.name,model)// model[ this.primaryKeyAttr.name ]
+			{repo,mapper} = this,
+			json = mapper.toObject(model),
+			doc = convertModelToDoc(
+				this,
+				this.modelType,
+				mapper,
+				this.primaryKeyAttr.name,
+				model
+			),
+			
+			id = dbKeyFromObject(this,this.primaryKeyAttr.name,model)
 		
 		if (id && doc._id && !doc._rev) {
+			
 			const
 				rev = await this.getRev(doc._id)
 			
@@ -309,22 +344,53 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			}
 		}
 		
-		
-		try {
-			const res:any = await this.db[ doc._id ? 'put' : 'post' ](doc)
+		/**
+		 * Actual save function - separate func - in case
+		 * of failure & retry or overwrite
+		 *
+		 * @returns {M}
+		 */
+		const doSave = async ():Promise<M> => {
 			
-			const savedModel = Object.assign({}, model, { $$doc: { _id: res.id, '_rev': res.rev, attrs: json } })
+			const
+				res:any = await this.db[ doc._id ? 'put' : 'post' ](doc),
+				savedModel = Object.assign({}, model, {
+					$$doc: {
+						_id: res.id,
+						'_rev': res.rev,
+						attrs: json
+					}
+				})
 			
-			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save, savedModel)
+			if (this.repo.supportPersistenceEvents())
+				this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save, savedModel)
 			
 			return savedModel as M
-			
-		} catch (err) {
-			log.error('Failed to persist model', err)
-			log.error('Failed persisted json', json, model)
-			
-			throw err
 		}
+		
+		let
+			result:M
+		
+		try {
+			result = await doSave()
+		} catch (err) {
+			if (err && err.status === 409 && this.overwriteConflicts && doc._id) {
+				try {
+					doc._rev = await this.getRev(doc._id)
+					
+					result = await doSave()
+					
+				}	catch (err2) {
+					log.error(`Unable to update with revised ref too`,err,err2)
+					throw err2
+				}
+			} else {
+				log.error(`Failed to persist model(${this.modelOptions.clazzName}) code(${err && err.status})`, json, model, err)
+				throw err
+			}
+		}
+		
+		return result
 	}
 	
 	/**
@@ -459,9 +525,10 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			.filter(row => !row.error && row.value && row.value.rev)
 			.forEach(row => {
 				const
-					id = row.id, rev = row.value.rev,
+					id = row.id,
 					doc = docs.find(doc => `${doc._id}` === `${id}`)
-				doc._rev = rev
+				
+				doc._rev = row.value.rev
 			})
 		
 		
@@ -470,10 +537,44 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 			responses = await this.db.bulkDocs(docs),
 			
 			// Map Docs -> Models
-			savedModels = docs.map((doc, index) => {
-				const savedModel = mapper.fromObject(doc.attrs)
+			savedModels = await Promise.all(docs.map(async (doc, index) => {
+				const
+					savedModel = mapper.fromObject(doc.attrs),
+					res = responses[ index ]
 				
-				const res = responses[ index ]
+				if (!res) {
+					throw new Error(`No response @ index ${index}`)
+				}
+				
+				if (res.error === true) {
+					
+					// IF CONFLICT AND WE OVERWRITE CONFLICTS
+					if (res.status === 409 && this.overwriteConflicts && doc._id) {
+						try {
+							doc._rev = await this.getRev(doc._id)
+							
+							const
+								conflictRes = await this.db.put(doc)
+							
+							if (!conflictRes.error) {
+								Object.assign(res, conflictRes)
+							} else {
+								//noinspection ExceptionCaughtLocallyJS
+								throw (conflictRes instanceof Error ? conflictRes : new Error(conflictRes))
+							}
+							
+						} catch (err) {
+							log.error(`Bulk docs error (conflict), 2nd error after trying to persist with correct rev`,err)
+							throw err
+						}
+					}
+					
+					// OTHERWISE - THROW
+					else {
+						throw res
+					}
+				}
+				
 				Object.assign(savedModel as any, {
 					$$doc: {
 						_id: res.id,
@@ -483,7 +584,7 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 				})
 				
 				return savedModel
-			})
+			}))
 		
 		if (this.repo.supportPersistenceEvents())
 			this.repo.triggerPersistenceEvent(ModelPersistenceEventType.Save, ...savedModels)

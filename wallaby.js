@@ -1,14 +1,19 @@
 
 //require('./etc/packages-path')
 
-var path = require('path')
-var projectRoot = path.resolve(__dirname)
-var _ = require('lodash')
-var nodeModuleRelativePaths = require('glob').sync('packages/*/node_modules')
-var nodeModulePaths = _.map(nodeModuleRelativePaths,function(modPath) {
-	return path.resolve('.',modPath)
-})
-var nodePath = (process.env.NODE_PATH || "") + ':' + nodeModulePaths.join(':')
+var
+	path = require('path'),
+	projectRoot = path.resolve(__dirname),
+	_ = require('lodash'),
+	nodeModuleRelativePaths = require('glob').sync('packages/*/node_modules'),
+	
+	nodeModulePaths = _.map(nodeModuleRelativePaths,function(modPath) {
+		return path.resolve('.',modPath)
+	}),
+	
+	nodePath = (process.env.NODE_PATH || "") + ':' + nodeModulePaths.join(':')
+
+
 //var tsConfig = require('./tsconfig.json').compilerOptions
 //console.log('Using runner node path\n',nodeModulePaths,'\n',nodePath)
 // nodeModulePaths.forEach(function(newPath) {
@@ -17,9 +22,6 @@ var nodePath = (process.env.NODE_PATH || "") + ':' + nodeModulePaths.join(':')
 
 module.exports = function (wallaby) {
 
-
-
-
 	return {
 		projectRoot: projectRoot,
 
@@ -27,7 +29,7 @@ module.exports = function (wallaby) {
 		 * Regular modules
 		 */
 		files: [
-			'typings/browser.d.ts',
+			'!typings/browser.d.ts',
 			'packages/*/src/**/*.ts',
 			'!packages/*/src/**/*.d.ts',
 			'!packages/*/src/test/**/*.spec.ts',
@@ -53,25 +55,26 @@ module.exports = function (wallaby) {
 		},
 
 		// In order to get everything to work it has to
-		// go through babel - this needs to be fixed at somepont
+		// go through babel - this needs to be fixed at some-point
 		compilers: {
 			'**/*.ts': wallaby.compilers.typeScript({
-				typescript: require('typescript'),
-				module: 5,  // ES6
-				target: 2,  // ES6
-				emitDecoratorMetadata: true,
-				experimentalDecorators: true,
-				preserveConstEnums: true,
-				allowSyntheticDefaultImports: true
+				typescript: require('typescript')
+				// module: 5,  // ES6
+				// target: 2,  // ES6
+				// emitDecoratorMetadata: true,
+				// experimentalDecorators: true,
+				// preserveConstEnums: true,
+				// allowSyntheticDefaultImports: true
 			})
 		},
-		preprocessors: {
-			'**/*.js': file => {
-				return require('babel-core').transform(file.content,{
-					sourceMap: true, presets: ['es2015','stage-0']
-				})
-			}
-		},
+		// preprocessors: {
+		// 	'**/*.js': file => {
+		// 		return require('babel-core').transform(file.content,{
+		// 			sourceMap: true,
+		// 			presets: ['es2015','stage-0']
+		// 		})
+		// 	}
+		// },
 
 		delays: {
 			edit: 500,
@@ -85,8 +88,10 @@ module.exports = function (wallaby) {
 
 		// Override the global Promise
 		bootstrap: function() {
-			var path = require('path')
-			var mochaPath = path.resolve(wallaby.localProjectDir,'./etc/mocha/mocha-setup')
+			var
+				path = require('path'),
+				mochaPath = path.resolve(wallaby.localProjectDir,'./etc/mocha/mocha-setup')
+			
 			//console.log('mocha path', mochaPath)
 			global.assert = require('assert')
 			require(mochaPath)

@@ -60,6 +60,11 @@ export interface IPouchDBModelOptions extends IModelOptions {
 	 * @param key
 	 */
 	keyUnwrap?:(key:string) => any
+	
+	/**
+	 * Overwrite any conflicts
+	 */
+	overwriteConflicts?:boolean
 }
 
 /**
