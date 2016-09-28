@@ -1,4 +1,14 @@
-const fs = require('fs')
+const
+	fs = require('fs'),
+	{
+		releaseFiles,
+		basePackageJson,
+		nextMinorVersion,
+		gulp,
+		git,
+		ghRelease,
+		runSequence
+	} = global
 
 /**
  * Push compiled release files to github
@@ -19,6 +29,7 @@ function releaseAllPush() {
 
 	return gulp.src(releaseFiles)
 		.pipe(ghRelease({
+			token: process.env.TS_TOKEN || process.env.GITHUB_API_TOKEN,
 			tag: `v${nextMinorVersion}`,
 			name: `TypeStore Release ${nextMinorVersion}`,
 			draft:false,

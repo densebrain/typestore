@@ -9,6 +9,7 @@
       <w>mkdirp</w>
       <w>persistable</w>
       <w>pouchdb</w>
+      <w>prerelease</w>
       <w>regenerator</w>
       <w>startkey</w>
       <w>typestore</w>
