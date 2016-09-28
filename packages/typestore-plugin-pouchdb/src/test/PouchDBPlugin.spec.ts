@@ -81,9 +81,9 @@ async function reset(useGlobal = true, extraOpts = null,...models) {
  * Pouch test suite - should be abstracted
  * to be a store test suite in general
  */
-describe('#plugin-pouchdb', () => {
+xdescribe('#plugin-pouchdb', () => {
 	
-	describe.only(`#conflict-overwrite-test`, async () => {
+	describe(`#conflict-overwrite-test`, async () => {
 		before(async() => {
 			await reset(
 				false,
@@ -143,7 +143,7 @@ describe('#plugin-pouchdb', () => {
 			
 		})
 		
-		it.only('#conflict-overwrite-bulk',async () => {
+		it('#conflict-overwrite-bulk',async () => {
 			
 			let
 				err:Error = null
@@ -546,13 +546,13 @@ describe('#plugin-pouchdb', () => {
 							
 							
 							// Iterate 10 batches of 100
-							for (let k = 0; k < 30; k++) {
+							for (let k = 0; k < 10; k++) {
 								
 								const
 									group3 = '' + k,
 									models = []
 								
-								for (let l = 0; l < 30; l++) {
+								for (let l = 0; l < 10; l++) {
 									const
 										id = makeId(group1, group2, group3, uuid.v4()),
 										model = Object.assign(new Fixtures.PDBModel3(), {
