@@ -1,15 +1,24 @@
 
-const Bluebird = require('bluebird')
-Bluebird.config({
-	cancellation: true,
-	longStackTraces: true,
-	warnings: {
-		wForgottenReturn: false
-	},
-	monitoring: true
-})
+const
+	Bluebird = require('bluebird')
 
-const g = global as any
+try {
+	Bluebird.config({
+		//cancellation: true,
+		monitoring: process.env.NODE_ENV === 'development',
+		longStackTraces: process.env.NODE_ENV === 'development',
+		warnings: {
+			wForgottenReturn: false
+		}
+	})
+} catch (err) {
+	try {
+		console.warn(`Unable to configure promises, likely already configured`)
+	} catch (err2) {}
+}
+
+const
+	g = global as any
 
 Promise = Bluebird
 g.Promise = Bluebird
