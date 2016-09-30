@@ -22,8 +22,8 @@ import {
 	Coordinator,
 	SyncStrategy,
 	Repo,
-	ModelDescriptor,
-	AttributeDescriptor,
+	Model,
+	Attribute,
 	RepoDescriptor,
 	FinderDescriptor,
 	DefaultKeyMapper,
@@ -49,7 +49,7 @@ const log = Log.create(__filename)
 // which exposes a single get property clazzName
 // so this is simple for convience
 // @see https://github.com/densebrain/typestore/blob/master/packages/typestore/src/decorations/ModelDecorations.ts
-@ModelDescriptor({tableName:'test_cars'})
+@Model({tableName:'test_cars'})
 class Car extends DefaultModel {
 
 	/**
@@ -69,7 +69,7 @@ class Car extends DefaultModel {
 	 * This is the primary key, note the additional
 	 * primary key attribute
 	 */
-	@AttributeDescriptor({name:'manufacturer',primaryKey:true})
+	@Attribute({name:'manufacturer',primaryKey:true})
 	manufacturer:string
 
 	/**
@@ -78,10 +78,10 @@ class Car extends DefaultModel {
 	 * NOT really how you would use a secondary
 	 * key, but serves as an example
 	 */
-	@AttributeDescriptor({name:'year',secondaryKey:true})
+	@Attribute({name:'year',secondaryKey:true})
 	year:number
 
-	@AttributeDescriptor({
+	@Attribute({
 		name:'model',
 		index:{
 			name: 'ModelIndex'
@@ -92,7 +92,7 @@ class Car extends DefaultModel {
 	/**
 	 * tagLine attribute is describing a secondary index
 	 */
-	@AttributeDescriptor({
+	@Attribute({
 		name:'tagLine',
 		index:{
 			name: 'TagLineIndex'

@@ -2,8 +2,8 @@ import 'reflect-metadata'
 import {
 	Log,
 	Repo,
-	ModelDescriptor,
-	AttributeDescriptor,
+	Model,
+	Attribute,
 	RepoDescriptor,
 	FinderDescriptor,
 	DefaultModel
@@ -15,7 +15,7 @@ import {DynamoDBFinderDescriptor} from "../../DynamoDBDecorations";
 
 const log = Log.create(__filename)
 
-@ModelDescriptor({tableName:'testDynamoTable1'})
+@Model({tableName:'testDynamoTable1'})
 export class Test1 extends DefaultModel {
 
 	
@@ -24,14 +24,14 @@ export class Test1 extends DefaultModel {
 		log.info(`constructor for ${(this.constructor as any).name}`)
 	}
 
-	@AttributeDescriptor({name:'id',primaryKey:true})
+	@Attribute({name:'id',primaryKey:true})
 	id:string
 
-	@AttributeDescriptor({name:'createdAt',secondaryKey:true})
+	@Attribute({name:'createdAt',secondaryKey:true})
 	createdAt:number
 
 
-	@AttributeDescriptor({
+	@Attribute({
 		name:'randomText',
 		index:{
 			name: 'RandomTextIndex'

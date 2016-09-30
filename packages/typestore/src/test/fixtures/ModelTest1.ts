@@ -1,20 +1,20 @@
 import 'reflect-metadata'
 import {getLogger} from 'typelogger'
-import {ModelDescriptor, AttributeDescriptor} from "../../Decorations";
+import {Model, Attribute} from "../../Decorations";
 
 const log = getLogger(__filename)
 
-@ModelDescriptor({tableName:'testTable_manager1'})
+@Model({tableName:'testTable_manager1'})
 export class ModelTest1 {
 
-	@AttributeDescriptor({name:'id',primaryKey:true})
+	@Attribute({name:'id',primaryKey:true})
 	id:string
 
-	@AttributeDescriptor({name:'createdAt',secondaryKey:true})
+	@Attribute({name:'createdAt',secondaryKey:true})
 	createdAt:number
 
 
-	@AttributeDescriptor({
+	@Attribute({
 		name:'randomText',
 		index:{
 			name: 'RandomTextIndex'

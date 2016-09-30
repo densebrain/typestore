@@ -1,15 +1,15 @@
 
 import {
-	ModelDescriptor, AttributeDescriptor, IModelOptions,
+	Model, Attribute, IModelOptions,
 	IModelAttributeOptions
 } from "../decorations/ModelDecorations";
 import {TypeStoreAttrKey, TypeStoreModelKey} from "../Constants";
 import {getMetadata} from "../MetadataManager";
 
-@ModelDescriptor()
+@Model()
 class DecorationTest {
 
-	@AttributeDescriptor()
+	@Attribute()
 	myString:string
 }
 

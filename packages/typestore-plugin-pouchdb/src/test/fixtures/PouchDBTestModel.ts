@@ -5,8 +5,8 @@ import {
 	Repo,
 	RepoDescriptor,
 	FinderDescriptor,
-	ModelDescriptor,
-	AttributeDescriptor,
+	Model,
+	Attribute,
 	DefaultModel,
 	FinderRequest,
 	FinderResultArray
@@ -30,14 +30,14 @@ const log = Log.create(__filename)
 })
 export class PDBModel2 extends DefaultModel {
 
-	@AttributeDescriptor({name:'id',primaryKey:true})
+	@Attribute({name:'id',primaryKey:true})
 	id:string
 
-	@AttributeDescriptor({name:'createdAt'})
+	@Attribute({name:'createdAt'})
 	createdAt:number
 
 
-	@AttributeDescriptor({
+	@Attribute({
 		name:'randomText',
 		index:{
 			name: 'randomText'
@@ -45,7 +45,7 @@ export class PDBModel2 extends DefaultModel {
 	})
 	randomText:string
 
-	@AttributeDescriptor()
+	@Attribute()
 	name:string
 
 	constructor() {
@@ -73,14 +73,14 @@ export class PDBRepo2 extends Repo<PDBModel2> {
 })
 export class PDBModel1 extends DefaultModel {
 
-	@AttributeDescriptor({name:'id',primaryKey:true})
+	@Attribute({name:'id',primaryKey:true})
 	id:string
 
-	@AttributeDescriptor({name:'createdAt'})
+	@Attribute({name:'createdAt'})
 	createdAt:number
 
 
-	@AttributeDescriptor(
+	@Attribute(
 		{
 		name:'randomText',
 		index:{
@@ -90,7 +90,7 @@ export class PDBModel1 extends DefaultModel {
 	)
 	randomText:string
 
-	@AttributeDescriptor()
+	@Attribute()
 	name:string
 
 	constructor() {
@@ -175,27 +175,27 @@ export class PDBRepo1 extends Repo<PDBModel1> {
  */
 
 
-@ModelDescriptor({tableName:'idb_model_3'})
+@Model({tableName:'idb_model_3'})
 export class PDBModel3 extends DefaultModel {
 	
 	static makeId(...groups:string[]) {
 		return groups.join('-')
 	}
 	
-	@AttributeDescriptor({name:'id',primaryKey:true})
+	@Attribute({name:'id',primaryKey:true})
 	id:string
 	
-	@AttributeDescriptor()
+	@Attribute()
 	group1:string
 	
-	@AttributeDescriptor()
+	@Attribute()
 	group2:string
 	
-	@AttributeDescriptor()
+	@Attribute()
 	group3:string
 	
 	
-	@AttributeDescriptor()
+	@Attribute()
 	name:string
 }
 
@@ -245,13 +245,13 @@ export class PDBModel4 extends DefaultModel {
 	
 	static makeId = makeModel4Id
 	
-	@AttributeDescriptor({name:'id',primaryKey:true})
+	@Attribute({name:'id',primaryKey:true})
 	id:string
 	
-	@AttributeDescriptor()
+	@Attribute()
 	second:string
 	
-	@AttributeDescriptor()
+	@Attribute()
 	name:string
 }
 

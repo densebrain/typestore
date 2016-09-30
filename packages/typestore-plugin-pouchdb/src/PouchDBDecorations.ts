@@ -1,4 +1,4 @@
-import {FinderDescriptor, Repo,ModelDescriptor,IModelOptions,IModel,IFinderOptions} from 'typestore'
+import {FinderDescriptor, Repo,Model,IModelOptions,IModel,IFinderOptions} from 'typestore'
 
 import {PouchDBRepoPlugin} from './PouchDBRepoPlugin'
 
@@ -74,7 +74,7 @@ export interface IPouchDBModelOptions extends IModelOptions {
  * @returns {(constructor:Function)=>undefined}
  */
 export function PouchDBModel(opts:IPouchDBModelOptions) {
-	return ModelDescriptor(opts)
+	return Model(opts)
 }
 
 /**

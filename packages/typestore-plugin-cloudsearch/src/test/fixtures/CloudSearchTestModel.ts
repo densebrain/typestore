@@ -6,8 +6,8 @@ import {
 	Repo,
 	Log,
 	DefaultKeyMapper,
-	ModelDescriptor,
-	AttributeDescriptor,
+	Model,
+	Attribute,
 	RepoDescriptor,
 	FinderDescriptor,
 	DefaultModel
@@ -23,17 +23,17 @@ const log = Log.create(__filename)
 
 
 
-@ModelDescriptor({tableName:'testTable1'})
+@Model({tableName:'testTable1'})
 export class CloudSearchTestModel extends DefaultModel {
 
-	@AttributeDescriptor({name:'id',primaryKey:true})
+	@Attribute({name:'id',primaryKey:true})
 	id:string
 
-	@AttributeDescriptor({})
+	@Attribute({})
 	date:number
 
 
-	@AttributeDescriptor({})
+	@Attribute({})
 	text:string
 
 	constructor() {

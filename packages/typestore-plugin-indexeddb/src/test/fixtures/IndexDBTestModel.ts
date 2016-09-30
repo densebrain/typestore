@@ -5,8 +5,8 @@ import {
 	Repo,
 	RepoDescriptor,
 	FinderDescriptor,
-	ModelDescriptor,
-	AttributeDescriptor,
+	Model,
+	Attribute,
 	DefaultModel
 } from "typestore"
 
@@ -19,17 +19,17 @@ const log = Log.create(__filename)
  * Plain Jane super simple model
  */
 
-@ModelDescriptor({tableName:'idb_model_1'})
+@Model({tableName:'idb_model_1'})
 export class IDBModel1 extends DefaultModel {
 
-	@AttributeDescriptor({name:'id',primaryKey:true})
+	@Attribute({name:'id',primaryKey:true})
 	id:string
 
-	@AttributeDescriptor({name:'createdAt'})
+	@Attribute({name:'createdAt'})
 	createdAt:number
 
 
-	@AttributeDescriptor({
+	@Attribute({
 		name:'randomText',
 		index:{
 			name: 'RandomTextIndex'
@@ -37,7 +37,7 @@ export class IDBModel1 extends DefaultModel {
 	})
 	randomText:string
 
-	@AttributeDescriptor()
+	@Attribute()
 	name:string
 	
 	constructor() {

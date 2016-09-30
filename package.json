@@ -7,8 +7,8 @@
         "local-install": "./etc/scripts/local-install.sh",
         "prepublish": "etc/scripts/prepublish.sh",
         "compile-watch": "gulp compile-watch",
-        "test": "gulp tsconfig && gulp compile-all && gulp test-all",
-        "publish": "gulp tsconfig && gulp compile-all && gulp publish-all"
+        "test": "gulp test-all",
+        "publish": "gulp publish-all"
     },
     "repository": {
         "type": "git",

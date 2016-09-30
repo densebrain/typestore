@@ -101,7 +101,7 @@ export type TKeyValue = IKeyValue|string|number
  *
  * @param opts
  */
-export function ModelDescriptor(opts:IModelOptions = {}) {
+export function Model(opts:IModelOptions = {}) {
 	
 	return function(constructor:Function) {
 		// Make sure everything is valid
@@ -167,7 +167,7 @@ export function DefaultValue(defaultValueFn:DefaultValueFn) {
  * @constructor
  */
 
-export function AttributeDescriptor(opts:IModelAttributeOptions = {}) {
+export function Attribute(opts:IModelAttributeOptions = {}) {
 	return function (target:any,propertyKey:string) {
 		const attrType = getMetadataType(target,propertyKey)
 		opts = Object.assign({},{
