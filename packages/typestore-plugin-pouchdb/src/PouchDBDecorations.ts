@@ -24,6 +24,7 @@ export interface IPouchDBFnFinderOptions extends IPouchDBFinderOptions {
 }
 
 export interface IPouchDBPrefixFinderOptions extends IPouchDBFinderOptions {
+	reverse?:boolean
 	keyProvider:(...args) => {startKey:string,endKey:string}
 }
 

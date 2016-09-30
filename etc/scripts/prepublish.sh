@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
-# Make sure the latest typescript is installed
-#npm i -g typescript@next
-#npm i typescript@next
+TS_VERSION=2.1.0-dev.20160914
+echo "Using TypeScript version ${TS_VERSION} for build"
 
-# Now link the global TS
-#npm link typescript
+# Make sure the latest typescript is installed
+npm i typescript@${TS_VERSION}
 
 # Create TS Config
 gulp tsconfig
 
 link_disabled=true
 
+# INSTALL DEPENDENCIES
 function installPackage() {
 	link=$2
 
@@ -36,6 +36,7 @@ function installPackage() {
 	echo "Prepared $1"
 }
 
+# CLEAN CURRENT LINKS
 echo "Cleaning existing links"
 rm -Rf node_modules/typestore*
 
@@ -44,9 +45,10 @@ for pkg in $(ls packages); do
 	echo "Going to install $pkg"
 	installPackage "${pkg}"
 done
+
 #installPackage "typestore" true
 #installPackage "typestore-mocks" true
 #installPackage "typestore-plugin-dynamodb"
 #installPackage "typestore-plugin-cloudsearch"
 
-echo "Home to Code"
+

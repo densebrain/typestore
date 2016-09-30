@@ -236,7 +236,7 @@ export function makePrefixFinder(pouchRepo:PouchDBRepoPlugin<any>,finderKey:stri
 	log.debug(`Finder '${finderKey}' uses allDocs with prefixes`)
 	
 	const
-		{keyProvider} = opts
+		{keyProvider,reverse} = opts
 	
 	return async (request:FinderRequest,...args) => {
 		const
@@ -245,7 +245,7 @@ export function makePrefixFinder(pouchRepo:PouchDBRepoPlugin<any>,finderKey:stri
 			includeDocs =  requestInclude === true ||  (requestInclude !== false && opts.includeDocs !== false)
 		
 		//log.debug(`Start key = ${startkey} / End key = ${endkey}`,'IncludeDocs',includeDocs, ' request.includeDocs',request && request.includeModels,'opts.includeDocs',opts.includeDocs)
-		return pouchRepo.all(request,includeDocs,startkey,endkey)
+		return pouchRepo.all(request,includeDocs,startkey,endkey,reverse)
 	}
 }
 

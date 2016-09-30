@@ -435,12 +435,13 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 	 * @param startkey - start with key (if provided, endkey is required too
 	 * @param endkey
 	 */
-	async all(request:FinderRequest, includeDocs = true, startkey:string = null, endkey:string = null) {
+	async all(request:FinderRequest, includeDocs = true, startkey:string = null, endkey:string = null, reverse = false) {
 		assert((!startkey && !endkey) || (startkey && endkey), `Either provide start key and end key or neither`)
 		
 		const
 			keyOpts = !startkey ? {} : { startkey, endkey },
 			opts = Object.assign({
+				reverse: reverse === true,
 				include_docs: includeDocs
 			}, keyOpts),
 			{ limit, offset } = request || ({} as FinderRequest)
