@@ -81,7 +81,7 @@ async function reset(useGlobal = true, extraOpts = null,...models) {
  * Pouch test suite - should be abstracted
  * to be a store test suite in general
  */
-describe('#plugin-pouchdb', () => {
+xdescribe('#plugin-pouchdb', () => {
 	
 	describe(`#conflict-overwrite-test`, async () => {
 		before(async() => {
