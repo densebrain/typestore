@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Make sure the latest typescript is installed
-npm i -g typescript@next
-npm i typescript@next
+#npm i -g typescript@next
+#npm i typescript@next
 
 # Now link the global TS
 #npm link typescript
