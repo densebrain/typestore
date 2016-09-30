@@ -2,7 +2,7 @@
     "name": "typestore-project",
     "internal": true,
     "description": "TypeStore development package",
-    "version": "0.2.7",
+    "version": "0.2.8",
     "scripts": {
         "local-install": "./etc/scripts/local-install.sh",
         "prepublish": "etc/scripts/prepublish.sh",
