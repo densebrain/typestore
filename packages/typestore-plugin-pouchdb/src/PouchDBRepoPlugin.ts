@@ -67,6 +67,7 @@ export class PouchDBKeyValue implements IKeyValue {
 	}
 }
 
+
 /**
  * PouchDB repo plugin
  */
@@ -151,6 +152,24 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		})
 		
 		repo.attach(this)
+		
+		this.extendRepo(repo)
+	}
+	
+	/**
+	 * Customize the repo extending the API
+	 *
+	 * @param repo
+	 */
+	private extendRepo(repo:Repo<M>) {
+		Object.defineProperty(repo,'pouchDB',{
+			get: () => this.db
+		})
+		
+		Object.defineProperty(repo,'modelFromObject',{
+			value: this.modelFromObject.bind(this)
+		})
+		
 	}
 	
 	
@@ -273,6 +292,35 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 		return val
 	}
 	
+	/**
+	 * Map a pouch doc to a model
+	 *
+	 * @param val
+	 * @returns {M}
+	 */
+	modelFromObject(val:any):M {
+		const
+			mapper = getDefaultMapper(this.repo.modelClazz)
+		
+		return val && val.attrs && mapper
+			.fromObject(val.attrs, (o, model:any) => {
+				
+				const
+					$$doc = Object.assign({}, val)
+				
+				delete $$doc[ 'attrs' ]
+				model.$$doc = $$doc
+				
+				return model
+			})
+	}
+	
+	/**
+	 * Get a single object
+	 *
+	 * @param key
+	 * @returns {Promise<M>}
+	 */
 	async get(key:PouchDBKeyValue):Promise<M> {
 		if (!key)
 			throw new Error('key can not be undefined or falsy')
@@ -290,21 +338,9 @@ export class PouchDBRepoPlugin<M extends IModel> implements IRepoPlugin<M>, IFin
 				throw err
 			})
 		
-		if (!result)
-			return null
 		
-		const
-			mapper = getDefaultMapper(this.repo.modelClazz)
 		
-		return mapper
-			.fromObject(result.attrs, (o, model:any) => {
-				const $$doc = Object.assign({}, result)
-				delete $$doc[ 'attrs' ]
-				
-				model.$$doc = $$doc
-				
-				return model
-			})
+		return result && this.modelFromObject(result)
 		
 	}
 	

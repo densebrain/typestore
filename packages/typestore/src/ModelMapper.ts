@@ -84,7 +84,12 @@ export class ModelMapper<M extends IModel> implements IModelMapper<M> {
 	}
 
 	fromObject(obj:Object,decorator = null):M {
-		const o = new this.modelClazz()
+		if (!obj)
+			return null
+		
+		const
+			o = new this.modelClazz()
+		
 		for (let key of Object.keys(obj)) {
 			if (this.attrPersists(key))
 				o[key] = obj[key]
