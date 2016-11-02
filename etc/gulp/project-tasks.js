@@ -64,8 +64,8 @@ module.exports = function(projectName) {
 		cp('-Rf',`${project.base}/*`,targetDir)
 		rm('-Rf',`${targetDir}/node_modules`)
 
-		if (projectName === 'typestore')
-			cp('./README.md',targetDir)
+		// if (projectName === 'typestore')
+		// 	cp('./README.md',targetDir)
 
 		const targetPackageJsonFile = `${targetDir}/package.json`
 		const packageJson = readJSONFileSync(targetPackageJsonFile)
