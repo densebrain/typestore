@@ -1,7 +1,11 @@
 /**
  * Import PouchDB
  */
-const PouchDB:any = require('pouchdb').plugin(require('pouchdb-find'))
+
+
+const
+	PouchModuleName = process.env.POUCH_MODULE_NAME || 'pouchdb',
+	PouchDB:any = require(PouchModuleName).plugin(require('pouchdb-find'))
 
 // Tracks whether quick search is enabled
 let quickSearchEnabled = false
