@@ -3,9 +3,21 @@
  */
 
 
+function loadPouchDB() {
+	const
+		g = global as any,
+		PouchModuleName = process.env.POUCH_MODULE_NAME || 'pouchdb'
+	
+	
+	console.log(`Loading PouchDB from Global`,g.PouchDB,PouchModuleName)
+	
+	return g.PouchDB || require(PouchModuleName)
+}
+
+
+
 const
-	PouchModuleName = process.env.POUCH_MODULE_NAME || 'pouchdb',
-	PouchDB:any = require(PouchModuleName).plugin(require('pouchdb-find'))
+	PouchDB:any = loadPouchDB().plugin(require('pouchdb-find'))
 
 // Tracks whether quick search is enabled
 let quickSearchEnabled = false
