@@ -44,7 +44,7 @@ const
 	}]
 
 
-setOverrideLevel(log,LogLevel.DEBUG)
+//setOverrideLevel(log,LogLevel.DEBUG)
 
 let
 	PouchDB = null
@@ -76,6 +76,7 @@ export interface IPouchDBReplication {
  */
 export interface IPouchDBOptions {
 	filename:string
+	skipIndexes?:boolean
 	overwriteConflicts?:boolean
 	databasePerRepo?:boolean
 	createOptions?:any
@@ -93,7 +94,7 @@ export const PouchDBOptionDefaults = {
 }
 
 /**
- * Uses dexie under the covers - its a mature library - and i'm lazy
+ * Pouch plugin
  */
 export class PouchDBPlugin implements IStorePlugin {
 	
@@ -288,18 +289,25 @@ export class PouchDBPlugin implements IStorePlugin {
 			
 		}
 		
+		
+		const
+			skipIndexes = this.opts.skipIndexes === true
+		
 		// Add global design docs
-		if (useGlobal)
-			await loadDesignDocs(DesignDocsGlobal)
+		if (!skipIndexes) {
+			if (useGlobal)
+				await loadDesignDocs(DesignDocsGlobal)
+			
+			// Add design docs that are used everywhere
+			await loadDesignDocs(DesignDocs)
+			
+			// Now init the database
+			// Create type index
+			if (useGlobal)
+				await makeMangoIndex(true,db, null, PouchDBTypeIndex, 'asc', [ 'type' ])
+		}
 		
-		// Add design docs that are used everywhere
-		await loadDesignDocs(DesignDocs)
 		
-		
-		// Now init the database
-		// Create type index
-		if (useGlobal)
-			await makeMangoIndex(true,db, null, PouchDBTypeIndex, 'asc', [ 'type' ])
 		
 		const
 			indexArgs = [],
@@ -370,9 +378,11 @@ export class PouchDBPlugin implements IStorePlugin {
 			return newSchema
 		}, {})
 		
-		log.debug(`Now creating ${indexArgs.length} indexes`)
-		await Promise.all(indexArgs.map(args => makeMangoIndex.apply(null, args)))
 		
+		if (!skipIndexes) {
+			log.debug(`Now creating ${indexArgs.length} indexes`)
+			await Promise.all(indexArgs.map(args => makeMangoIndex.apply(null, args)))
+		}
 		return db
 
 
