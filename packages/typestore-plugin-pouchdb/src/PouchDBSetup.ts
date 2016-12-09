@@ -1,8 +1,16 @@
 /**
+ * Load a specific pouchdb module
+ *
+ * @param moduleName
+ * @returns {any}
+ */
+function loadPouchDBModule(moduleName) {
+	return (moduleName === 'pouchdb-browser') ? require('pouchdb-browser') : require('pouchdb')
+}
+
+/**
  * Import PouchDB
  */
-
-
 function loadPouchDB() {
 	const
 		g = global as any,
@@ -11,7 +19,8 @@ function loadPouchDB() {
 	
 	console.log(`Loading PouchDB from Global`,g.PouchDB,PouchModuleName)
 	
-	return g.PouchDB || require(PouchModuleName)
+	return g.PouchDB || loadPouchDBModule(PouchModuleName)
+	
 }
 
 

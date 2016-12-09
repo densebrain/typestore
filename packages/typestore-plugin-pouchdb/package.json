@@ -7,7 +7,7 @@
   "scripts": {
     "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
   },
-  "dependencies": {
+  "peerDependencies": {
     "pouchdb": "^5.4.5",
     "pouchdb-find": "^0.10.3",
     "pouchdb-quick-search": "^1.1.3"
