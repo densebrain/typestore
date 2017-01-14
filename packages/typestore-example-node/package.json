@@ -4,6 +4,12 @@
   "version": "0.1.6",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "files": [
+    "src",
+    "dist",
+    "package.json",
+    "README.md"
+  ],
   "scripts": {
     "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
   },

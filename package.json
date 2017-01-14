@@ -10,6 +10,12 @@
         "test": "gulp test-all",
         "publish": "gulp publish-all"
     },
+    "files": [
+        "src",
+        "dist",
+        "package.json",
+        "README.md"
+    ],
     "repository": {
         "type": "git",
         "url": "git+https://github.com/densebrain/typestore.git"
