@@ -1,8 +1,9 @@
 //const PouchDB = require('pouchdb')
 //import * as PouchDB from 'pouchdb'
-import {isString,IModelType} from 'typestore'
+import {IModelType} from 'typestore'
 import {cleanFieldPrefixes,filterReservedFields,mapAttrsToField} from './PouchDBUtil'
-import { PouchDBRepoPlugin } from "typestore-plugin-pouchdb/PouchDBRepoPlugin"
+import {isFunction,isNil,isString} from 'typeguard'
+//import { PouchDBRepoPlugin } from "typestore-plugin-pouchdb/PouchDBRepoPlugin"
 
 const log = require('typelogger').create(__filename)
 

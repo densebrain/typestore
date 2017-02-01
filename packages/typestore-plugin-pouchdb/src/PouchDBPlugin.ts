@@ -18,7 +18,6 @@ import {
 import {PouchDBPKIndex,PouchDBTypeIndex} from './PouchDBConstants'
 import {PouchDBRepoPlugin} from "./PouchDBRepoPlugin";
 import {makeMangoIndex} from './PouchDBIndexes'
-import {LogLevel,setOverrideLevel} from 'typelogger'
 import { mkdirp } from "./PouchDBUtil"
 
 const
@@ -174,12 +173,10 @@ export class PouchDBPlugin implements IStorePlugin {
 		const
 			filename = `${this.opts.filename}${modelName ? `/${modelName}` : ''}`
 		
-		
-		
 		if (filename.startsWith('/')) {
 			try {
 				log.debug(`Checking filesystem path exists: ${filename}`)
-				mkdirp(this.opts.filename)
+				mkdirp(filename)
 				
 			} catch (err) {
 				log.warn(`Failed to create db directory`,err)

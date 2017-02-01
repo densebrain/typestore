@@ -1,5 +1,5 @@
-import {Log,FinderRequest,FinderResultArray,isFunction,isNil} from 'typestore'
-
+import {Log,FinderRequest,FinderResultArray} from 'typestore'
+import {isFunction,isNil} from 'typeguard'
 
 import {
 	IPouchDBFullTextFinderOptions,

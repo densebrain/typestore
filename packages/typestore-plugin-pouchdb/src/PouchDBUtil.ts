@@ -1,4 +1,5 @@
-import {Log,isString,IModelMapper,IModel,IModelType,getDefaultMapper,isFunction,ModelMapper} from 'typestore'
+import {Log,IModelMapper,IModel,IModelType,getDefaultMapper,ModelMapper} from 'typestore'
+import {isString,isFunction} from 'typeguard'
 
 import {
 	PouchDBAttributePrefix, PouchDBReservedFields, PouchDBOperators,

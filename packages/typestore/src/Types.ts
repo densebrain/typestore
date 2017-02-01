@@ -3,7 +3,7 @@ import {Repo} from "./Repo"
 import {NoReflectionMetataError} from './Errors'
 import {IModel, IModelType} from "./ModelTypes"
 import {IIndexOptions,IPlugin} from "./PluginTypes";
-import {isNumber} from './Util'
+import {isNumber} from 'typeguard'
 
 
 export * from './ModelTypes'

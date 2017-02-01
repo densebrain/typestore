@@ -1,10 +1,6 @@
 //import 'reflect-metadata'
 import './Globals'
 
-const Bluebird = require('bluebird')
-Promise = Bluebird
-
-
 import * as Log from './log'
 import {TypeStoreModelKey} from './Constants'
 import {
@@ -18,12 +14,17 @@ import {
 } from './Types'
 import {msg, Strings} from "./Messages"
 import {Repo} from "./Repo";
-import {PluginFilter, assert, PromiseMap, isNil} from "./Util";
+import {PluginFilter, assert, PromiseMap} from "./Util";
 import {IModelOptions} from "./decorations/ModelDecorations";
 import {PluginEventType} from "./PluginTypes";
+import { isNil } from "typeguard"
 
 // Create logger
-const log = Log.create(__filename)
+const
+	Bluebird = require('bluebird'),
+	log = Log.create(__filename)
+
+Promise = Bluebird
 
 /**
  * ClassName -> ModelClass Mapping table
@@ -174,7 +175,7 @@ export class Coordinator implements ICoordinator {
 		this.checkStarted(true)
 		models.forEach(model => this.registerModel(model))
 
-		this.startPromise = PromiseMap(this.plugins, plugin => (plugin) && plugin.start())
+		this.startPromise = PromiseMap(this.plugins, plugin => plugin && plugin.start())
 
 		return Bluebird.resolve(this.startPromise)
 			.return(this)

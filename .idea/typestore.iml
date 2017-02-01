@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/packages/typestore/src/test" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/packages/typestore-plugin-cloudsearch/src/test" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/packages/typestore-plugin-dynamodb/src/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/typestore-plugin-pouchdb/src/test" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/dist" />
       <excludeFolder url="file://$MODULE_DIR$/node_modules" />
@@ -41,5 +42,6 @@
         </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="library" name="typestore-typed-modules" level="project" />
   </component>
 </module>

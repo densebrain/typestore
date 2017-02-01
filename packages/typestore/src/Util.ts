@@ -1,8 +1,10 @@
 import {IPlugin, IRepoPlugin, PluginType, IStorePlugin,
 	IIndexerPlugin, IFinderPlugin,IRepoSupportPlugin} from "./Types"
 import {Repo} from "./Repo"
+import { isString, isNumber } from "typeguard"
 
-const Bluebird = require('bluebird')
+const
+	Bluebird = require('bluebird')
 
 export function assert(test,msg:string = null) {
 	if (!test)
@@ -11,22 +13,6 @@ export function assert(test,msg:string = null) {
 
 function isTypeOf(o,typeStr) {
 	return typeof o === typeStr
-}
-
-export function isNil(o:any) {
-	return isTypeOf(o,'undefined') || o === null
-}
-
-export function isFunction(o:any):o is Function {
-	return isTypeOf(o,'function')
-}
-
-export function isNumber(o:any):o is number {
-	return isTypeOf(o,'number')
-}
-
-export function isString(o:any):o is string {
-	return isTypeOf(o,'string')
 }
 
 export function isNumberOrString(o:any):o is string|number {

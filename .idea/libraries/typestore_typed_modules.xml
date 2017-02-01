@@ -1,0 +1,16 @@
+<component name="libraryTable">
+  <library name="typestore-typed-modules" type="javaScript">
+    <properties>
+      <option name="frameworkName" value="node_modules" />
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/node_modules/typeguard" />
+        <item url="file://$PROJECT_DIR$/node_modules/typelogger" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/node_modules/typeguard" />
+      <root url="file://$PROJECT_DIR$/node_modules/typelogger" />
+    </CLASSES>
+    <SOURCES />
+  </library>
+</component>

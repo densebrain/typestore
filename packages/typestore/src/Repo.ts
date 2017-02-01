@@ -27,7 +27,6 @@ import {NotImplemented} from "./Errors"
 import * as Log from './log'
 
 import {
-	isFunction,
 	isFinderPlugin,
 	PluginFilter,
 	PromiseMap
@@ -37,6 +36,7 @@ import {ModelMapper,getDefaultMapper} from "./ModelMapper"
 import {IModelType} from "./ModelTypes"
 import {IModelOptions, IModelKey, IKeyValue, TKeyValue, IModelAttributeOptions} from "./decorations/ModelDecorations";
 import {getMetadata} from "./MetadataManager";
+import { isFunction } from "typeguard"
 
 // Logger
 const log = Log.create(__filename)
