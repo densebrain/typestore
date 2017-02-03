@@ -85,7 +85,7 @@ export interface IDynamoDBModelOptions extends IModelOptions {
 export interface IDynamoDBStorePluginOptions {
 	endpoint?:string
 	region?:string
-	awsOptions?:AWS.ClientConfigPartial
+	awsOptions?:any
 	prefix?:string
 }
 

@@ -31,5 +31,8 @@
     "url": "https://github.com/densebrain/typestore/issues"
   },
   "homepage": "https://github.com/densebrain/typestore#readme",
-  "dependencies": {}
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^7.0.4"
+  }
 }

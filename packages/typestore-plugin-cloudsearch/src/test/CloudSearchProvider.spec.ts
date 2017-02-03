@@ -8,7 +8,7 @@ const sharedIniCreds =  new AWS.SharedIniFileCredentials({profile: 'default'})
 import * as Faker from 'faker'
 import {CloudSearchTestModel,CloudSearchTest1Repo} from './fixtures/index'
 import * as sinon from 'sinon'
-import * as uuid from 'node-uuid'
+import uuid = require('uuid')
 
 import * as TypeStore from 'typestore'
 import {Coordinator,Log,IndexAction} from 'typestore'

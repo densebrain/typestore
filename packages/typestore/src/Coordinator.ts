@@ -1,4 +1,3 @@
-//import 'reflect-metadata'
 import './Globals'
 
 import * as Log from './log'

@@ -16,14 +16,20 @@
 		"experimentalDecorators": true,
 		"preserveConstEnums": true,
 		"allowSyntheticDefaultImports": true,
-		"inlineSourceMap": true
+		"inlineSourceMap": true,
+		"typeRoots": [
+			"./node_modules/@types",
+			"../node_modules/@types",
+			"../../node_modules/@types",
+			"../../../node_modules/@types",
+			"../../../typings/globals",
+			"../../../typings/modules"
+		]
 	},
 
 
 	"exclude": [
 		"node_modules",
-		"**/node_modules",
-		"dist",
-		"**/dist"
+		"dist"
 	]
 }

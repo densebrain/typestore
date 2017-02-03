@@ -25,7 +25,11 @@
     "db"
   ],
   "dependencies": {
-    "aws-sdk": "^2.3.7",
+    "aws-sdk": "^2.9.0",
     "lodash": "^4.11.1"
+  },
+  "devDependencies": {
+    "gulp-typescript": "^3.1.4",
+    "typescript": "^2.1.5"
   }
 }

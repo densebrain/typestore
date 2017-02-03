@@ -2,6 +2,7 @@
 
 import {TableStatus} from "./DynamoDBTypes";
 import * as _ from 'lodash'
+import * as AWS from 'aws-sdk'
 
 export function typeToDynamoType(type:any, typeName:string = null) {
 	return (type === String || typeName === 'String') ? 'S' : //string
@@ -10,7 +11,7 @@ export function typeToDynamoType(type:any, typeName:string = null) {
 				'M' //object
 }
 
-export function tableNameParam(TableName:string) {
+export function tableNameParam(TableName:string):AWS.DynamoDB.DescribeTableInput {
 	return {TableName}
 }
 

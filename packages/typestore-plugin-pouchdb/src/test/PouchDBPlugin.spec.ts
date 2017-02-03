@@ -3,7 +3,7 @@ const PouchDB = require('pouchdb')
 //PouchDB.debug.enable('*');
 
 import * as Faker from 'faker'
-import * as uuid from 'node-uuid'
+import uuid = require('uuid')
 import { Coordinator, Log } from 'typestore'
 import { PouchDBPlugin } from "../PouchDBPlugin";
 import * as Fixtures from './fixtures/PouchDBTestModel'

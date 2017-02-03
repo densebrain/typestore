@@ -8,8 +8,7 @@
   },
   "dependencies": {
     "chalk": "registry:npm/chalk#1.0.0+20160211003958",
-    "lodash": "registry:npm/lodash#4.0.0+20160701205107",
-    "node-uuid": "registry:npm/node-uuid#1.4.7+20160503013124"
+    "lodash": "registry:npm/lodash#4.0.0+20160701205107"
   },
   "globalDependencies": {
     "bluebird": "registry:dt/bluebird#2.0.0+20160701023356",

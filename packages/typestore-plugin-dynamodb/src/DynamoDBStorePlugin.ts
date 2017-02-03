@@ -352,8 +352,8 @@ export class DynamoDBStorePlugin implements IStorePlugin {
 	 */
 	async waitForTable(TableName:string, resourceState:ResourceState = ResourceState.tableExists):Promise<boolean> {
 		await this.dynamoClient.waitFor(
-					ResourceState[resourceState],
-					tableNameParam(TableName)
+					ResourceState[resourceState] as any,
+					tableNameParam(TableName) as any
 				).promise()
 
 		return this.setTableAvailable(TableName)

@@ -2,7 +2,9 @@
   <dictionary name="jglanz">
     <words>
       <w>attrs</w>
+      <w>cloudsearch</w>
       <w>densebrain</w>
+      <w>dynamodb</w>
       <w>dyno</w>
       <w>endkey</w>
       <w>falsy</w>

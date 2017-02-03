@@ -1,4 +1,4 @@
-import * as uuid from 'node-uuid'
+import uuid = require('uuid')
 import {Coordinator,Log,Repo} from 'typestore'
 import * as Fixtures from './fixtures/IndexDBTestModel'
 import * as Faker from 'faker'

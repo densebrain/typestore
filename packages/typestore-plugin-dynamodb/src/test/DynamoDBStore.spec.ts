@@ -1,7 +1,7 @@
 
 import * as TypeStore from 'typestore'
 
-import * as uuid from 'node-uuid'
+const uuid = require('uuid/v4')
 import {Coordinator,Log,SyncStrategy} from 'typestore'
 import {IDynamoDBStorePluginOptions} from "../DynamoDBTypes"
 import {DynamoDBStorePlugin} from '../DynamoDBStorePlugin'
@@ -95,7 +95,7 @@ xdescribe('#plugin-dynamodb', function() {
 		let test1Repo = null
 		before(async () => {
 			t1 = new Fixtures.Test1()
-			t1.id = uuid.v4()
+			t1.id = uuid()
 			t1.createdAt = new Date().getTime()
 			t1.randomText = 'asdfasdfadsf'
 

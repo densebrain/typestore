@@ -1,4 +1,3 @@
-
 import {
 	ICoordinator,
 	ICoordinatorOptions,
@@ -13,8 +12,6 @@ import {
 	assert,
 	IModelType
 } from 'typestore'
-
-
 import {PouchDBPKIndex,PouchDBTypeIndex} from './PouchDBConstants'
 import {PouchDBRepoPlugin} from "./PouchDBRepoPlugin";
 import {makeMangoIndex} from './PouchDBIndexes'

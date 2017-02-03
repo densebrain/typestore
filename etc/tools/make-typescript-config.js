@@ -28,10 +28,10 @@ function makeTypeScriptConfig(project,isGlobalConfig = false) {
 	}
 
 
-
-	_.assign(tsCompilerOptions,{
-		baseUrl,
-		//outDir,
+	//
+	 _.assign(tsCompilerOptions,{
+	 	baseUrl,
+		outDir,
 		paths: projectNames.reduce((projectPaths,name) => {
 			return Object.assign(projectPaths, {
 				[name]: [makePackageDir(name,'index')],
