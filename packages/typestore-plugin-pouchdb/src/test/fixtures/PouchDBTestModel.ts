@@ -18,7 +18,7 @@ import {
 	PouchDBModel,
 	PouchDBMangoFinder,
 	PouchDBFullTextFinder
-} from 'typestore-plugin-pouchdb'
+} from '../../index'
 
 
 const log = Log.create(__filename)

@@ -19,7 +19,8 @@ Bluebird
 		monitoring: false
 	})
 
-Log.setLogThreshold(process.env.DEBUG ? Log.LogLevel.DEBUG : Log.LogLevel.WARN )
+console.log(`Log level`,Object.keys(Log),Log.LogLevel)
+//Log.setLogThreshold(process.env.DEBUG ? Log.LogLevel.DEBUG : Log.LogLevel.WARN )
  
 Object.assign(global,{
 	Promise:Bluebird,

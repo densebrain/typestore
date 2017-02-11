@@ -120,9 +120,9 @@ module.exports = function(projectName) {
 
 
 	// Grab the project for the compilation task
-	const {tsConfigFile,tsSettings} = makeTypeScriptConfig(project)
-	const tsProject = ts.createProject(tsConfigFile,tsSettings)
-	const babelConfig = makeBabelConfig(project)
+	// const {tsConfigFile,tsSettings} = makeTypeScriptConfig(project)
+	// const tsProject = ts.createProject(tsConfigFile,tsSettings)
+	// const babelConfig = makeBabelConfig(project)
 
 	/**
 	 * Compile compile
@@ -131,40 +131,15 @@ module.exports = function(projectName) {
 	 * @returns {*}
 	 */
 	const compile = () => {
-		//process.chdir(project.base)
-
-		const sourcemapOpts = {
-			sourceRoot: path.resolve(project.base, 'src'),
-			includeContent: false
+		process.chdir(project.base)
+		
+		log.info(`Compiling in: ${project.base}`)
+		if (exec('../../node_modules/.bin/tsc --project tsconfig.json').code !== 0) {
+			throw new Error(`Compilation failed in: ${project.base}`)
 		}
-
-
-		const tsResult = gulp.src(project.srcs,{cwd:processDir})
-		//const tsResult = gulp.src(project.srcs)
-			.pipe(sourceMaps.init({loadMaps:true}))
-			//.pipe(ts(tsSettings))
-			.pipe(ts(tsProject))
-
-
-
-		const sourceMapHandler = (sourceMapMode === SourceMapModes.SourceMap) ?
-			// External source maps
-			sourceMaps.write('.', sourcemapOpts) :
-			// Inline source maps
-			sourceMaps.write(sourcemapOpts)
-
-		const finalMerge = merge([
-			tsResult.dts
-				.pipe(gulp.dest(distPath)),
-			tsResult.js
-				.pipe(babel(babelConfig))
-				.pipe(sourceMapHandler)
-				.pipe(gulp.dest(distPath))
-		])
-
+		
 		log.info('Compilation Completed')
 
-		return finalMerge
 	}
 
 	gulp.task(taskCompileName,[],compile)

@@ -2,13 +2,11 @@ const PouchDB = require('pouchdb')
 //PouchDB.debug.enable('pouchdb:*')
 //PouchDB.debug.enable('*');
 
-import * as Faker from 'faker'
+import * as Faker from "faker"
+import { Coordinator, FinderRequest, Log } from "typestore"
+import { IPouchDBOptions, PouchDBPlugin } from "../PouchDBPlugin"
+import * as Fixtures from "./fixtures/PouchDBTestModel"
 import uuid = require('uuid')
-import { Coordinator, Log } from 'typestore'
-import { PouchDBPlugin } from "../PouchDBPlugin";
-import * as Fixtures from './fixtures/PouchDBTestModel'
-import { IPouchDBOptions } from "../PouchDBPlugin"
-import {FinderRequest} from 'typestore'
 
 
 // Store is configured to reside in the tmp folder

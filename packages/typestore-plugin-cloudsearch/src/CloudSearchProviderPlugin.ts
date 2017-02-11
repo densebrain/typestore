@@ -21,7 +21,6 @@ import {
 import {CloudSearchDomain} from 'aws-sdk'
 import {ICloudSearchOptions} from "./CloudSearchTypes";
 import {CloudSearchDefaults, CloudSearchFinderKey} from "./CloudSearchConstants";
-
 import getMetadata = Reflect.getMetadata;
 
 
@@ -170,7 +169,8 @@ export class CloudSearchProviderPlugin implements IIndexerPlugin, IFinderPlugin,
 		log.info('Querying with params', params)
 
 		let results = await this.client.search(params).promise()
-		return results.hits.hit
+		
+		return results.hits.hit as any
 	}
 
 

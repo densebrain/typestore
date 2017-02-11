@@ -30,6 +30,7 @@ Promise = Bluebird
  */
 export type TModelTypeMap = {[clazzName:string]:IModelType}
 
+
 /**
  * The overall coordinator
  */

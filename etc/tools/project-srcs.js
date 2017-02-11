@@ -1,5 +1,10 @@
+require('../global-env')
+
+const
+	{_,processDir} = global
 
 module.exports = function(project,srcPath,isGlobalConfig=false) {
+	
 	const basePaths = [
 		`${processDir}/typings/browser.d.ts`,
 		`${processDir}/packages/typestore/typings/typestore.d.ts`
@@ -15,7 +20,6 @@ module.exports = function(project,srcPath,isGlobalConfig=false) {
 			[
 				`${srcPath}/**/*.ts`,
 				`${processDir}/typings/*.d.ts`,
-				// `${project.base}/typings/browser.d.ts`,
 				`${project.base}/typings/*.d.ts`,
 				`!${srcPath}/**/*.d.ts`
 			]

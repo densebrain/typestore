@@ -14,6 +14,15 @@
             <path value="file://$PROJECT_DIR$/packages/typestore-example-webpack/src" />
             <path value="file://$PROJECT_DIR$/packages/typestore-example-node/src" />
             <path value="file://$PROJECT_DIR$/etc" />
+            <path value="file://$PROJECT_DIR$/packages" />
+            <path value="file://$PROJECT_DIR$/packages/typestore" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-example-node" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-example-webpack" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-mocks" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-plugin-cloudsearch" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-plugin-dynamodb" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-plugin-indexeddb" />
+            <path value="file://$PROJECT_DIR$/packages/typestore-plugin-pouchdb" />
           </resourceRoots>
         </entryData>
       </entry>

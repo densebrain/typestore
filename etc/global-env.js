@@ -12,15 +12,18 @@ const
 	projectConfigs = require('./projects.json'),
 	projectNames = Object.keys(projectConfigs),
 	helpers = require('./tools/helpers'),
-	{readJSONFileSync} = helpers
+	{readJSONFileSync} = helpers,
+	basePackageJson = readJSONFileSync('./package.json') 
 
-Object.keys(projectConfigs).forEach(projectName => projectConfigs[projectName].name = projectName)
+Object
+	.keys(projectConfigs)
+	.forEach(projectName => projectConfigs[projectName].name = projectName)
 
 Object.assign(global,{
 	_,
 	tsc,
 	processDir: path.resolve(__dirname,'..'),
-	basePackageJson: readJSONFileSync('./package.json')
+	basePackageJson
 },helpers)
 
 // Config for release and versioning

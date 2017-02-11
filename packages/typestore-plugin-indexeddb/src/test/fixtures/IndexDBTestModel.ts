@@ -10,7 +10,7 @@ import {
 	DefaultModel
 } from "typestore"
 
-import {IndexedDBFinderDescriptor} from 'typestore-plugin-indexeddb'
+import {IndexedDBFinderDescriptor} from '../../index'
 
 const log = Log.create(__filename)
 

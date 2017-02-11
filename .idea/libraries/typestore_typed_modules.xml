@@ -3,11 +3,17 @@
     <properties>
       <option name="frameworkName" value="node_modules" />
       <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/node_modules/@types/typescript" />
+        <item url="file://$PROJECT_DIR$/node_modules/@types/source-map-support" />
+        <item url="file://$PROJECT_DIR$/node_modules/@types/uuid" />
         <item url="file://$PROJECT_DIR$/node_modules/typeguard" />
         <item url="file://$PROJECT_DIR$/node_modules/typelogger" />
       </sourceFilesUrls>
     </properties>
     <CLASSES>
+      <root url="file://$PROJECT_DIR$/node_modules/@types/typescript" />
+      <root url="file://$PROJECT_DIR$/node_modules/@types/source-map-support" />
+      <root url="file://$PROJECT_DIR$/node_modules/@types/uuid" />
       <root url="file://$PROJECT_DIR$/node_modules/typeguard" />
       <root url="file://$PROJECT_DIR$/node_modules/typelogger" />
     </CLASSES>

@@ -2,9 +2,9 @@
 
 
 module.exports = function (wallaby) {
-	var config = require('../../etc/wallaby/wallaby.base')(wallaby)
+	
 
-	return Object.assign(config,{
+	return Object.assign(require('../../etc/wallaby/wallaby.base')(wallaby),{
 		// Extended options go here
 	});
 };

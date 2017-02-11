@@ -1,7 +1,8 @@
 {
 	"compilerOptions": {
-		"target": "ES6",
+		"target": "ES5",
 		"lib": [
+			"es6",
 			"es7",
 			"es2015",
 			"es2016",
@@ -26,8 +27,8 @@
 			"../../../typings/modules"
 		]
 	},
-
-
+	
+	"compileOnSave": true,
 	"exclude": [
 		"node_modules",
 		"dist"
