@@ -1,9 +1,9 @@
 language: node_js
 node_js:
-  - '6.1'
+  - '7.2'
 before_script:
-  - npm install -g gulp babel-register source-map-support
-script: gulp clean compile-all test-all
+  - npm install -g gulp mocha babel-register source-map-support
+script: npm run clean && npm run compile && npm run test
 dd:
   secure: K7PikcxxeKBQUm1FDGdZI40cEZIF5aqqLGOoCxt3mcouf3vcRG6dkwxpZ6sl76/DVE03l7lEpI0pccnE2ixec1nURgeV9uNPNhsoPyu1o00b6yGBx2kQs9YbjE4h7UYAfDwbvOSMZ0kp4P+D67axbYqVuKEuXppggI9k+EmDr5XyuuIW53ETCuToXUA/ElIK9QZ7eIn7+lAffH4RtAk7vgmpanyLUQCauGrKOaHGvXe6RNvcFFQXZtbKQ/h7pE16GMVuXHkOFVKPPfI+VEDA5F8qAnUMbMMT8tsMfFQVj3nVULQyQRrQAMDPfnqSXcNWs8rKJ1nHub9TSB04Yxg/nstJRX++qirijLNZvPyAaz91C12W+evaogKmetReXv7BQiHYZS4ROiyLOtftn98vWi/rDgVor5wzX9pzXNyDeixhNjtwYJndG8RDgqEqDTotO6+d/TE79Z5WQvObttnYrfTy6fsvHVw7mXtpPbpNkAlL6ZKBagWlwX243j9qIevX+UBfDTHz+nqcignXoTcFCwpLEZ9R9//oD69N9Uw4pxR02LtU7x/I89ntG8Hr/FLwhbwkX9mbCfztmtYvzGDq1ocQcwEOY41XvFk6LR78WMb0uKFrOC7ywJGuXkeIUEmTlPhJRVunft8QBz3w6xVrdThhIucKZlgYDoWaLrdwNK8=
 deploy:
