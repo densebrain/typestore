@@ -12,7 +12,9 @@
     "config": "node ./etc/scripts/config.js",
     "compile": "node ./etc/scripts/compile.js",
     "compile:watch": "node ./etc/scripts/compile.js --watch",
-    "release": "npm version patch && git push --tags"
+    "release": "node ./etc/scripts/release.js",
+    "deploy:prepare": "npm run clean && npm run compile && npm run test",
+    "deploy": "npm run deploy:prepare && npm run release"
   },
   "files": [
     "src",

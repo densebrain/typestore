@@ -1,35 +1,35 @@
 {
-  "name": "typestore-plugin-dynamodb",
-  "description": "DynamoDB TypesStore Plugin",
-  "version": "1.0.0",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
-  "files": [
-    "src",
-    "dist",
-    "package.json",
-    "README.md"
-  ],
-  "scripts": {
-    "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
-  },
-  "keywords": [
-    "dynamo",
-    "dynamodb",
-    "typescript",
-    "typestore",
-    "store",
-    "plugin",
-    "ts",
-    "mapper",
-    "db"
-  ],
-  "dependencies": {
-    "aws-sdk": "^2.9.0",
-    "lodash": "^4.11.1"
-  },
-  "devDependencies": {
-    "gulp-typescript": "^3.1.4",
-    "typescript": "^2.1.5"
-  }
+    "name": "typestore-plugin-dynamodb",
+    "description": "DynamoDB TypesStore Plugin",
+    "version": "0.2.26",
+    "main": "dist/index.js",
+    "typings": "dist/index.d.ts",
+    "files": [
+        "src",
+        "dist",
+        "package.json",
+        "README.md"
+    ],
+    "scripts": {
+        "test": "gulp ts-compile && mocha src/test/**/*.spec.js"
+    },
+    "keywords": [
+        "dynamo",
+        "dynamodb",
+        "typescript",
+        "typestore",
+        "store",
+        "plugin",
+        "ts",
+        "mapper",
+        "db"
+    ],
+    "dependencies": {
+        "aws-sdk": "^2.9.0",
+        "lodash": "^4.11.1"
+    },
+    "devDependencies": {
+        "gulp-typescript": "^3.1.4",
+        "typescript": "^2.1.5"
+    }
 }
