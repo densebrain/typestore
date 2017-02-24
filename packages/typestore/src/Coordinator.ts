@@ -101,7 +101,7 @@ export class Coordinator implements ICoordinator {
 
 	private initialized = false
 
-	// NOTE: settled and settling Promise are overriden properties - check below namespace
+	// NOTE: settled and settling Promise are overridden properties - check below namespace
 
 	private startPromise:Promise<any> = null
 	private internal = {
